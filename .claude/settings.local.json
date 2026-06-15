@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($csc = Get-ChildItem \"C:\\\\Windows\\\\Microsoft.NET\\\\Framework64\" -Recurse -Filter csc.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName; Write-Output \"csc: $csc\"; Write-Output \"node: $\\(\\(Get-Command node -ErrorAction SilentlyContinue\\).Source\\)\"; Write-Output \"dotnet: $\\(\\(Get-Command dotnet -ErrorAction SilentlyContinue\\).Source\\)\")"
+    ]
+  }
+}
