@@ -10,6 +10,7 @@ import {
   MessagesSquare,
   Building2,
   ListChecks,
+  BookOpen,
   Circle,
   type LucideIcon,
 } from "lucide-react";
@@ -91,6 +92,7 @@ export function Sidebar({
       )}
 
       {link("/problems", "LeetCode", ListChecks, lcPct, path === "/problems")}
+      {link("/cheatsheets", "Cheat Sheets", BookOpen, null, path === "/cheatsheets")}
 
       <div className="flex-1" />
       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs text-slate-500">
