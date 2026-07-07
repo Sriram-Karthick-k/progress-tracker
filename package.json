@@ -6,12 +6,8 @@
     "dev": "next dev -p 7373",
     "build": "prisma generate && next build",
     "start": "next start -p 7373",
-    "migrate": "prisma migrate dev",
-    "seed": "tsx prisma/seed.ts",
-    "setup": "prisma generate && prisma migrate deploy && tsx prisma/seed.ts"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate dev"
   },
   "dependencies": {
     "@prisma/client": "^5.18.0",

@@ -1,39 +1,39 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Pencil, Check } from "lucide-react";
-import { patchEntity, EntityKind } from "@/lib/client";
+import { useProgress } from "./ProgressProvider";
 
-export function NotesBox({
-  kind,
-  id,
-  notes,
-}: {
-  kind: EntityKind;
-  id: number;
-  notes: string | null;
-}) {
-  const router = useRouter();
+export function NotesBox({ id }: { id: string }) {
+  const { get, update } = useProgress();
+  const stored = get(id).notes;
+
   const [open, setOpen] = useState(false);
-  const [val, setVal] = useState(notes ?? "");
+  const [val, setVal] = useState(stored);
   const [saved, setSaved] = useState(true);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loaded = useRef(false);
 
-  useEffect(() => setVal(notes ?? ""), [notes]);
+  // Sync from storage once it has hydrated (only while the box isn't being edited).
+  useEffect(() => {
+    if (!loaded.current || (!open && saved)) {
+      setVal(stored);
+      loaded.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stored]);
 
   function onChange(v: string) {
     setVal(v);
     setSaved(false);
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(async () => {
-      await patchEntity(kind, id, { notes: v });
+    timer.current = setTimeout(() => {
+      update(id, { notes: v });
       setSaved(true);
-      router.refresh();
-    }, 500);
+    }, 400);
   }
 
-  const hasNotes = (notes ?? "").trim().length > 0;
+  const hasNotes = stored.trim().length > 0;
 
   return (
     <>

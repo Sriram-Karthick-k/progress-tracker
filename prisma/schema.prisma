@@ -7,51 +7,15 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-// SQLite has no native enum; Status is a String constrained in app code:
-// "TODO" | "ATTEMPTED" | "LEARNING" | "DONE"
-
-model Round {
-  id          Int     @id @default(autoincrement())
-  key         String  @unique // "dsa","lowlevel","sysdesign","behavioral","company"
-  name        String
-  description String?
-  icon        String?
-  order       Int
-  topics      Topic[]
-}
-
-model Topic {
-  id          Int      @id @default(autoincrement())
-  round       Round    @relation(fields: [roundId], references: [id])
-  roundId     Int
-  category    String // grouping within a round, e.g. "Two Pointers" / "C++"
-  name        String // the pattern/topic/skill itself
-  description String? // "when to recognize it" / what to learn
-  cue         String? // trigger phrase that signals this pattern
-  order       Int      @default(0)
-  // progress (single user -> inline)
-  status      String   @default("TODO")
-  confidence  Int      @default(0) // 0-5
-  revisit     Boolean  @default(false)
-  notes       String?
-  updatedAt   DateTime @updatedAt
-}
-
-model Problem {
-  id         Int       @id @default(autoincrement())
-  lcNumber   Int?
-  title      String
-  url        String?
-  difficulty String // Easy/Medium/Hard
-  pattern    String // ties to a Topic.category in DSA round
-  companies  String // comma-separated tags
-  order      Int       @default(0)
-  // progress
-  status     String    @default("TODO")
-  confidence Int       @default(0)
-  attempts   Int       @default(0)
-  revisit    Boolean   @default(false)
-  dateSolved DateTime?
-  notes      String?
-  updatedAt  DateTime  @updatedAt
+// Content lives in code (lib/seed-data.ts). The database only stores PROGRESS,
+// keyed by the stable string IDs from that module. This one small key-value table
+// is trivial to back with any database. status: "TODO"|"ATTEMPTED"|"LEARNING"|"DONE".
+model Progress {
+  key        String   @id
+  status     String   @default("TODO")
+  confidence Int      @default(0)
+  revisit    Boolean  @default(false)
+  attempts   Int      @default(0)
+  notes      String   @default("")
+  updatedAt  DateTime @updatedAt
 }

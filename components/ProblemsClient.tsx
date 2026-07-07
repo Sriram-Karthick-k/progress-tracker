@@ -2,41 +2,38 @@
 
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import { ProblemRow, ProblemLike } from "./ProblemRow";
+import { ProblemRow } from "./ProblemRow";
 import { STATUSES, STATUS_META } from "@/lib/status";
+import { PROBLEMS } from "@/lib/seed-data";
+import { useProgress } from "./ProgressProvider";
 
-export function ProblemsClient({ problems }: { problems: ProblemLike[] }) {
+export function ProblemsClient() {
+  const { get } = useProgress();
   const [q, setQ] = useState("");
   const [company, setCompany] = useState("");
   const [pattern, setPattern] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [status, setStatus] = useState("");
 
-  const patterns = useMemo(
-    () => Array.from(new Set(problems.map((p) => p.pattern))),
-    [problems]
-  );
+  const patterns = useMemo(() => Array.from(new Set(PROBLEMS.map((p) => p.pattern))), []);
   const companies = useMemo(
     () =>
       Array.from(
         new Set(
-          problems.flatMap((p) =>
-            p.companies.split(",").map((s) => s.trim()).filter(Boolean)
-          )
+          PROBLEMS.flatMap((p) => p.companies.split(",").map((s) => s.trim()).filter(Boolean))
         )
       ).sort(),
-    [problems]
+    []
   );
 
-  const filtered = problems.filter((p) => {
+  const filtered = PROBLEMS.filter((p) => {
     if (pattern && p.pattern !== pattern) return false;
     if (difficulty && p.difficulty !== difficulty) return false;
-    if (status && p.status !== status) return false;
+    if (status && get(p.id).status !== status) return false;
     if (company && !p.companies.includes(company)) return false;
     if (q) {
       const s = q.toLowerCase();
-      if (!p.title.toLowerCase().includes(s) && !String(p.lcNumber ?? "").includes(s))
-        return false;
+      if (!p.title.toLowerCase().includes(s) && !String(p.lcNumber).includes(s)) return false;
     }
     return true;
   });

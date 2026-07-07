@@ -3,3 +3,11 @@ node_modules/
 npm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
+
+# env
+.env
+.env*.local
+
+# local SQLite data (content lives in code; progress is per-machine)
+/prisma/dev.db
+/prisma/dev.db-journal

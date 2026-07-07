@@ -11,9 +11,14 @@ import {
   Building2,
   ListChecks,
   BookOpen,
+  Database,
   Circle,
   type LucideIcon,
 } from "lucide-react";
+import { ROUNDS, PROBLEMS } from "@/lib/seed-data";
+import { weightedPct } from "@/lib/status";
+import { roundStatuses, STORAGE_MODE } from "@/lib/progress";
+import { useProgress } from "./ProgressProvider";
 
 const ICONS: Record<string, LucideIcon> = {
   Boxes,
@@ -24,16 +29,9 @@ const ICONS: Record<string, LucideIcon> = {
   Circle,
 };
 
-export type NavItem = { key: string; name: string; icon: string; pct: number };
-
-export function Sidebar({
-  roundItems,
-  lcPct,
-}: {
-  roundItems: NavItem[];
-  lcPct: number;
-}) {
+export function Sidebar() {
   const path = usePathname();
+  const { get, ready } = useProgress();
 
   const link = (
     href: string,
@@ -53,17 +51,15 @@ export function Sidebar({
     >
       <Icon size={18} className="shrink-0" />
       <span className="flex-1">{label}</span>
-      {pct !== null && (
-        <span
-          className={`tabular-nums text-xs ${
-            active ? "text-indigo-300" : "text-slate-600"
-          }`}
-        >
+      {pct !== null && ready && (
+        <span className={`tabular-nums text-xs ${active ? "text-indigo-300" : "text-slate-600"}`}>
           {pct}%
         </span>
       )}
     </Link>
   );
+
+  const lcPct = weightedPct(PROBLEMS.map((p) => get(p.id).status));
 
   return (
     <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col gap-1.5 border-r border-white/10 bg-slate-950/60 p-4 backdrop-blur">
@@ -72,33 +68,34 @@ export function Sidebar({
           IP
         </div>
         <div>
-          <div className="text-sm font-semibold leading-tight text-white">
-            Interview Prep
-          </div>
+          <div className="text-sm font-semibold leading-tight text-white">Interview Prep</div>
           <div className="text-xs text-slate-400">Sriram Karthick K</div>
         </div>
       </div>
 
       {link("/", "Dashboard", LayoutDashboard, null, path === "/")}
 
-      {roundItems.map((r) =>
+      {ROUNDS.map((r) =>
         link(
           `/rounds/${r.key}`,
           r.name,
           ICONS[r.icon] ?? Circle,
-          r.pct,
+          weightedPct(roundStatuses(r.key, get)),
           path === `/rounds/${r.key}`
         )
       )}
 
       {link("/problems", "LeetCode", ListChecks, lcPct, path === "/problems")}
       {link("/cheatsheets", "Cheat Sheets", BookOpen, null, path === "/cheatsheets")}
+      {link("/sql", "SQL", Database, null, path === "/sql")}
 
       <div className="flex-1" />
       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs text-slate-500">
-        Progress saves automatically to{" "}
-        <span className="text-slate-300">prisma/dev.db</span>. Back it up by
-        copying that file.
+        {STORAGE_MODE === "db" ? (
+          <>Progress saves to <span className="text-slate-300">SQLite (prisma/dev.db)</span>.</>
+        ) : (
+          <>Progress saves in this <span className="text-slate-300">browser</span> (localStorage).</>
+        )}
       </div>
     </aside>
   );

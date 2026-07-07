@@ -1,20 +1,55 @@
-import { PrismaClient } from "@prisma/client";
+// Canonical CONTENT for the tracker — static, read-only, needs no database.
+// Progress (status/confidence/revisit/notes) is stored separately (see lib/progress.ts),
+// keyed by the stable string IDs generated here. This lets the app run against SQLite
+// locally OR pure localStorage on Vercel/static hosting with the same content.
 
-const prisma = new PrismaClient();
+export type RoundDef = {
+  key: string;
+  name: string;
+  icon: string;
+  description: string;
+  order: number;
+};
 
-/* ----------------------------- ROUNDS ----------------------------- */
-const rounds = [
-  { key: "dsa", name: "DSA Patterns", icon: "Boxes", order: 1, description: "Recognition cues, not just names. State brute force -> optimal complexity BEFORE coding -> code -> edge cases -> test." },
-  { key: "lowlevel", name: "Low-level / Domain", icon: "Cpu", order: 2, description: "Your strongest differentiator - C++, WASM, rendering, cross-platform, real-time collab." },
+export type TopicDef = {
+  id: string;
+  roundKey: string;
+  category: string;
+  cue: string | null;
+  name: string;
+  description: string | null;
+  order: number;
+};
+
+export type ProblemDef = {
+  id: string;
+  lcNumber: number;
+  title: string;
+  url: string;
+  difficulty: string;
+  pattern: string;
+  companies: string;
+  order: number;
+};
+
+function slug(s: string) {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export const ROUNDS: RoundDef[] = [
+  { key: "dsa", name: "DSA Patterns", icon: "Boxes", order: 1, description: "Recognition cues, not just names. State brute force → optimal complexity BEFORE coding → code → edge cases → test." },
+  { key: "lowlevel", name: "Low-level / Domain", icon: "Cpu", order: 2, description: "Your strongest differentiator — C++, WASM, rendering, cross-platform, real-time collab." },
   { key: "sysdesign", name: "System Design", icon: "Network", order: 3, description: "Always follow the framework. Building blocks cold + your collab/rendering sweet spot." },
   { key: "behavioral", name: "Behavioral / HR", icon: "MessagesSquare", order: 4, description: "STAR method, quantify results. Build a story bank from Vani / Zoho." },
   { key: "company", name: "Company-specific", icon: "Building2", order: 5, description: "What they test + my angle. Fill before each interview." },
 ];
 
-/* ----------------------------- TOPICS ----------------------------- */
 type Cat = { round: string; cat: string; cue?: string; items: { n: string; d?: string }[] };
 
-const topics: Cat[] = [
+const CATS: Cat[] = [
   // ---- DSA ----
   { round: "dsa", cat: "Arrays & Hashing", cue: '"have you seen this value / count of X"', items: [
     { n: "Hash map / frequency counting", d: "anagrams, top-K, first unique." },
@@ -63,7 +98,7 @@ const topics: Cat[] = [
     { n: "2-D DP", d: "edit distance, LCS, unique paths, knapsack." },
   ]},
   { round: "dsa", cat: "Greedy", cue: '"minimum number of", "can you finish"', items: [
-    { n: "Jump game, gas station, interval scheduling", d: "local optimum -> global." },
+    { n: "Jump game, gas station, interval scheduling", d: "local optimum → global." },
   ]},
   { round: "dsa", cat: "Intervals", cue: '"merge", "meeting rooms", "overlap"', items: [
     { n: "Sort by start, merge/overlap", d: "merge intervals, meeting rooms." },
@@ -94,14 +129,14 @@ const topics: Cat[] = [
   ]},
   { round: "lowlevel", cat: "WebAssembly & Emscripten", cue: '"how does Vani run C++ in the browser, what is slow"', items: [
     { n: "Linear memory model", d: "single growable ArrayBuffer; no GC." },
-    { n: "JS <-> WASM interop", d: "copying across the boundary; embind / ccall / cwrap." },
+    { n: "JS ↔ WASM interop", d: "copying across the boundary; embind / ccall / cwrap." },
     { n: "Performance", d: "minimizing boundary crossings, passing pointers, SharedArrayBuffer + threads, SIMD." },
     { n: "Build pipeline", d: "Emscripten + CMake toolchain, -O flags, -s linker settings, growing memory, exported functions." },
   ]},
   { round: "lowlevel", cat: "Rendering (Skia + WebGPU)", cue: '"design the rendering layer", "60fps with 10k shapes"', items: [
     { n: "Skia", d: "paths, paints, text; CPU vs GPU backends." },
     { n: "WebGPU vs WebGL", d: "explicit pipelines, command buffers, bind groups, lower overhead." },
-    { n: "Render pipeline", d: "vertex -> rasterize -> fragment; command encoding." },
+    { n: "Render pipeline", d: "vertex → rasterize → fragment; command encoding." },
     { n: "Batching & draw calls", d: "fewer draw calls = faster; instancing." },
     { n: "Dirty-region redraw", d: "only repaint what changed." },
     { n: "Frame budget", d: "16.6 ms @ 60fps; what blows it." },
@@ -122,9 +157,9 @@ const topics: Cat[] = [
   { round: "sysdesign", cat: "The framework (always this order)", cue: "never skip a step", items: [
     { n: "Clarify requirements", d: "functional + non-functional." },
     { n: "Scale estimates", d: "QPS, storage, bandwidth." },
-    { n: "API design -> data model", d: "contracts before architecture." },
-    { n: "High-level architecture", d: "then deep-dive on 1-2 components." },
-    { n: "Bottlenecks -> trade-offs", d: "close strong." },
+    { n: "API design → data model", d: "contracts before architecture." },
+    { n: "High-level architecture", d: "then deep-dive on 1–2 components." },
+    { n: "Bottlenecks → trade-offs", d: "close strong." },
   ]},
   { round: "sysdesign", cat: "Building blocks (know cold)", cue: "the standard toolkit", items: [
     { n: "Load balancing; horizontal vs vertical scaling" },
@@ -139,7 +174,7 @@ const topics: Cat[] = [
     { n: "Sync engine", d: "OT/CRDT server, op log, delta sync, version vectors." },
     { n: "Presence & multiplayer cursors", d: "fan-out, ephemeral state, heartbeat/expiry." },
     { n: "Offline-first editor", d: "local-first writes, queue + reconcile on reconnect." },
-    { n: "Asset/image pipeline", d: "upload -> process -> CDN; thumbnails; dedupe." },
+    { n: "Asset/image pipeline", d: "upload → process → CDN; thumbnails; dedupe." },
     { n: "LLM context-extraction service", d: "embeddings, vector store, chunking, retrieval." },
   ]},
   { round: "sysdesign", cat: "Practice prompts", cue: "drill these end-to-end", items: [
@@ -191,9 +226,27 @@ const topics: Cat[] = [
   ]},
 ];
 
-/* ----------------------------- PROBLEMS ----------------------------- */
+export const TOPICS: TopicDef[] = (() => {
+  const out: TopicDef[] = [];
+  let order = 0;
+  for (const c of CATS) {
+    for (const item of c.items) {
+      out.push({
+        id: `t-${slug(c.round)}-${slug(c.cat)}-${slug(item.n)}`,
+        roundKey: c.round,
+        category: c.cat,
+        cue: c.cue ?? null,
+        name: item.n,
+        description: item.d ?? null,
+        order: order++,
+      });
+    }
+  }
+  return out;
+})();
+
 // [lcNumber, title, difficulty, pattern, companies]
-const problems: [number, string, string, string, string][] = [
+const RAW_PROBLEMS: [number, string, string, string, string][] = [
   [1, "Two Sum", "Easy", "Arrays & Hashing", "Amazon,PayPal,Adobe"],
   [49, "Group Anagrams", "Medium", "Arrays & Hashing", "Amazon,Adobe"],
   [347, "Top K Frequent Elements", "Medium", "Arrays & Hashing", "Amazon"],
@@ -261,68 +314,19 @@ const problems: [number, string, string, string, string][] = [
   [338, "Counting Bits", "Easy", "Bit Manipulation", ""],
 ];
 
-function slug(t: string) {
-  return t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
-
-async function main() {
-  console.log("Seeding database...");
-  // Idempotent: clear then insert.
-  await prisma.topic.deleteMany();
-  await prisma.problem.deleteMany();
-  await prisma.round.deleteMany();
-
-  for (const r of rounds) {
-    const round = await prisma.round.create({
-      data: { key: r.key, name: r.name, description: r.description, icon: r.icon, order: r.order },
-    });
-
-    const cats = topics.filter((t) => t.round === r.key);
-    let order = 0;
-    for (const c of cats) {
-      for (const item of c.items) {
-        await prisma.topic.create({
-          data: {
-            roundId: round.id,
-            category: c.cat,
-            name: item.n,
-            description: item.d ?? null,
-            cue: c.cue ?? null,
-            order: order++,
-          },
-        });
-      }
-    }
-  }
-
-  let pOrder = 0;
-  for (const [lc, title, difficulty, pattern, companies] of problems) {
-    await prisma.problem.create({
-      data: {
-        lcNumber: lc,
-        title,
-        difficulty,
-        pattern,
-        companies,
-        url: `https://leetcode.com/problems/${slug(title)}/`,
-        order: pOrder++,
-      },
-    });
-  }
-
-  const [rc, tc, pc] = await Promise.all([
-    prisma.round.count(),
-    prisma.topic.count(),
-    prisma.problem.count(),
-  ]);
-  console.log(`Seeded ${rc} rounds, ${tc} topics, ${pc} problems.`);
-}
-
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
+export const PROBLEMS: ProblemDef[] = RAW_PROBLEMS.map(
+  ([lcNumber, title, difficulty, pattern, companies], i) => ({
+    id: `p-lc${lcNumber}`,
+    lcNumber,
+    title,
+    difficulty,
+    pattern,
+    companies,
+    url: `https://leetcode.com/problems/${slug(title)}/`,
+    order: i,
   })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+);
+
+export function topicsForRound(roundKey: string): TopicDef[] {
+  return TOPICS.filter((t) => t.roundKey === roundKey);
+}

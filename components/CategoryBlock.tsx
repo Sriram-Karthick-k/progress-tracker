@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { TopicCard, TopicLike } from "./TopicCard";
+import { TopicCard } from "./TopicCard";
 import { ProgressBar } from "./ProgressBar";
 import { statusCounts, weightedPct } from "@/lib/status";
+import { TopicDef } from "@/lib/seed-data";
+import { useProgress } from "./ProgressProvider";
 
 export function CategoryBlock({
   category,
@@ -13,10 +15,12 @@ export function CategoryBlock({
 }: {
   category: string;
   cue: string | null;
-  topics: TopicLike[];
+  topics: TopicDef[];
 }) {
+  const { get } = useProgress();
   const [open, setOpen] = useState(true);
-  const statuses = topics.map((t) => t.status);
+
+  const statuses = topics.map((t) => get(t.id).status);
   const counts = statusCounts(statuses);
   const pct = weightedPct(statuses);
 
