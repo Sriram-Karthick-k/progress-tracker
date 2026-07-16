@@ -21,16 +21,10 @@ export type TopicDef = {
   order: number;
 };
 
-export type ProblemDef = {
-  id: string;
-  lcNumber: number;
-  title: string;
-  url: string;
-  difficulty: string;
-  pattern: string;
-  companies: string;
-  order: number;
-};
+// Problems (and the 23 DSA patterns) are generated from DSA_Mastery_Tracker.xlsx.
+import { PROBLEMS, PATTERN_ORDER, PATTERN_CUE } from "./problems";
+export type { ProblemDef } from "./problems";
+export { PROBLEMS, PATTERN_ORDER, PATTERN_CUE } from "./problems";
 
 function slug(s: string) {
   return s
@@ -49,66 +43,34 @@ export const ROUNDS: RoundDef[] = [
 
 type Cat = { round: string; cat: string; cue?: string; items: { n: string; d?: string }[] };
 
+// The DSA round mirrors the 23 patterns in DSA_Mastery_Tracker.xlsx: one category per
+// pattern (with its "when to reach for it" cue), one topic per sub-group. Derived from
+// PROBLEMS so adding a problem automatically keeps this in sync.
+const DSA_CATS: Cat[] = PATTERN_ORDER.map((pattern) => {
+  const list = PROBLEMS.filter((p) => p.pattern === pattern);
+  const groups: string[] = [];
+  list.forEach((p) => {
+    if (!groups.includes(p.group)) groups.push(p.group);
+  });
+  return {
+    round: "dsa",
+    cat: pattern,
+    cue: PATTERN_CUE[pattern],
+    items: groups.map((g) => {
+      const ex = list.filter((p) => p.group === g);
+      return {
+        n: g,
+        d: `${ex.length} problem${ex.length === 1 ? "" : "s"} — e.g. ${ex
+          .slice(0, 3)
+          .map((p) => p.title)
+          .join(", ")}`,
+      };
+    }),
+  };
+});
+
 const CATS: Cat[] = [
-  // ---- DSA ----
-  { round: "dsa", cat: "Arrays & Hashing", cue: '"have you seen this value / count of X"', items: [
-    { n: "Hash map / frequency counting", d: "anagrams, top-K, first unique." },
-    { n: "Prefix sum", d: "range-sum queries, subarray sum = k." },
-    { n: "Encode/decode & in-place array tricks", d: "product except self, set matrix zeroes." },
-  ]},
-  { round: "dsa", cat: "Two Pointers", cue: '"pair/triplet that sums to", "is palindrome"', items: [
-    { n: "Opposite-ends two pointers", d: "3Sum, container with most water, valid palindrome." },
-    { n: "Fast & slow pointers", d: "cycle detection, middle of list, happy number." },
-  ]},
-  { round: "dsa", cat: "Sliding Window", cue: '"longest/shortest substring such that", "max sum of size k"', items: [
-    { n: "Fixed window / variable window", d: "longest substring no-repeat, min window substring." },
-  ]},
-  { round: "dsa", cat: "Binary Search", cue: '"minimize the max", "find threshold"', items: [
-    { n: "Classic + on rotated array", d: "sorted data or monotonic answer space." },
-    { n: "Binary search on the answer", d: "Koko eating bananas, ship capacity (very common at Amazon)." },
-  ]},
-  { round: "dsa", cat: "Stack", cue: '"matching", "next greater/warmer"', items: [
-    { n: "Valid parentheses / monotonic stack", d: "daily temperatures, largest rectangle." },
-  ]},
-  { round: "dsa", cat: "Linked List", cue: '"reverse in place", "reorder"', items: [
-    { n: "Reverse / merge / cycle / copy-with-random", d: "pointer surgery, O(1) space." },
-  ]},
-  { round: "dsa", cat: "Trees", cue: '"path", "level", "ancestor"', items: [
-    { n: "DFS (pre/in/post)", d: "recursion fundamentals." },
-    { n: "BFS level-order", d: "queue-based traversal." },
-    { n: "LCA, validate BST, serialize/deserialize", d: "classic tree manipulations." },
-  ]},
-  { round: "dsa", cat: "Tries", cue: '"starts with", "dictionary of words"', items: [
-    { n: "Implement trie, word search II", d: "prefix queries on words." },
-  ]},
-  { round: "dsa", cat: "Heap / Top-K / Two-Heaps", cue: '"k largest/closest", "median so far"', items: [
-    { n: "Heaps for running min/max, k-th element, median stream", d: "priority queue patterns." },
-  ]},
-  { round: "dsa", cat: "Backtracking", cue: '"all possible", "every combination"', items: [
-    { n: "Subsets, permutations, combination sum, N-Queens, word search", d: "generate all combinations/permutations/subsets." },
-  ]},
-  { round: "dsa", cat: "Graphs", cue: '"islands", "prerequisites", "shortest path"', items: [
-    { n: "BFS/DFS on grid", d: "number of islands, flood fill." },
-    { n: "Topological sort", d: "course schedule, dependency ordering." },
-    { n: "Union-Find", d: "connectivity, cycle detection." },
-    { n: "Dijkstra / word ladder", d: "network delay, weighted shortest path." },
-  ]},
-  { round: "dsa", cat: "Dynamic Programming", cue: '"max/min ways", "can you reach"', items: [
-    { n: "1-D DP", d: "climbing stairs, house robber, coin change, LIS." },
-    { n: "2-D DP", d: "edit distance, LCS, unique paths, knapsack." },
-  ]},
-  { round: "dsa", cat: "Greedy", cue: '"minimum number of", "can you finish"', items: [
-    { n: "Jump game, gas station, interval scheduling", d: "local optimum → global." },
-  ]},
-  { round: "dsa", cat: "Intervals", cue: '"merge", "meeting rooms", "overlap"', items: [
-    { n: "Sort by start, merge/overlap", d: "merge intervals, meeting rooms." },
-  ]},
-  { round: "dsa", cat: "Math & Geometry", cue: '"rotate", "spiral", "overlapping rectangles"', items: [
-    { n: "Matrix rotation, coordinate math, bit tricks", d: "rotate image, spiral matrix." },
-  ]},
-  { round: "dsa", cat: "Bit Manipulation", cue: '"single number", "count bits"', items: [
-    { n: "XOR tricks, masks", d: "single number, count bits." },
-  ]},
+  // ---- DSA (your personal edge — kept alongside the generated patterns) ----
   { round: "dsa", cat: "Domain tie-ins (your edge)", cue: "mention these in interviews", items: [
     { n: "Coordinate/geometry problems", d: "maps to Skia hit-testing & bounding boxes." },
     { n: "Diff / merge / LCS", d: "maps to Operational Transform in Vani." },
@@ -229,7 +191,7 @@ const CATS: Cat[] = [
 export const TOPICS: TopicDef[] = (() => {
   const out: TopicDef[] = [];
   let order = 0;
-  for (const c of CATS) {
+  for (const c of [...DSA_CATS, ...CATS]) {
     for (const item of c.items) {
       out.push({
         id: `t-${slug(c.round)}-${slug(c.cat)}-${slug(item.n)}`,
@@ -244,88 +206,6 @@ export const TOPICS: TopicDef[] = (() => {
   }
   return out;
 })();
-
-// [lcNumber, title, difficulty, pattern, companies]
-const RAW_PROBLEMS: [number, string, string, string, string][] = [
-  [1, "Two Sum", "Easy", "Arrays & Hashing", "Amazon,PayPal,Adobe"],
-  [49, "Group Anagrams", "Medium", "Arrays & Hashing", "Amazon,Adobe"],
-  [347, "Top K Frequent Elements", "Medium", "Arrays & Hashing", "Amazon"],
-  [238, "Product of Array Except Self", "Medium", "Arrays & Hashing", "Amazon,Figma"],
-  [560, "Subarray Sum Equals K", "Medium", "Arrays & Hashing", "PayPal"],
-  [73, "Set Matrix Zeroes", "Medium", "Arrays & Hashing", "Adobe"],
-  [125, "Valid Palindrome", "Easy", "Two Pointers", "Amazon"],
-  [15, "3Sum", "Medium", "Two Pointers", "Amazon,Adobe"],
-  [11, "Container With Most Water", "Medium", "Two Pointers", "Amazon"],
-  [141, "Linked List Cycle", "Easy", "Two Pointers", "Amazon"],
-  [202, "Happy Number", "Easy", "Two Pointers", ""],
-  [876, "Middle of the Linked List", "Easy", "Two Pointers", ""],
-  [3, "Longest Substring Without Repeating Characters", "Medium", "Sliding Window", "Amazon,Adobe"],
-  [76, "Minimum Window Substring", "Hard", "Sliding Window", "Amazon"],
-  [121, "Best Time to Buy and Sell Stock", "Easy", "Sliding Window", "Amazon,PayPal"],
-  [704, "Binary Search", "Easy", "Binary Search", ""],
-  [33, "Search in Rotated Sorted Array", "Medium", "Binary Search", "Amazon,Adobe"],
-  [875, "Koko Eating Bananas", "Medium", "Binary Search", "Amazon"],
-  [153, "Find Minimum in Rotated Sorted Array", "Medium", "Binary Search", ""],
-  [20, "Valid Parentheses", "Easy", "Stack", "Amazon,PayPal"],
-  [739, "Daily Temperatures", "Medium", "Stack", "Amazon"],
-  [84, "Largest Rectangle in Histogram", "Hard", "Stack", ""],
-  [206, "Reverse Linked List", "Easy", "Linked List", "Amazon,Adobe"],
-  [21, "Merge Two Sorted Lists", "Easy", "Linked List", "Amazon"],
-  [138, "Copy List with Random Pointer", "Medium", "Linked List", "Amazon,Figma"],
-  [143, "Reorder List", "Medium", "Linked List", "Amazon"],
-  [226, "Invert Binary Tree", "Easy", "Trees", "Amazon"],
-  [104, "Maximum Depth of Binary Tree", "Easy", "Trees", ""],
-  [102, "Binary Tree Level Order Traversal", "Medium", "Trees", "Amazon,Adobe"],
-  [98, "Validate Binary Search Tree", "Medium", "Trees", "Amazon"],
-  [235, "Lowest Common Ancestor of a BST", "Medium", "Trees", "Amazon"],
-  [297, "Serialize and Deserialize Binary Tree", "Hard", "Trees", "Amazon,Figma"],
-  [208, "Implement Trie (Prefix Tree)", "Medium", "Tries", "Amazon"],
-  [212, "Word Search II", "Hard", "Tries", "Amazon"],
-  [215, "Kth Largest Element in an Array", "Medium", "Heap / Top-K / Two-Heaps", "Amazon,PayPal"],
-  [295, "Find Median from Data Stream", "Hard", "Heap / Top-K / Two-Heaps", "Amazon"],
-  [973, "K Closest Points to Origin", "Medium", "Heap / Top-K / Two-Heaps", "Amazon"],
-  [78, "Subsets", "Medium", "Backtracking", "Amazon,Adobe"],
-  [46, "Permutations", "Medium", "Backtracking", "Adobe"],
-  [39, "Combination Sum", "Medium", "Backtracking", "Amazon"],
-  [79, "Word Search", "Medium", "Backtracking", "Amazon"],
-  [51, "N-Queens", "Hard", "Backtracking", ""],
-  [200, "Number of Islands", "Medium", "Graphs", "Amazon,Adobe,Figma"],
-  [207, "Course Schedule", "Medium", "Graphs", "Amazon"],
-  [133, "Clone Graph", "Medium", "Graphs", "Amazon"],
-  [417, "Pacific Atlantic Water Flow", "Medium", "Graphs", ""],
-  [127, "Word Ladder", "Hard", "Graphs", "Amazon"],
-  [743, "Network Delay Time", "Medium", "Graphs", ""],
-  [70, "Climbing Stairs", "Easy", "Dynamic Programming", "Adobe"],
-  [198, "House Robber", "Medium", "Dynamic Programming", "Amazon"],
-  [322, "Coin Change", "Medium", "Dynamic Programming", "Amazon,PayPal"],
-  [300, "Longest Increasing Subsequence", "Medium", "Dynamic Programming", "Amazon"],
-  [72, "Edit Distance", "Hard", "Dynamic Programming", "Amazon"],
-  [1143, "Longest Common Subsequence", "Medium", "Dynamic Programming", "Adobe"],
-  [62, "Unique Paths", "Medium", "Dynamic Programming", "Amazon"],
-  [55, "Jump Game", "Medium", "Greedy", "Amazon,Adobe"],
-  [134, "Gas Station", "Medium", "Greedy", "Amazon"],
-  [56, "Merge Intervals", "Medium", "Intervals", "Amazon,Figma,Adobe"],
-  [253, "Meeting Rooms II", "Medium", "Intervals", "Amazon"],
-  [57, "Insert Interval", "Medium", "Intervals", "Amazon"],
-  [48, "Rotate Image", "Medium", "Math & Geometry", "Amazon,Adobe"],
-  [54, "Spiral Matrix", "Medium", "Math & Geometry", "Amazon"],
-  [136, "Single Number", "Easy", "Bit Manipulation", ""],
-  [191, "Number of 1 Bits", "Easy", "Bit Manipulation", ""],
-  [338, "Counting Bits", "Easy", "Bit Manipulation", ""],
-];
-
-export const PROBLEMS: ProblemDef[] = RAW_PROBLEMS.map(
-  ([lcNumber, title, difficulty, pattern, companies], i) => ({
-    id: `p-lc${lcNumber}`,
-    lcNumber,
-    title,
-    difficulty,
-    pattern,
-    companies,
-    url: `https://leetcode.com/problems/${slug(title)}/`,
-    order: i,
-  })
-);
 
 export function topicsForRound(roundKey: string): TopicDef[] {
   return TOPICS.filter((t) => t.roundKey === roundKey);

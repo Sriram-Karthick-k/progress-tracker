@@ -23,6 +23,9 @@ export function ProblemRow({ p }: { p: ProblemDef }) {
           {p.title}
           <ExternalLink size={12} className="text-slate-600 group-hover:text-indigo-300" />
         </Link>
+        {p.mechanic && (
+          <div className="mt-0.5 text-sm text-slate-400">{p.mechanic}</div>
+        )}
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
           <span className="text-xs font-bold" style={{ color: DIFF_COLOR[p.difficulty] }}>
             {p.difficulty}
@@ -31,6 +34,20 @@ export function ProblemRow({ p }: { p: ProblemDef }) {
           <span className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[11px] text-slate-400">
             {p.pattern}
           </span>
+          {p.group && (
+            <span className="rounded border border-indigo-500/20 bg-indigo-500/[0.07] px-1.5 py-0.5 text-[11px] text-indigo-300/80">
+              {p.group}
+            </span>
+          )}
+          {p.also.map((a) => (
+            <span
+              key={a}
+              title="Also drills this pattern"
+              className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[11px] text-slate-500"
+            >
+              also: {a}
+            </span>
+          ))}
           {companies.map((c) => (
             <span
               key={c}

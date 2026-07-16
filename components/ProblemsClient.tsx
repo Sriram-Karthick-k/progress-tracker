@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { ProblemRow } from "./ProblemRow";
 import { STATUSES, STATUS_META } from "@/lib/status";
-import { PROBLEMS } from "@/lib/seed-data";
+import { PROBLEMS, PATTERN_ORDER } from "@/lib/seed-data";
 import { useProgress } from "./ProgressProvider";
 
 export function ProblemsClient() {
@@ -15,7 +15,8 @@ export function ProblemsClient() {
   const [difficulty, setDifficulty] = useState("");
   const [status, setStatus] = useState("");
 
-  const patterns = useMemo(() => Array.from(new Set(PROBLEMS.map((p) => p.pattern))), []);
+  // keep the spreadsheet's drilling order rather than alphabetical
+  const patterns = PATTERN_ORDER;
   const companies = useMemo(
     () =>
       Array.from(
@@ -27,13 +28,15 @@ export function ProblemsClient() {
   );
 
   const filtered = PROBLEMS.filter((p) => {
-    if (pattern && p.pattern !== pattern) return false;
+    // a cross-listed problem shows under either of its patterns
+    if (pattern && p.pattern !== pattern && !p.also.includes(pattern)) return false;
     if (difficulty && p.difficulty !== difficulty) return false;
     if (status && get(p.id).status !== status) return false;
     if (company && !p.companies.includes(company)) return false;
     if (q) {
       const s = q.toLowerCase();
-      if (!p.title.toLowerCase().includes(s) && !String(p.lcNumber).includes(s)) return false;
+      const hay = `${p.title} ${p.lcNumber} ${p.group} ${p.mechanic}`.toLowerCase();
+      if (!hay.includes(s)) return false;
     }
     return true;
   });
