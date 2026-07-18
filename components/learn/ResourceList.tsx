@@ -4,13 +4,14 @@
 // links + progress controls. The app organizes and tracks; the depth is in the
 // linked references.
 
-import { ExternalLink, FileText, Play, BookOpen, FileCode, Dumbbell, GraduationCap } from "lucide-react";
+import { ExternalLink, FileText, Play, BookOpen, FileCode, Dumbbell, GraduationCap, NotebookPen } from "lucide-react";
 import type { Resource, ResourceKind } from "@/lib/learn/resource-types";
 import { topicProgressId } from "@/lib/learn/resource-types";
 import type { ResourceDomain } from "@/lib/learn/resources";
 import { StatusToggle } from "@/components/StatusToggle";
 import { RevisitFlag } from "@/components/RevisitFlag";
-import { NotesBox } from "@/components/NotesBox";
+import { openNoteEditor } from "@/components/notebook/noteClient";
+import { NOTES_EDITABLE } from "@/components/notebook/editable";
 import { Card } from "@/components/ui";
 
 const KIND_META: Record<ResourceKind, { icon: typeof FileText; label: string; cls: string }> = {
@@ -66,9 +67,18 @@ export function ResourceDomainView({ domain }: { domain: ResourceDomain }) {
                       <div className="font-semibold text-slate-100">{topic.title}</div>
                       {topic.blurb && <div className="mt-0.5 text-sm text-slate-400">{topic.blurb}</div>}
                     </div>
+                    {NOTES_EDITABLE && (
+                      <button
+                        onClick={() => openNoteEditor([domain.key, topic.id], topic.title)}
+                        title={`Take notes on ${topic.title}`}
+                        aria-label="Take notes"
+                        className="grid h-8 w-8 place-items-center rounded-lg border border-slate-700 text-slate-500 transition hover:border-indigo-400/60 hover:text-indigo-300"
+                      >
+                        <NotebookPen size={14} />
+                      </button>
+                    )}
                     <StatusToggle id={pid} />
                     <RevisitFlag id={pid} />
-                    <NotesBox id={pid} />
                   </div>
                   <div className="grid gap-1.5 sm:grid-cols-2">
                     {topic.resources.map((r, i) => (

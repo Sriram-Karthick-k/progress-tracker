@@ -6,7 +6,6 @@ import { ExternalLink, MessageSquareText, Youtube, ArrowUpRight } from "lucide-r
 import { PageHeader, Card } from "@/components/ui";
 import { StatusToggle } from "@/components/StatusToggle";
 import { RevisitFlag } from "@/components/RevisitFlag";
-import { NotesBox } from "@/components/NotesBox";
 import { useProgress } from "@/components/ProgressProvider";
 import { weightedPct, DIFF_COLOR } from "@/lib/status";
 import { SQL_PROBLEMS, SQL_CATEGORIES, sqlProblemUrl, SQL_50_PLAN_URL, SqlProblem } from "@/lib/sql-problems";
@@ -33,7 +32,6 @@ function Row({ p }: { p: SqlProblem }) {
       </div>
       <StatusToggle id={p.id} />
       <RevisitFlag id={p.id} />
-      <NotesBox id={p.id} />
     </div>
   );
 }

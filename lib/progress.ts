@@ -21,11 +21,9 @@ export const DEFAULT_PROGRESS: Progress = {
   attempts: 0,
 };
 
-// Storage backend. "local" = browser localStorage (works ANYWHERE incl. Vercel/static).
-// "db" = server API backed by Prisma/SQLite (local .exe / dev). Selected at build time.
-export const STORAGE_MODE: "local" | "db" =
-  process.env.NEXT_PUBLIC_STORAGE_MODE === "db" ? "db" : "local";
-
+// Storage: browser localStorage only — zero dependencies, works as a fully
+// static site (surge / Vercel / anywhere). Snapshot to a file with the
+// dashboard's Export/Import (JSON) if you want it versioned.
 const LS_KEY = "interviewPrepProgress.v1";
 
 function readLocal(): ProgressMap {
@@ -46,32 +44,14 @@ function writeLocal(map: ProgressMap) {
   }
 }
 
-/** Load the whole progress map. In db mode, tries the API and falls back to localStorage. */
+/** Load the whole progress map from localStorage. */
 export async function loadAll(): Promise<ProgressMap> {
-  if (STORAGE_MODE === "db") {
-    try {
-      const res = await fetch("/api/progress", { cache: "no-store" });
-      if (res.ok) return (await res.json()) as ProgressMap;
-    } catch {
-      /* API unavailable → fall through to local */
-    }
-  }
   return readLocal();
 }
 
-/** Persist a change. Always mirrors to localStorage; also PATCHes the API in db mode. */
-export function persist(map: ProgressMap, id: string, patch: Partial<Progress>) {
-  writeLocal(map); // offline-safe mirror in every mode
-  if (STORAGE_MODE === "db") {
-    const { touched: _touched, ...apiPatch } = patch; // API schema has no `touched`
-    fetch("/api/progress", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, ...apiPatch }),
-    }).catch(() => {
-      /* best-effort; localStorage already has it */
-    });
-  }
+/** Persist a change to localStorage. */
+export function persist(map: ProgressMap, _id: string, _patch: Partial<Progress>) {
+  writeLocal(map);
 }
 
 /* ---- activity log (heatmap + streak) — localStorage only ---- */

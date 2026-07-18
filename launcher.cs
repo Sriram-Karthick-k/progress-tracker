@@ -31,7 +31,7 @@ class Launcher
         Console.WriteLine("  Interview Prep Tracker");
         Console.WriteLine("  ----------------------");
         Console.WriteLine("  Starting the local server, your browser will open at " + Url);
-        Console.WriteLine("  Your progress is saved to prisma\\dev.db (back it up by copying that file).");
+        Console.WriteLine("  Notes are saved as markdown files under content\\notes\\. Progress is in your browser.");
         Console.WriteLine("  Keep this window open while you work; close it to stop the app.");
         Console.WriteLine();
 
@@ -53,6 +53,8 @@ class Launcher
             UseShellExecute = false,
             CreateNoWindow = false,
         };
+        // Keep the Notebook editor enabled at runtime (overrides .env.local).
+        psi.EnvironmentVariables["NEXT_PUBLIC_NOTES_READONLY"] = "0";
 
         Process node;
         try { node = Process.Start(psi); }

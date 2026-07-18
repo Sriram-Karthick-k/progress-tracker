@@ -4,19 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 7373",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start -p 7373",
-    "postinstall": "prisma generate",
-    "db:migrate": "prisma migrate dev",
     "verify": "tsx scripts/verify-data.ts"
   },
   "dependencies": {
     "@dagrejs/dagre": "^3.0.0",
-    "@prisma/client": "^5.18.0",
     "@xyflow/react": "^12.11.2",
     "framer-motion": "^12.42.2",
     "katex": "^0.17.0",
     "lucide-react": "^0.427.0",
+    "marked": "^14.1.2",
     "mermaid": "^11.16.0",
     "next": "14.2.5",
     "react": "^18.3.1",
@@ -30,7 +28,6 @@
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.41",
-    "prisma": "^5.18.0",
     "tailwindcss": "^3.4.10",
     "tsx": "^4.17.0",
     "typescript": "^5.5.4"

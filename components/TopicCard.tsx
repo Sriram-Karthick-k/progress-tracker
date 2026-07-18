@@ -1,7 +1,6 @@
 import { StatusToggle } from "./StatusToggle";
 import { ConfidenceStars } from "./ConfidenceStars";
 import { RevisitFlag } from "./RevisitFlag";
-import { NotesBox } from "./NotesBox";
 import { TopicDef } from "@/lib/seed-data";
 
 export function TopicCard({ topic }: { topic: TopicDef }) {
@@ -16,7 +15,6 @@ export function TopicCard({ topic }: { topic: TopicDef }) {
       <ConfidenceStars id={topic.id} />
       <StatusToggle id={topic.id} />
       <RevisitFlag id={topic.id} />
-      <NotesBox id={topic.id} />
     </div>
   );
 }

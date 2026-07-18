@@ -1,46 +1,53 @@
 # Interview Prep Tracker
 
-The app from `PLAN.md`, built on the planned stack: **Next.js 14 (App Router) + TypeScript +
-Prisma + SQLite + Tailwind + Recharts + lucide-react**. Single user, local-only, no auth.
+A personal interview-prep app: DSA/SQL problem trackers, curated resource hubs,
+visual roadmaps, spaced-repetition flashcards, and a file-based **Notebook**
+knowledge base. No database, no SQLite — progress lives in `localStorage`, notes
+live as markdown files.
 
-## Just run it
-Double-click **`InterviewPrep.exe`**. It starts the local server and opens your browser at
-<http://localhost:7373>. Keep the console window open while you work; closing it stops the
-app (the server is tied to the window, so nothing is left running).
+## Run it
 
-> Requires Node.js installed (already on this machine). The exe runs the production build
-> in this folder — keep `InterviewPrep.exe` inside the project folder.
-
-## What's inside
-- **Dashboard** (`/`) — overall %, per-round progress bars, status donut, LeetCode by
-  difficulty, company readiness, and a "needs revisit" list (Recharts).
-- **Round pages** (`/rounds/[key]`) — all topics from `PLAN.md` Part 2 grouped by category
-  with their recognition cues; collapsible. Each topic has a status toggle
-  (To do → Attempted → Learning → Done), 0–5 confidence stars, a revisit flag, and notes.
-- **LeetCode** (`/problems`) — 470 problems across 33 patterns mapped to companies, with
-  search and filters (company / pattern / difficulty / status). Titles link to leetcode.com.
-- **Learn** (`/learn/[domain]`) — guided lessons (Java, LLD; more coming per `ROADMAP.md`)
-  with diagrams (mermaid), step-through visualizers, ❌ defective vs ✅ good code panels,
-  quizzes, and per-lesson progress. One lesson at a time with Prev / "Mark done · Next".
-- **API**: `PATCH /api/progress` persists progress (localStorage fallback everywhere).
-
-## Your data
-All progress lives in **`prisma/dev.db`** (SQLite). Back it up by copying that file (or
-committing it to git). This is your single source of truth — exactly as the plan specified.
-
-## Development
 ```bash
-npm run dev        # dev server (hot reload) on http://localhost:7373
-npm run seed       # reset + reseed the database from prisma/seed.ts
-npm run build      # prisma generate + next build (production)
-npm run start      # run the production build (what the .exe launches)
+npm install
+npm run dev            # http://localhost:7373  — one server, one URL
 ```
 
-### Rebuilding the launcher
-After changing `launcher.cs`, run `./build-exe.ps1` to recompile `InterviewPrep.exe`.
+That's it. In local dev the in-app Notebook editor is enabled and writes real
+`.md` files (via the same-origin `/api/notes` route).
 
-## Extending the LeetCode list
-The plan references a 102-problem spreadsheet. To load it, export it to rows of
-`[lcNumber, title, difficulty, pattern, companies]`, paste them into the `problems` array in
-`prisma/seed.ts`, then run `npm run seed`. (Patterns should match the DSA categories so the
-problems line up with the right round.)
+## Editing notes
+
+Editing is controlled by one env flag, `NEXT_PUBLIC_NOTES_EDITABLE`:
+
+- **Local** — `.env.local` sets `NEXT_PUBLIC_NOTES_EDITABLE=1`, so the ✎ Edit /
+  New-note UI is on and saves write to `content/notes/**.md`.
+- **Remote** — deploy without that flag → the editor is hidden and `/api/notes`
+  returns 403. The published site is **read-only**.
+
+You can always just edit the markdown files in `content/notes/` directly.
+
+## Build & deploy
+
+```bash
+npm run build
+npm run start          # serve the production build on :7373
+```
+
+Deploy to **Vercel** (or any Node host) — no SQLite, nothing to provision.
+Leave `NEXT_PUBLIC_NOTES_EDITABLE` unset on the remote so it stays read-only.
+
+## How data works
+
+- **Content** (problems, resources, cheatsheets, flashcards) — typed modules in `lib/`.
+- **Notes** — markdown under `content/notes/**.md`; folders become the Notebook tree.
+- **Progress** (status / confidence / notes / flags) — browser `localStorage`;
+  snapshot it to a file anytime with **Export / Import** on the dashboard.
+
+## Scripts
+
+| Script | What |
+|--------|------|
+| `npm run dev` | dev server (:7373), notes editor enabled |
+| `npm run build` | production build |
+| `npm run start` | serve the build (:7373) |
+| `npm run verify` | data-integrity check on the problem set |

@@ -4,6 +4,7 @@ import { ProgressProvider } from "@/components/ProgressProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AppShell } from "@/components/AppShell";
 import { CommandPalette } from "@/components/CommandPalette";
+import { NoteEditorHost } from "@/components/notebook/NoteEditorHost";
 
 export const metadata: Metadata = {
   title: "Interview Prep Tracker",
@@ -28,6 +29,7 @@ export default function RootLayout({
           <ProgressProvider>
             <AppShell>{children}</AppShell>
             <CommandPalette />
+            <NoteEditorHost />
           </ProgressProvider>
         </ThemeProvider>
       </body>

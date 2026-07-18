@@ -3,7 +3,6 @@ import { ExternalLink, MessageSquareText, Youtube } from "lucide-react";
 import { StatusToggle } from "./StatusToggle";
 import { ConfidenceStars } from "./ConfidenceStars";
 import { RevisitFlag } from "./RevisitFlag";
-import { NotesBox } from "./NotesBox";
 import { DIFF_COLOR } from "@/lib/status";
 import { ProblemDef } from "@/lib/seed-data";
 
@@ -83,7 +82,6 @@ export function ProblemRow({ p }: { p: ProblemDef }) {
       <ConfidenceStars id={p.id} />
       <StatusToggle id={p.id} />
       <RevisitFlag id={p.id} />
-      <NotesBox id={p.id} />
     </div>
   );
 }
