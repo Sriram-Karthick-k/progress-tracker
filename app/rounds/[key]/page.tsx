@@ -33,7 +33,7 @@ export default function RoundPage({ params }: { params: { key: string } }) {
   const donutData = STATUSES.map((s) => ({ name: STATUS_META[s].label, value: counts[s], color: STATUS_META[s].color }));
 
   return (
-    <div className="px-8 py-8 lg:px-10">
+    <div className="px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
       <div className="mb-7 flex flex-wrap items-center gap-6">
         <StatusDonut data={donutData} centerLabel={`${pct}%`} centerSub="Complete" />
         <div className="min-w-0">

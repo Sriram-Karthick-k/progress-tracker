@@ -7,6 +7,8 @@ export type Progress = {
   revisit: boolean;
   notes: string;
   attempts: number;
+  /** Epoch ms of the last update — drives spaced repetition. localStorage only. */
+  touched?: number;
 };
 
 export type ProgressMap = Record<string, Partial<Progress>>;
@@ -61,14 +63,43 @@ export async function loadAll(): Promise<ProgressMap> {
 export function persist(map: ProgressMap, id: string, patch: Partial<Progress>) {
   writeLocal(map); // offline-safe mirror in every mode
   if (STORAGE_MODE === "db") {
+    const { touched: _touched, ...apiPatch } = patch; // API schema has no `touched`
     fetch("/api/progress", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, ...patch }),
+      body: JSON.stringify({ id, ...apiPatch }),
     }).catch(() => {
       /* best-effort; localStorage already has it */
     });
   }
+}
+
+/* ---- activity log (heatmap + streak) — localStorage only ---- */
+
+const ACTIVITY_KEY = "interviewPrepActivity.v1";
+
+export type ActivityMap = Record<string, number>; // "YYYY-MM-DD" -> update count
+
+export function loadActivity(): ActivityMap {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(ACTIVITY_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+export function recordActivity() {
+  if (typeof window === "undefined") return;
+  const key = new Date().toISOString().slice(0, 10);
+  const map = loadActivity();
+  map[key] = (map[key] ?? 0) + 1;
+  try {
+    window.localStorage.setItem(ACTIVITY_KEY, JSON.stringify(map));
+  } catch {
+    /* ignore */
+  }
+  window.dispatchEvent(new Event("prep-activity"));
 }
 
 export function exportJson(map: ProgressMap): string {

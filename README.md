@@ -17,9 +17,12 @@ app (the server is tied to the window, so nothing is left running).
 - **Round pages** (`/rounds/[key]`) — all topics from `PLAN.md` Part 2 grouped by category
   with their recognition cues; collapsible. Each topic has a status toggle
   (To do → Attempted → Learning → Done), 0–5 confidence stars, a revisit flag, and notes.
-- **LeetCode** (`/problems`) — 65 seeded problems mapped to patterns + companies, with
+- **LeetCode** (`/problems`) — 470 problems across 33 patterns mapped to companies, with
   search and filters (company / pattern / difficulty / status). Titles link to leetcode.com.
-- **API**: `PATCH /api/topic/[id]` and `PATCH /api/problem/[id]` persist progress.
+- **Learn** (`/learn/[domain]`) — guided lessons (Java, LLD; more coming per `ROADMAP.md`)
+  with diagrams (mermaid), step-through visualizers, ❌ defective vs ✅ good code panels,
+  quizzes, and per-lesson progress. One lesson at a time with Prev / "Mark done · Next".
+- **API**: `PATCH /api/progress` persists progress (localStorage fallback everywhere).
 
 ## Your data
 All progress lives in **`prisma/dev.db`** (SQLite). Back it up by copying that file (or

@@ -91,8 +91,8 @@ export function HorizontalBars({ data }: { data: HBar[] }) {
           axisLine={false}
           tickLine={false}
         />
-        <Tooltip cursor={{ fill: "rgba(255,255,255,0.04)" }} content={<HBarTooltip />} />
-        <Bar dataKey="pct" radius={[4, 4, 4, 4]} background={{ fill: "#0b1220" }}>
+        <Tooltip cursor={{ fill: "rgba(100,116,139,0.12)" }} content={<HBarTooltip />} />
+        <Bar dataKey="pct" radius={[4, 4, 4, 4]} background={{ fill: "rgba(100,116,139,0.18)" }}>
           {data.map((d, i) => (
             <BarCell key={i} fill={d.color} />
           ))}

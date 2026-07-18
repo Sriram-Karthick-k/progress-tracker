@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Sidebar } from "@/components/Sidebar";
 import { ProgressProvider } from "@/components/ProgressProvider";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { AppShell } from "@/components/AppShell";
+import { CommandPalette } from "@/components/CommandPalette";
 
 export const metadata: Metadata = {
   title: "Interview Prep Tracker",
-  description: "Track learning across all 5 interview rounds.",
+  description: "Track learning across all interview rounds.",
 };
+
+// Runs before paint to set the theme attribute and avoid a light/dark flash.
+const NO_FLASH = `(function(){try{var p=localStorage.getItem('theme.v1')||'system';var d=p==='dark'||(p!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';}catch(e){document.documentElement.dataset.theme='dark';}})();`;
 
 export default function RootLayout({
   children,
@@ -14,14 +19,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: NO_FLASH }} />
+      </head>
       <body className="min-h-screen font-sans text-slate-200 antialiased">
-        <ProgressProvider>
-          <div className="flex">
-            <Sidebar />
-            <main className="min-w-0 flex-1">{children}</main>
-          </div>
-        </ProgressProvider>
+        <ThemeProvider>
+          <ProgressProvider>
+            <AppShell>{children}</AppShell>
+            <CommandPalette />
+          </ProgressProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

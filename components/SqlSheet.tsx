@@ -12,9 +12,16 @@ import {
 } from "@/lib/sqlsheet";
 import { CodeBlock } from "@/components/CodeBlock";
 import { ResultTable } from "@/components/ResultTable";
-import { PageHeader, Card } from "@/components/ui";
+import { ScrollSpyNav } from "@/components/ScrollSpyNav";
+import { Card } from "@/components/ui";
 
-export default function SqlPage() {
+// short label for the TOC, e.g. "3. GROUP BY"
+function tocLabel(title: string) {
+  return title.split(" — ")[0].split(" (")[0];
+}
+
+// The SQL cheat sheet, rendered inside the unified Cheat Sheets page as a tab.
+export function SqlSheet() {
   const [q, setQ] = useState("");
   const query = q.trim().toLowerCase();
 
@@ -30,13 +37,7 @@ export default function SqlPage() {
   }, [query]);
 
   return (
-    <div className="px-8 py-8 lg:px-10">
-      <PageHeader
-        title="SQL — PostgreSQL Cheat Sheet"
-        subtitle="Every keyword with its meaning, a runnable query, and the real result — against one practice schema."
-      />
-
-      {/* schema */}
+    <div>
       <Card className="mb-6 p-5">
         <div className="mb-3 flex items-center gap-2 text-sm font-bold text-white">
           <Database size={16} className="text-indigo-300" /> Practice schema
@@ -59,13 +60,11 @@ export default function SqlPage() {
         </div>
       </Card>
 
-      {/* search */}
+      <div className="flex gap-8">
+        <div className="min-w-0 flex-1">
       <div className="mb-5">
         <div className="relative">
-          <Search
-            size={15}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
-          />
+          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -75,23 +74,6 @@ export default function SqlPage() {
         </div>
       </div>
 
-      {/* jump chips */}
-      {!query && (
-        <div className="mb-6 flex flex-wrap gap-2">
-          {CONCEPTS.map((c) => (
-            <a
-              key={c.id}
-              href={`#${c.id}`}
-              className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-slate-400 transition hover:border-white/20 hover:text-slate-200"
-            >
-              <span className="text-slate-600">{c.n}.</span>{" "}
-              {c.title.split(" — ")[0].split(" (")[0]}
-            </a>
-          ))}
-        </div>
-      )}
-
-      {/* concepts */}
       <div className="space-y-4">
         {concepts.length === 0 && (
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-16 text-center text-sm text-slate-500">
@@ -115,11 +97,7 @@ export default function SqlPage() {
             <div className="space-y-4">
               {c.examples.map((ex, i) => (
                 <div key={i}>
-                  {ex.caption && (
-                    <div className="mb-1.5 text-xs font-semibold text-slate-400">
-                      {ex.caption}
-                    </div>
-                  )}
+                  {ex.caption && <div className="mb-1.5 text-xs font-semibold text-slate-400">{ex.caption}</div>}
                   <div className="grid gap-3 lg:grid-cols-2">
                     <CodeBlock code={ex.query} />
                     {ex.result && <ResultTable result={ex.result} />}
@@ -131,19 +109,14 @@ export default function SqlPage() {
         ))}
       </div>
 
-      {/* reference blocks */}
       {!query && (
         <div className="mt-8 grid gap-4 lg:grid-cols-2">
           <Card className="p-5" id="execution-order">
-            <div className="mb-4 text-sm font-bold text-white">
-              Execution order (why WHERE can't see aggregates)
-            </div>
+            <div className="mb-4 text-sm font-bold text-white">Execution order (why WHERE can't see aggregates)</div>
             <div className="space-y-2">
               {EXECUTION_ORDER.map((s, i) => (
                 <div key={i} className="flex items-center gap-3 text-sm">
-                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-white/[0.04] text-xs font-bold text-slate-400">
-                    {i + 1}
-                  </span>
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-white/[0.04] text-xs font-bold text-slate-400">{i + 1}</span>
                   <code className="font-mono font-semibold text-indigo-300">{s.step}</code>
                   <ArrowRight size={13} className="text-slate-600" />
                   <span className="text-slate-400">{s.detail}</span>
@@ -153,15 +126,11 @@ export default function SqlPage() {
           </Card>
 
           <Card className="p-5" id="gotchas">
-            <div className="mb-4 text-sm font-bold text-white">
-              Top gotchas (where points are lost)
-            </div>
+            <div className="mb-4 text-sm font-bold text-white">Top gotchas (where points are lost)</div>
             <ol className="space-y-2.5 text-sm text-slate-300">
               {GOTCHAS.map((g, i) => (
                 <li key={i} className="flex gap-2.5">
-                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-rose-500/15 text-xs font-bold text-rose-300">
-                    {i + 1}
-                  </span>
+                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-rose-500/15 text-xs font-bold text-rose-300">{i + 1}</span>
                   {g}
                 </li>
               ))}
@@ -174,12 +143,8 @@ export default function SqlPage() {
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr className="bg-white/[0.03]">
-                    <th className="border-b border-white/10 px-3 py-2 text-left font-semibold text-slate-300">
-                      Keyword
-                    </th>
-                    <th className="border-b border-white/10 px-3 py-2 text-left font-semibold text-slate-300">
-                      Purpose
-                    </th>
+                    <th className="border-b border-white/10 px-3 py-2 text-left font-semibold text-slate-300">Keyword</th>
+                    <th className="border-b border-white/10 px-3 py-2 text-left font-semibold text-slate-300">Purpose</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -197,6 +162,20 @@ export default function SqlPage() {
           </Card>
         </div>
       )}
+        </div>
+
+        {!query && (
+          <ScrollSpyNav
+            items={[
+              ...CONCEPTS.map((c) => ({ id: c.id, label: `${c.n}. ${tocLabel(c.title)}` })),
+              { id: "execution-order", label: "Execution order" },
+              { id: "gotchas", label: "Top gotchas" },
+              { id: "keywords", label: "Keywords" },
+            ]}
+            heading="SQL sections"
+          />
+        )}
+      </div>
     </div>
   );
 }

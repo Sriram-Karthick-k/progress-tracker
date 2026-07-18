@@ -30,8 +30,9 @@ export function CodeBlock({ code }: { code: string }) {
           </>
         )}
       </button>
+      {/* code stays dark-themed in both modes, so pin a light text color */}
       <pre className="overflow-x-auto rounded-xl border border-white/10 bg-[#0b1120] p-4 text-[13px] leading-relaxed">
-        <code className="font-mono text-slate-200">{code}</code>
+        <code className="font-mono text-[#e2e8f0]">{code}</code>
       </pre>
     </div>
   );

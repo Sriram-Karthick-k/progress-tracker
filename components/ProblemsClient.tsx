@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { ProblemRow } from "./ProblemRow";
 import { STATUSES, STATUS_META } from "@/lib/status";
@@ -9,11 +10,13 @@ import { useProgress } from "./ProgressProvider";
 
 export function ProblemsClient() {
   const { get } = useProgress();
-  const [q, setQ] = useState("");
-  const [company, setCompany] = useState("");
-  const [pattern, setPattern] = useState("");
-  const [difficulty, setDifficulty] = useState("");
-  const [status, setStatus] = useState("");
+  // deep-linkable: /problems?pattern=Two%20Pointers&q=125 (used by search + mastery cards)
+  const params = useSearchParams();
+  const [q, setQ] = useState(params.get("q") ?? "");
+  const [company, setCompany] = useState(params.get("company") ?? "");
+  const [pattern, setPattern] = useState(params.get("pattern") ?? "");
+  const [difficulty, setDifficulty] = useState(params.get("difficulty") ?? "");
+  const [status, setStatus] = useState(params.get("status") ?? "");
 
   // keep the spreadsheet's drilling order rather than alphabetical
   const patterns = PATTERN_ORDER;

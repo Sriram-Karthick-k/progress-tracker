@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, MessageSquareText, Youtube } from "lucide-react";
 import { StatusToggle } from "./StatusToggle";
 import { ConfidenceStars } from "./ConfidenceStars";
 import { RevisitFlag } from "./RevisitFlag";
@@ -9,6 +9,9 @@ import { ProblemDef } from "@/lib/seed-data";
 
 export function ProblemRow({ p }: { p: ProblemDef }) {
   const companies = p.companies.split(",").map((s) => s.trim()).filter(Boolean);
+  // deterministic help links (no per-problem curation needed)
+  const solutionsUrl = `${p.url.replace(/\/?$/, "/")}solutions/`;
+  const videoUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${p.title} leetcode ${p.lcNumber}`)}`;
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-white/5 px-4 py-3 transition last:border-b-0 hover:bg-white/[0.02]">
       <div className="w-9 shrink-0 text-sm tabular-nums text-slate-500">{p.lcNumber}</div>
@@ -56,6 +59,24 @@ export function ProblemRow({ p }: { p: ProblemDef }) {
               {c}
             </span>
           ))}
+        </div>
+        <div className="mt-1.5 flex flex-wrap items-center gap-3">
+          <a
+            href={solutionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] text-slate-500 transition hover:text-indigo-300"
+          >
+            <MessageSquareText size={12} /> Solutions
+          </a>
+          <a
+            href={videoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] text-slate-500 transition hover:text-rose-300"
+          >
+            <Youtube size={12} /> Video
+          </a>
         </div>
       </div>
 

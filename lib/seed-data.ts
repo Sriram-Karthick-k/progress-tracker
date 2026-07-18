@@ -38,7 +38,6 @@ export const ROUNDS: RoundDef[] = [
   { key: "lowlevel", name: "Low-level / Domain", icon: "Cpu", order: 2, description: "Your strongest differentiator — C++, WASM, rendering, cross-platform, real-time collab." },
   { key: "sysdesign", name: "System Design", icon: "Network", order: 3, description: "Always follow the framework. Building blocks cold + your collab/rendering sweet spot." },
   { key: "behavioral", name: "Behavioral / HR", icon: "MessagesSquare", order: 4, description: "STAR method, quantify results. Build a story bank from Vani / Zoho." },
-  { key: "company", name: "Company-specific", icon: "Building2", order: 5, description: "What they test + my angle. Fill before each interview." },
 ];
 
 type Cat = { round: string; cat: string; cue?: string; items: { n: string; d?: string }[] };
@@ -170,21 +169,6 @@ const CATS: Cat[] = [
   ]},
   { round: "behavioral", cat: "Salary negotiation", cue: "anchor high, justify with the skill set", items: [
     { n: "Anchor to 20-25 LPA target (current ~15 LPA)", d: "Don't anchor low, don't disclose current first; justify with C++/WASM/rendering/collab." },
-  ]},
-
-  // ---- COMPANY ----
-  { round: "company", cat: "Targets - what they test + my angle", cue: "fill before each interview", items: [
-    { n: "Amazon", d: "DSA + Leadership Principles (write 2 stories per LP). High bar on optimal + edge cases." },
-    { n: "PayPal", d: "DSA + payments/scale, idempotency, concurrency." },
-    { n: "Dell", d: "DSA + real-time media/networking." },
-    { n: "Cisco / Webex", d: "DSA + real-time; values your WebSocket/real-time background." },
-    { n: "Comcast", d: "DSA + real-time media/networking." },
-    { n: "Adobe", d: "algorithmic + some rendering; lean on Skia/WebGPU." },
-    { n: "Figma", d: "rendering, canvas perf, WASM, OT/CRDT. Practical/take-home style." },
-    { n: "Canva", d: "rendering, canvas perf, WASM. Your background is the headline." },
-    { n: "Rive", d: "rendering, animation, WASM." },
-    { n: "tldraw", d: "rendering, canvas, OT/CRDT." },
-    { n: "FULL Creative", d: "practical builds, not hard DSA." },
   ]},
 ];
 

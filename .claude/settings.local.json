@@ -3,7 +3,23 @@
     "allow": [
       "PowerShell($csc = Get-ChildItem \"C:\\\\Windows\\\\Microsoft.NET\\\\Framework64\" -Recurse -Filter csc.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName; Write-Output \"csc: $csc\"; Write-Output \"node: $\\(\\(Get-Command node -ErrorAction SilentlyContinue\\).Source\\)\"; Write-Output \"dotnet: $\\(\\(Get-Command dotnet -ErrorAction SilentlyContinue\\).Source\\)\")",
       "Bash(cd \"e:/web-projects/interview-preparation\" && rm -rf cheatsheets && echo \"removed cheatsheets folder\")",
-      "Bash(python -)"
+      "Bash(python -)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(npx tsx -e ' *)",
+      "Bash(grep -vE '<div|<H2|<H3|<P|<UL|<Note|<Code|<Output|<Diagram|<Viz|<Quiz|<BadGood|<T |<T>|<Trace|<QA|<A>|</|<T$')",
+      "Bash(grep -n '`' lib/learn/patterns/stack/lesson.tsx)",
+      "Bash(grep -vE 'Output>|code=\\\\{`|`\\\\}')",
+      "Bash(grep -n '\\\\${' lib/learn/patterns/stack/lesson.tsx)",
+      "Bash(cp lib/learn/patterns/stack/lesson.tsx /tmp/stack-lesson-backup.tsx)",
+      "Bash(cp /tmp/min.tsx lib/learn/patterns/stack/lesson.tsx)",
+      "WebFetch(domain:jeffe.cs.illinois.edu)",
+      "WebFetch(domain:visualgo.net)",
+      "WebFetch(domain:cp-algorithms.com)",
+      "WebFetch(domain:www.programiz.com)",
+      "WebFetch(domain:algs4.cs.princeton.edu)",
+      "WebFetch(domain:www.geeksforgeeks.org)"
     ],
     "additionalDirectories": [
       "e:\\web-projects\\interview-preparation\\cheatsheets"

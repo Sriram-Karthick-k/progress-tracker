@@ -14,6 +14,7 @@ import {
   DEFAULT_PROGRESS,
   loadAll,
   persist,
+  recordActivity,
 } from "@/lib/progress";
 
 type Ctx = {
@@ -52,11 +53,13 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 
   const update = useCallback((id: string, patch: Partial<Progress>) => {
     setMap((prev) => {
-      const merged: Progress = { ...DEFAULT_PROGRESS, ...(prev[id] || {}), ...patch };
+      const stamped = { ...patch, touched: Date.now() };
+      const merged: Progress = { ...DEFAULT_PROGRESS, ...(prev[id] || {}), ...stamped };
       const next = { ...prev, [id]: merged };
-      persist(next, id, patch);
+      persist(next, id, stamped);
       return next;
     });
+    recordActivity();
   }, []);
 
   const replaceAll = useCallback((incoming: ProgressMap) => {
