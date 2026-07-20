@@ -1,11 +1,10 @@
-// Streak + daily-goal helpers over the activity log (localStorage only — see
-// loadActivity/recordActivity in progress.ts). Activity = one count per day of
-// progress updates. A "day" is a UTC date key (matches recordActivity).
+// Streak + daily-goal helpers over the activity log (stored in
+// content/progress.json — see lib/progress.ts). Activity = one count per day
+// of progress updates. A "day" is a UTC date key (matches recordActivity).
 
-import { ActivityMap } from "./progress";
+import { ActivityMap, getGoalStored, setGoalStored } from "./progress";
 
 const DAY = 86_400_000;
-const GOAL_KEY = "dailyGoal.v1";
 export const DEFAULT_GOAL = 5;
 
 function ymd(d: Date) {
@@ -57,12 +56,10 @@ export function computeStreak(activity: ActivityMap): Streaks {
 }
 
 export function getGoal(): number {
-  if (typeof window === "undefined") return DEFAULT_GOAL;
-  const v = Number(localStorage.getItem(GOAL_KEY));
-  return v > 0 ? v : DEFAULT_GOAL;
+  const v = getGoalStored();
+  return v && v > 0 ? v : DEFAULT_GOAL;
 }
 
 export function setGoal(n: number) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(GOAL_KEY, String(Math.max(1, Math.min(50, Math.round(n)))));
+  setGoalStored(Math.max(1, Math.min(50, Math.round(n))));
 }

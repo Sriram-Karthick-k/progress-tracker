@@ -1,9 +1,9 @@
 // Retrieval-practice layer: flip-and-grade flashcards wired into the SAME
 // spaced-repetition engine as the rest of the app (reviewIntervalDays off
 // Progress.confidence + touched). Grading a card records activity (streak) and
-// reschedules it. Seeded decks below + a localStorage "My Cards" deck.
+// reschedules it. Seeded decks below + a file-backed "My Cards" deck.
 
-import { Progress } from "./progress";
+import { Progress, getCustomCardsRaw, setCustomCardsRaw } from "./progress";
 import { reviewIntervalDays } from "./study";
 import { PATTERN_ORDER, PATTERN_CUE } from "./problems";
 
@@ -100,33 +100,21 @@ export function seedCards(): Flashcard[] {
 
 /* ------------------------------ custom deck ------------------------------ */
 
-const CUSTOM_KEY = "flashcards.custom.v1";
+// Custom cards live in content/progress.json alongside progress (see lib/progress.ts).
 export const CUSTOM_META: DeckMeta = { key: "custom", title: "My Cards", desc: "Cards you've written yourself." };
-type StoredCustom = { id: string; front: string; back: string };
-
-function rawCustom(): StoredCustom[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(CUSTOM_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
 
 export function getCustomCards(): Flashcard[] {
-  return rawCustom().map((c) => ({ ...c, deckKey: "custom", deckTitle: CUSTOM_META.title }));
+  return getCustomCardsRaw().map((c) => ({ ...c, deckKey: "custom", deckTitle: CUSTOM_META.title }));
 }
 
 export function addCustomCard(front: string, back: string) {
-  const arr = rawCustom();
   const id = `fc-custom-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
-  arr.push({ id, front: front.trim(), back: back.trim() });
-  localStorage.setItem(CUSTOM_KEY, JSON.stringify(arr));
+  setCustomCardsRaw([...getCustomCardsRaw(), { id, front: front.trim(), back: back.trim() }]);
   window.dispatchEvent(new Event("prep-flashcards"));
 }
 
 export function deleteCustomCard(id: string) {
-  localStorage.setItem(CUSTOM_KEY, JSON.stringify(rawCustom().filter((c) => c.id !== id)));
+  setCustomCardsRaw(getCustomCardsRaw().filter((c) => c.id !== id));
   window.dispatchEvent(new Event("prep-flashcards"));
 }
 

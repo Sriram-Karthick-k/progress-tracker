@@ -156,7 +156,7 @@ export function Sidebar({
         <ThemeToggle />
       </div>
       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs text-slate-500">
-        Progress saves in this <span className="text-slate-300">browser</span> (localStorage). Use Export on the dashboard to snapshot it to a file.
+        Progress saves to <span className="text-slate-300">content/progress.json</span> — use Sync to commit it with your notes.
       </div>
     </aside>
   );

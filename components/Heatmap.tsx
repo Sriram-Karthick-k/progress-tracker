@@ -23,7 +23,12 @@ function dayKey(d: Date): string {
 /** GitHub-style activity heatmap + current streak, from the local activity log. */
 export function Heatmap() {
   const [activity, setActivity] = useState<ActivityMap | null>(null);
-  useEffect(() => setActivity(loadActivity()), []); // client-only (localStorage)
+  useEffect(() => {
+    const refresh = () => setActivity({ ...loadActivity() });
+    refresh(); // store hydrates async from content/progress.json…
+    window.addEventListener("prep-activity", refresh); // …and pings this when ready/updated
+    return () => window.removeEventListener("prep-activity", refresh);
+  }, []);
 
   const act = activity ?? {};
   const today = new Date();

@@ -1,0 +1,47 @@
+{
+  "progress": {
+    "t-dsa-arrays-hashing-prefix-sum": {
+      "status": "DONE",
+      "confidence": 4,
+      "revisit": true,
+      "attempts": 0,
+      "notes": ""
+    },
+    "t-sysdesign-the-framework-always-this-order-clarify-requirements": {
+      "status": "TODO",
+      "confidence": 0,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0
+    },
+    "p-lc167": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784506991285
+    },
+    "p-lc125": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784507664399
+    },
+    "p-lc680": {
+      "status": "TODO",
+      "confidence": 4,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784510726384
+    }
+  },
+  "activity": {
+    "2026-07-20": 14
+  },
+  "goal": 3,
+  "customCards": []
+}

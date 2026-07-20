@@ -11,12 +11,15 @@ export function StreakGoal() {
   const [goal, setGoalState] = useState(DEFAULT_GOAL);
   const [mounted, setMounted] = useState(false);
 
-  const refresh = useCallback(() => setActivity(loadActivity()), []);
+  // store hydrates async from content/progress.json — refresh both on its ping
+  const refresh = useCallback(() => {
+    setActivity({ ...loadActivity() });
+    setGoalState(getGoal());
+  }, []);
 
   useEffect(() => {
     setMounted(true);
-    setActivity(loadActivity());
-    setGoalState(getGoal());
+    refresh();
     window.addEventListener("prep-activity", refresh);
     return () => window.removeEventListener("prep-activity", refresh);
   }, [refresh]);
