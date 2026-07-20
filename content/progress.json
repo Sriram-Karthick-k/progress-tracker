@@ -31,16 +31,56 @@
       "touched": 1784507664399
     },
     "p-lc680": {
+      "status": "DONE",
+      "confidence": 4,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784561567350
+    },
+    "p-lc15": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784561565643
+    },
+    "p-lc16": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784561645754
+    },
+    "p-lc18": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784564771089
+    },
+    "p-lc11": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784564910987
+    },
+    "p-lc42": {
       "status": "TODO",
       "confidence": 4,
       "revisit": true,
       "notes": "",
       "attempts": 0,
-      "touched": 1784510726384
+      "touched": 1784564989292
     }
   },
   "activity": {
-    "2026-07-20": 14
+    "2026-07-20": 36
   },
   "goal": 3,
   "customCards": []
