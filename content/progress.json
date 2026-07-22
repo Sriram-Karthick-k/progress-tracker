@@ -71,12 +71,12 @@
       "touched": 1784564910987
     },
     "p-lc42": {
-      "status": "TODO",
+      "status": "DONE",
       "confidence": 4,
       "revisit": true,
       "notes": "",
       "attempts": 0,
-      "touched": 1784564989292
+      "touched": 1784681902589
     },
     "p-lc881": {
       "status": "DONE",
@@ -178,12 +178,12 @@
   "activity": {
     "2026-07-20": 36,
     "2026-07-21": 14,
-    "2026-07-22": 41
+    "2026-07-22": 44
   },
   "goal": 3,
   "customCards": [],
   "lastRoute": "/problems?pattern=Two+Pointers",
   "scroll": {
-    "/problems?pattern=Two+Pointers": 1100
+    "/problems?pattern=Two+Pointers": 0
   }
 }
