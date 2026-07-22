@@ -13,7 +13,7 @@ const EDITABLE = process.env.NEXT_PUBLIC_NOTES_READONLY !== "1";
 // GET must not be prerendered at build time — it reads the live file.
 export const dynamic = "force-dynamic";
 
-const EMPTY = { progress: {}, activity: {}, goal: null, customCards: [] };
+const EMPTY = { progress: {}, activity: {}, goal: null, customCards: [], lastRoute: null, scroll: {} };
 
 export async function GET() {
   try {
@@ -39,6 +39,8 @@ export async function POST(req: NextRequest) {
     activity: typeof body.activity === "object" && body.activity !== null ? body.activity : {},
     goal: typeof body.goal === "number" ? body.goal : null,
     customCards: Array.isArray(body.customCards) ? body.customCards : [],
+    lastRoute: typeof body.lastRoute === "string" ? body.lastRoute : null,
+    scroll: typeof body.scroll === "object" && body.scroll !== null ? body.scroll : {},
   };
   try {
     fs.mkdirSync(path.dirname(FILE), { recursive: true });

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { ProgressProvider } from "@/components/ProgressProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AppShell } from "@/components/AppShell";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NoteEditorHost } from "@/components/notebook/NoteEditorHost";
+import { RouteResume } from "@/components/RouteResume";
 
 export const metadata: Metadata = {
   title: "Interview Prep Tracker",
@@ -27,6 +29,9 @@ export default function RootLayout({
       <body className="min-h-screen font-sans text-slate-200 antialiased">
         <ThemeProvider>
           <ProgressProvider>
+            <Suspense fallback={null}>
+              <RouteResume />
+            </Suspense>
             <AppShell>{children}</AppShell>
             <CommandPalette />
             <NoteEditorHost />

@@ -77,11 +77,113 @@
       "notes": "",
       "attempts": 0,
       "touched": 1784564989292
+    },
+    "p-lc881": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784595920732
+    },
+    "p-lc611": {
+      "status": "DONE",
+      "confidence": 4,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784599312345
+    },
+    "p-lc26": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784678069988
+    },
+    "p-lc80": {
+      "status": "DONE",
+      "confidence": 4,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784680170972
+    },
+    "p-lc27": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784680329326
+    },
+    "p-lc283": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784680692371
+    },
+    "p-lc88": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784680750406
+    },
+    "p-lc392": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784680854451
+    },
+    "p-lc977": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784681556817
+    },
+    "p-lc75": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784681579151
+    },
+    "p-lc344": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784681598014
+    },
+    "p-lc905": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784681864018
     }
   },
   "activity": {
-    "2026-07-20": 36
+    "2026-07-20": 36,
+    "2026-07-21": 14,
+    "2026-07-22": 41
   },
   "goal": 3,
-  "customCards": []
+  "customCards": [],
+  "lastRoute": "/problems?pattern=Two+Pointers",
+  "scroll": {
+    "/problems?pattern=Two+Pointers": 1100
+  }
 }

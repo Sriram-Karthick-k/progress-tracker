@@ -20,6 +20,10 @@ type Store = {
   activity: ActivityMap;
   goal: number | null;
   customCards: StoredCustomCard[];
+  /** Path + query string of the page you were last on — for resume-on-open. */
+  lastRoute: string | null;
+  /** Scroll Y per exact route, captured only when you leave that route. */
+  scroll: Record<string, number>;
 };
 
 export const DEFAULT_PROGRESS: Progress = {
@@ -38,7 +42,7 @@ export const DEFAULT_PROGRESS: Progress = {
 // once per page load, and debounce-saves the whole store after every change.
 // ---------------------------------------------------------------------------
 
-const EMPTY: Store = { progress: {}, activity: {}, goal: null, customCards: [] };
+const EMPTY: Store = { progress: {}, activity: {}, goal: null, customCards: [], lastRoute: null, scroll: {} };
 
 let store: Store = { ...EMPTY };
 let hydrating: Promise<void> | null = null;
@@ -68,8 +72,22 @@ function scheduleSave() {
   saveTimer = setTimeout(() => void saveNow(), 600);
 }
 
-/** Flush pending changes when the tab is hidden/closed (beacon survives unload). */
+/**
+ * Flush pending changes when the tab is hidden/closed (beacon survives unload).
+ * Also captures "where you left off" — the exact route + scroll position —
+ * every time you leave a page (tab switch, close, or navigate away), with no
+ * explicit action needed. RouteResume reads this on the next fresh load to
+ * jump straight back, so nothing is ever lost between sessions.
+ */
 function flushOnHide() {
+  if (typeof window !== "undefined") {
+    const route = window.location.pathname + window.location.search;
+    if (store.lastRoute !== route || store.scroll[route] !== window.scrollY) {
+      store.lastRoute = route;
+      store.scroll = { ...store.scroll, [route]: window.scrollY };
+      dirty = true;
+    }
+  }
   if (!dirty) return;
   if (saveTimer) clearTimeout(saveTimer);
   dirty = false;
@@ -124,7 +142,8 @@ function mergeLegacy(server: Store, legacy: Partial<Store>): Store {
     ...server.customCards,
     ...(legacy.customCards ?? []).filter((c) => !ids.has(c.id)),
   ];
-  return { progress, activity, goal: server.goal ?? legacy.goal ?? null, customCards };
+  // lastRoute/scroll are new fields legacy data never had — always server's
+  return { progress, activity, goal: server.goal ?? legacy.goal ?? null, customCards, lastRoute: server.lastRoute, scroll: server.scroll };
 }
 
 function clearLegacy() {
@@ -150,6 +169,14 @@ async function hydrate(): Promise<void> {
     } catch {
       /* API unreachable — session-only until it comes back */
     }
+    // preserve a lastRoute/scroll write that landed on the placeholder store
+    // during the fetch (e.g. an ultra-fast tab-hide right after opening) —
+    // it's strictly newer than whatever was already on disk.
+    if (store.lastRoute) {
+      server.lastRoute = store.lastRoute;
+      server.scroll = { ...server.scroll, ...store.scroll };
+    }
+
     const legacy = readLegacy();
     if (legacy) {
       store = mergeLegacy(server, legacy);
@@ -215,6 +242,18 @@ export function getCustomCardsRaw(): StoredCustomCard[] {
 export function setCustomCardsRaw(cards: StoredCustomCard[]) {
   store.customCards = cards;
   scheduleSave();
+}
+
+/* ---- resume-where-you-left-off ---- */
+
+/** The full path+query of the page you were last on (null if never recorded). */
+export function getLastRoute(): string | null {
+  return store.lastRoute;
+}
+
+/** Saved scroll Y for an exact route (path+query), or null if none recorded. */
+export function getScrollFor(route: string): number | null {
+  return store.scroll[route] ?? null;
 }
 
 export function exportJson(map: ProgressMap): string {
