@@ -173,17 +173,54 @@
       "notes": "",
       "attempts": 0,
       "touched": 1784681864018
+    },
+    "p-lc643": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784732524771
+    },
+    "p-lc438": {
+      "status": "DONE",
+      "confidence": 4,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784738898170
+    },
+    "p-lc567": {
+      "status": "DONE",
+      "confidence": 3,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784770882694
+    },
+    "p-lc239": {
+      "status": "DONE",
+      "confidence": 3,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1784770799650
     }
   },
   "activity": {
     "2026-07-20": 36,
     "2026-07-21": 14,
-    "2026-07-22": 44
+    "2026-07-22": 69,
+    "2026-07-23": 20
   },
   "goal": 3,
   "customCards": [],
-  "lastRoute": "/problems?pattern=Two+Pointers",
+  "lastRoute": "/cheatsheets",
   "scroll": {
-    "/problems?pattern=Two+Pointers": 0
+    "/problems?pattern=Two+Pointers": 0,
+    "/problems?pattern=Sliding%20Window": 0,
+    "/problems?pattern=Sliding+Window&status=TODO": 0,
+    "/problems?pattern=Sliding+Window": 100,
+    "/cheatsheets": 0
   }
 }

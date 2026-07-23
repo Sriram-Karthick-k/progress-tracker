@@ -30,6 +30,7 @@ function buildIndex(): Hit[] {
     { title: "SQL Practice", href: "/sql-practice" },
     { title: "Topics", href: "/topics" },
     { title: "Cheat Sheets", href: "/cheatsheets" },
+    { title: "Class Tree (collections hierarchy)", href: "/cheatsheets?tab=hierarchy" },
   ].forEach((p) => hits.push({ group: "Pages", title: p.title, sub: "go to page", href: p.href }));
 
   ROADMAPS.forEach((r) =>

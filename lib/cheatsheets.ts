@@ -1,5 +1,16 @@
-export type Snippet = { title: string; note?: string; code: string };
-export type Section = { id: string; title: string; snippets: Snippet[] };
+// Cheat sheets as real reference TABLES: one row per method.
+//   name = the method/call        desc = what it does (+ complexity)
+//   ex   = a runnable example      out  = what it returns / the resulting state
+// Each section's `intro` states the variable the examples assume, so every row
+// can stay a tiny one-liner (e.g. `l.get(0)` -> 3) instead of repeating setup.
+export type Method = {
+  name: string;
+  desc: string;
+  ex?: string;
+  out?: string;
+  note?: string;
+};
+export type Section = { id: string; title: string; intro?: string; methods: Method[] };
 export type Sheet = { lang: string; key: string; hint: string; sections: Section[] };
 
 /* =========================================================================
@@ -12,306 +23,335 @@ const JAVA: Sheet = {
   sections: [
     {
       id: "java-io",
-      title: "Boilerplate & I/O",
-      snippets: [
-        {
-          title: "Main + fast input",
-          note: "BufferedReader is much faster than Scanner for big inputs.",
-          code: `import java.util.*;
-import java.io.*;
-
-public class Main {
-  public static void main(String[] args) throws IOException {
-    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-    int n = Integer.parseInt(br.readLine().trim());
-    String[] parts = br.readLine().split(" ");
-    int[] a = new int[n];
-    for (int i = 0; i < n; i++) a[i] = Integer.parseInt(parts[i]);
-
-    StringBuilder sb = new StringBuilder();       // batch output = fast
-    sb.append("answer: ").append(n).append('\\n');
-    System.out.print(sb);
-  }
-}`,
-        },
-        {
-          title: "Quick Scanner (small input)",
-          code: `Scanner sc = new Scanner(System.in);
-int n = sc.nextInt();
-String word = sc.next();          // one token
-String line = sc.nextLine();      // rest of line
-double d = sc.nextDouble();`,
-        },
-        {
-          title: "Print",
-          code: `System.out.println("hi");
-System.out.printf("%d + %d = %d%n", a, b, a + b);
-System.out.println(Arrays.toString(arr));        // [1, 2, 3]`,
-        },
+      title: "Fast I/O",
+      intro: "BufferedReader is far faster than Scanner for large input. Batch output into a StringBuilder and print once.",
+      methods: [
+        { name: "new BufferedReader(new InputStreamReader(System.in))", desc: "Fast line reader. `throws IOException` on main.", ex: "String line = br.readLine();" },
+        { name: "br.readLine()", desc: "Reads one whole line (no newline). null at EOF.", ex: "int n = Integer.parseInt(br.readLine().trim());" },
+        { name: "line.split(\" \")", desc: "Split a line into tokens.", ex: 'int[] a = Arrays.stream(br.readLine().split(" "))\n  .mapToInt(Integer::parseInt).toArray();' },
+        { name: "new Scanner(System.in)", desc: "Convenient but slow — fine for tiny input.", ex: "Scanner sc = new Scanner(System.in);" },
+        { name: "sc.nextInt() / next() / nextLine()", desc: "Read an int / one token / rest of line.", ex: "int n = sc.nextInt();\nString w = sc.next();", note: "nextInt() leaves the newline unread — call nextLine() once to consume it before reading a full line." },
+        { name: "System.out.print(sb)", desc: "One flush of a StringBuilder = fast output.", ex: 'StringBuilder sb = new StringBuilder();\nsb.append(x).append("\\n");\nSystem.out.print(sb);' },
+        { name: "System.out.printf(fmt, ...)", desc: "C-style format. %d int, %s str, %.2f float, %n newline.", ex: 'System.out.printf("%.2f%n", 3.14159);', out: '3.14' },
+      ],
+    },
+    {
+      id: "java-primitives",
+      title: "Primitives, Wrappers & Parsing",
+      intro: "int/long/double are values on the stack; Integer/Long/Double are objects (needed in collections). Watch overflow and == on wrappers.",
+      methods: [
+        { name: "(int) 3.99", desc: "Cast truncates toward zero, never rounds.", ex: "(int) 3.99", out: "3" },
+        { name: "(byte) 130", desc: "Narrowing cast WRAPS around, doesn't clamp.", ex: "(byte) 130", out: "-126" },
+        { name: "7 / 2", desc: "Integer division truncates.", ex: "7 / 2  vs  7 / 2.0", out: "3  vs  3.5" },
+        { name: "a + b (int overflow)", desc: "Overflow is SILENT — no exception.", ex: "Integer.MAX_VALUE + 1", out: "-2147483648", note: "Cast to long BEFORE the op if a sum/product can exceed ~2.1e9: (long) a + b." },
+        { name: "Integer.parseInt(s)", desc: "String -> int. Throws NumberFormatException on bad input.", ex: 'Integer.parseInt("42")', out: "42" },
+        { name: "Integer.parseInt(s, radix)", desc: "Parse in a given base.", ex: 'Integer.parseInt("ff", 16)', out: "255" },
+        { name: "Long.parseLong / Double.parseDouble", desc: "Same for long / double.", ex: 'Double.parseDouble("3.14")', out: "3.14" },
+        { name: "Integer.valueOf(s)", desc: "Returns a boxed Integer (cached for -128..127).", ex: "Integer.valueOf(42)", out: "42" },
+        { name: "a == b  (Integer)", desc: "Reference compare — only 'works' in the -128..127 cache!", ex: "Integer a=128, b=128; a==b", out: "false", note: "NEVER use == on wrappers. Use a.equals(b), or unbox to int first." },
+        { name: "String.valueOf(x)", desc: "Any primitive -> String.", ex: "String.valueOf(42)", out: '"42"' },
+        { name: "Integer.MAX_VALUE / MIN_VALUE", desc: "Int bounds. Long.MAX_VALUE for overflow safety.", ex: "Integer.MAX_VALUE", out: "2147483647" },
       ],
     },
     {
       id: "java-string",
-      title: "String & StringBuilder",
-      snippets: [
-        {
-          title: "String basics (immutable!)",
-          code: `String s = "hello";
-s.length();              // 5
-s.charAt(1);             // 'e'
-s.substring(1, 3);       // "el"  (copy, [from, to))
-s.indexOf("l");          // 2     (-1 if absent)
-s.contains("ell");       // true
-s.toCharArray();         // char[]
-s.split(",");            // String[] (regex!)
-s.replace("l", "L");     // "heLLo"
-s.toUpperCase();         // "HELLO"
-s.trim();                // remove ends whitespace
-s.equals("hello");       // ALWAYS use equals, not ==
-s.compareTo("abc");      // <0 / 0 / >0`,
-        },
-        {
-          title: "StringBuilder (mutable — build strings here)",
-          note: "Never += in a loop. O(n^2). Use StringBuilder.",
-          code: `StringBuilder sb = new StringBuilder();
-sb.append("ab").append(1).append('c');
-sb.insert(0, "X");        // "Xab1c"
-sb.deleteCharAt(0);       // "ab1c"
-sb.reverse();             // "c1ba"
-sb.setCharAt(0, 'Z');
-sb.charAt(2);
-sb.length();
-String out = sb.toString();`,
-        },
-        {
-          title: "char helpers & parsing",
-          code: `Character.isDigit(c);  Character.isLetter(c);
-Character.isLetterOrDigit(c);  Character.isWhitespace(c);
-Character.toLowerCase(c);  Character.getNumericValue('7'); // 7
-
-Integer.parseInt("42");          // 42
-Integer.toBinaryString(5);       // "101"
-Integer.bitCount(7);             // 3 (set bits)
-String.valueOf(42);              // "42"`,
-        },
+      title: "String (immutable)",
+      intro: 'Assume String s = "hello world". Every method returns a NEW string — s is never modified.',
+      methods: [
+        { name: "s.length()", desc: "Number of chars (a method, not a field).", ex: "s.length()", out: "11" },
+        { name: "s.charAt(i)", desc: "Char at index i.", ex: "s.charAt(1)", out: "'e'" },
+        { name: "s.substring(i)", desc: "From index i to the end (copy).", ex: "s.substring(6)", out: '"world"' },
+        { name: "s.substring(i, j)", desc: "Range [i, j), end EXCLUSIVE.", ex: "s.substring(0, 5)", out: '"hello"' },
+        { name: "s.indexOf(str)", desc: "First index of substring, -1 if absent.", ex: 's.indexOf("o")', out: "4" },
+        { name: "s.indexOf(str, from)", desc: "First index at/after `from`.", ex: 's.indexOf("o", 5)', out: "7" },
+        { name: "s.lastIndexOf(str)", desc: "Last index of substring.", ex: 's.lastIndexOf("o")', out: "7" },
+        { name: "s.contains(cs)", desc: "Substring present?", ex: 's.contains("wor")', out: "true" },
+        { name: "s.startsWith / s.endsWith", desc: "Prefix / suffix test.", ex: 's.startsWith("he")', out: "true" },
+        { name: "s.isEmpty()", desc: "Length == 0?", ex: '"".isEmpty()', out: "true" },
+        { name: "s.isBlank()", desc: "Empty or all whitespace? (Java 11+)", ex: '"  ".isBlank()', out: "true" },
+        { name: "s.equals(o)", desc: "Content equality — ALWAYS use this, not ==.", ex: 's.equals("hello world")', out: "true" },
+        { name: "s.equalsIgnoreCase(o)", desc: "Case-insensitive content equality.", ex: '"HI".equalsIgnoreCase("hi")', out: "true" },
+        { name: "s.compareTo(o)", desc: "Lexicographic: <0 / 0 / >0.", ex: '"a".compareTo("b")', out: "-1" },
+        { name: "s.toUpperCase / toLowerCase", desc: "Case conversion (new string).", ex: '"Hi".toUpperCase()', out: '"HI"' },
+        { name: "s.trim()", desc: "Remove leading/trailing ASCII whitespace.", ex: '"  hi  ".trim()', out: '"hi"' },
+        { name: "s.strip()", desc: "Unicode-aware trim (Java 11+, prefer this).", ex: '"  hi  ".strip()', out: '"hi"' },
+        { name: "s.replace(a, b)", desc: "Replace ALL occurrences (literal, not regex).", ex: '"aaa".replace("a", "b")', out: '"bbb"' },
+        { name: "s.replaceAll(regex, r)", desc: "Regex replace all.", ex: '"a1b2".replaceAll("\\\\d", "#")', out: '"a#b#"' },
+        { name: "s.split(regex)", desc: "Split by REGEX into a String[].", ex: 's.split(" ")', out: '["hello", "world"]', note: 's.split(".") splits on EVERY char (. = any char in regex). Use split("\\\\.") for a literal dot.' },
+        { name: "s.split(regex, limit)", desc: "At most `limit` pieces.", ex: '"a,b,c".split(",", 2)', out: '["a", "b,c"]' },
+        { name: "s.toCharArray()", desc: "String -> char[] for index work.", ex: '"abc".toCharArray()', out: "['a','b','c']" },
+        { name: "s.repeat(n)", desc: "Concatenate s n times (Java 11+).", ex: '"ab".repeat(3)', out: '"ababab"' },
+        { name: "String.join(sep, parts)", desc: "Static — glue items with a separator.", ex: 'String.join("-", "a", "b", "c")', out: '"a-b-c"' },
+        { name: "String.format(fmt, ...)", desc: "Static — build via format specifiers.", ex: 'String.format("%03d", 7)', out: '"007"' },
+      ],
+    },
+    {
+      id: "java-stringbuilder",
+      title: "StringBuilder (mutable)",
+      intro: "Assume StringBuilder sb = new StringBuilder(\"abc\"). Mutates in place — use this to build strings, never += in a loop (that's O(n²)).",
+      methods: [
+        { name: "sb.append(x)", desc: "Append any type; chainable; amortized O(1).", ex: 'sb.append("d").append(1)', out: '"abcd1"' },
+        { name: "sb.insert(i, x)", desc: "Insert at index i (O(n), shifts right).", ex: 'sb.insert(0, "X")', out: '"Xabc"' },
+        { name: "sb.deleteCharAt(i)", desc: "Remove the char at index i.", ex: "sb.deleteCharAt(0)", out: '"bc"' },
+        { name: "sb.delete(i, j)", desc: "Remove range [i, j).", ex: "sb.delete(1, 3)", out: '"a"' },
+        { name: "sb.setCharAt(i, c)", desc: "Overwrite one char in place.", ex: "sb.setCharAt(0, 'Z')", out: '"Zbc"' },
+        { name: "sb.charAt(i)", desc: "Read a char.", ex: "sb.charAt(1)", out: "'b'" },
+        { name: "sb.reverse()", desc: "Reverse in place — palindrome/digit tricks.", ex: 'new StringBuilder("abc").reverse()', out: '"cba"' },
+        { name: "sb.length()", desc: "Current length.", ex: "sb.length()", out: "3" },
+        { name: "sb.setLength(n)", desc: "Truncate/extend. setLength(len-1) = drop last char, O(1).", ex: "sb.setLength(2)", out: '"ab"' },
+        { name: "sb.toString()", desc: "Convert to an immutable String at the end.", ex: "sb.toString()", out: '"abc"' },
+      ],
+    },
+    {
+      id: "java-char",
+      title: "Character & Integer statics",
+      intro: "Classify/convert chars without regex. `c - 'a'` maps 'a'..'z' to 0..25 — the key to frequency arrays.",
+      methods: [
+        { name: "Character.isDigit(c)", desc: "Is '0'-'9'?", ex: "Character.isDigit('7')", out: "true" },
+        { name: "Character.isLetter(c)", desc: "Is a letter?", ex: "Character.isLetter('a')", out: "true" },
+        { name: "Character.isLetterOrDigit(c)", desc: "Alphanumeric?", ex: "Character.isLetterOrDigit('#')", out: "false" },
+        { name: "Character.isUpperCase / isLowerCase", desc: "Case test.", ex: "Character.isUpperCase('A')", out: "true" },
+        { name: "Character.toLowerCase / toUpperCase", desc: "Convert one char.", ex: "Character.toUpperCase('a')", out: "'A'" },
+        { name: "Character.getNumericValue(c)", desc: "Digit char -> its int value.", ex: "Character.getNumericValue('7')", out: "7" },
+        { name: "(int) c", desc: "Char -> code point.", ex: "(int) 'a'", out: "97" },
+        { name: "c - 'a'", desc: "Map lowercase letter to 0..25 (freq-array index).", ex: "'c' - 'a'", out: "2" },
+        { name: "Integer.bitCount(x)", desc: "Number of set (1) bits.", ex: "Integer.bitCount(7)", out: "3" },
+        { name: "Integer.toBinaryString(x)", desc: "Binary text.", ex: "Integer.toBinaryString(5)", out: '"101"' },
+        { name: "Integer.compare(a, b)", desc: "Overflow-safe comparison for comparators.", ex: "Integer.compare(2, 5)", out: "-1" },
       ],
     },
     {
       id: "java-array",
       title: "Arrays",
-      snippets: [
-        {
-          title: "Create & init",
-          code: `int[] a = new int[n];               // all 0
-int[] b = {1, 2, 3};
-int[][] grid = new int[r][c];       // all 0
-Arrays.fill(a, -1);                 // fill with value
-int[][] g = new int[3][];           // jagged`,
-        },
-        {
-          title: "Arrays utility",
-          code: `Arrays.sort(a);                     // ascending (primitives)
-Arrays.sort(arr, Collections.reverseOrder());  // needs Integer[]
-Arrays.sort(a, 0, k);               // sort range [0, k)
-Arrays.binarySearch(a, key);        // sorted only
-int[] c = Arrays.copyOf(a, len);    // pad/truncate
-int[] d = Arrays.copyOfRange(a, i, j);          // slice [i, j)
-Arrays.equals(a, b);
-Arrays.toString(a);                 // print 1D
-Arrays.deepToString(grid);          // print 2D`,
-        },
+      intro: "Assume int[] a = {3, 1, 2}. Fixed length, default 0/false/null. `java.util.Arrays` holds the algorithms.",
+      methods: [
+        { name: "new int[n]", desc: "Length n, all zeros.", ex: "new int[3]", out: "{0, 0, 0}" },
+        { name: "a.length", desc: "Length — a FIELD (no parens), unlike String.length().", ex: "a.length", out: "3" },
+        { name: "Arrays.sort(a)", desc: "Ascending, in place. No comparator for primitives!", ex: "Arrays.sort(a)", out: "{1, 2, 3}" },
+        { name: "Arrays.sort(a, from, to)", desc: "Sort only range [from, to).", ex: "Arrays.sort(a, 0, 2)", out: "{1, 3, 2}" },
+        { name: "Arrays.fill(a, v)", desc: "Set every slot to v.", ex: "Arrays.fill(a, -1)", out: "{-1, -1, -1}" },
+        { name: "Arrays.copyOf(a, len)", desc: "Copy, padding with 0 or truncating.", ex: "Arrays.copyOf(a, 4)", out: "{3, 1, 2, 0}" },
+        { name: "Arrays.copyOfRange(a, i, j)", desc: "Slice [i, j).", ex: "Arrays.copyOfRange(a, 0, 2)", out: "{3, 1}" },
+        { name: "Arrays.binarySearch(a, key)", desc: "O(log n) — array must be SORTED first.", ex: "Arrays.binarySearch(new int[]{1,2,3}, 2)", out: "1" },
+        { name: "Arrays.equals(a, b)", desc: "Element-wise equality (== compares refs!).", ex: "Arrays.equals(a, new int[]{3,1,2})", out: "true" },
+        { name: "Arrays.toString(a)", desc: "Printable form for 1D.", ex: "Arrays.toString(a)", out: '"[3, 1, 2]"' },
+        { name: "Arrays.deepToString(grid)", desc: "Printable form for 2D/nested.", ex: "Arrays.deepToString(new int[][]{{1,2}})", out: '"[[1, 2]]"' },
+        { name: "Arrays.stream(a).sum() / max()", desc: "Reduce a primitive array.", ex: "Arrays.stream(a).sum()", out: "6" },
+        { name: "a.clone()", desc: "Shallow copy of the array.", ex: "a.clone()", out: "{3, 1, 2}" },
+        { name: "Arrays.asList(boxed)", desc: "FIXED-SIZE List view of an Integer[].", ex: "Arrays.asList(1, 2, 3)", out: "[1, 2, 3]", note: "On a primitive int[] this returns a List<int[]> of size 1! Only use with Integer[] / objects." },
+        { name: "int[][] dirs = {{-1,0},{1,0},{0,-1},{0,1}}", desc: "Grid neighbor offsets — loop these instead of 4 if-blocks.", ex: "for (int[] d : dirs) { nr=r+d[0]; nc=c+d[1]; }" },
       ],
     },
     {
       id: "java-list",
-      title: "ArrayList (List)",
-      snippets: [
-        {
-          title: "Everyday list",
-          note: "Default container. O(1) get, O(1) amortized add at end.",
-          code: `List<Integer> list = new ArrayList<>();
-list.add(5);            // append
-list.add(0, 9);         // insert at index
-list.get(0);            // read
-list.set(0, 7);         // replace
-list.remove(0);         // by INDEX
-list.remove(Integer.valueOf(7)); // by VALUE (careful!)
-list.size();
-list.contains(5);
-list.indexOf(5);
-Collections.sort(list);
-list.sort((x, y) -> y - x);       // custom (desc)
-for (int x : list) { ... }`,
-        },
-        {
-          title: "List <-> array",
-          code: `List<Integer> l = new ArrayList<>(Arrays.asList(1, 2, 3));
-Integer[] arr = l.toArray(new Integer[0]);
-List<int[]> pairs = new ArrayList<>();
-pairs.add(new int[]{1, 2});`,
-        },
+      title: "List — ArrayList",
+      intro: "Assume List<Integer> l = [3, 1, 2]. Backed by a resizable array: O(1) get/set, O(n) middle insert/remove. Default container.",
+      methods: [
+        { name: "l.add(e)", desc: "Append to end, O(1) amortized.", ex: "l.add(5)", out: "[3, 1, 2, 5]" },
+        { name: "l.add(i, e)", desc: "Insert at index i, O(n).", ex: "l.add(1, 9)", out: "[3, 9, 1, 2]" },
+        { name: "l.get(i)", desc: "Read at index, O(1).", ex: "l.get(0)", out: "3" },
+        { name: "l.set(i, e)", desc: "Replace at index; returns OLD value.", ex: "l.set(0, 7)", out: "3  (l = [7, 1, 2])" },
+        { name: "l.remove(int i)", desc: "Remove by INDEX.", ex: "l.remove(0)", out: "3  (l = [1, 2])" },
+        { name: "l.remove(Object o)", desc: "Remove by VALUE — must box!", ex: "l.remove(Integer.valueOf(1))", out: "true  (l = [3, 2])", note: "l.remove(1) calls remove(index)! Box the value: remove(Integer.valueOf(1))." },
+        { name: "l.indexOf(o)", desc: "First index of value, -1 if absent. O(n).", ex: "l.indexOf(1)", out: "1" },
+        { name: "l.contains(o)", desc: "Value present? O(n).", ex: "l.contains(2)", out: "true" },
+        { name: "l.size() / l.isEmpty()", desc: "Count / emptiness.", ex: "l.size()", out: "3" },
+        { name: "l.clear()", desc: "Remove everything.", ex: "l.clear()", out: "[]" },
+        { name: "Collections.sort(l)", desc: "Ascending, stable.", ex: "Collections.sort(l)", out: "[1, 2, 3]" },
+        { name: "l.sort(cmp)", desc: "Custom order.", ex: "l.sort((a, b) -> b - a)", out: "[3, 2, 1]" },
+        { name: "l.removeIf(pred)", desc: "Delete all matching — safe during iteration.", ex: "l.removeIf(x -> x < 2)", out: "[3, 2]" },
+        { name: "l.replaceAll(op)", desc: "In-place map over every element.", ex: "l.replaceAll(x -> x * 10)", out: "[30, 10, 20]" },
+        { name: "l.subList(i, j)", desc: "LIVE VIEW of [i, j) — mutations write through!", ex: "l.subList(0, 2)", out: "[3, 1]", note: "Not a copy. Wrap in new ArrayList<>(l.subList(i,j)) if you need an independent list." },
+        { name: "l.toArray(new Integer[0])", desc: "List -> array.", ex: "l.toArray(new Integer[0])", out: "Integer[]{3, 1, 2}" },
+        { name: "List.of(...)", desc: "IMMUTABLE list — add/set throw.", ex: "List.of(1, 2, 3)", out: "[1, 2, 3]" },
+        { name: "new ArrayList<>(List.of(...))", desc: "Mutable copy of an immutable list.", ex: "new ArrayList<>(List.of(1, 2))", out: "[1, 2]  (resizable)" },
+        { name: "Iterator + it.remove()", desc: "Only safe way to delete mid-loop besides removeIf.", ex: "var it = l.iterator();\nwhile (it.hasNext()) if (it.next()<0) it.remove();", note: "Removing in a for-each throws ConcurrentModificationException." },
       ],
     },
     {
       id: "java-deque",
-      title: "Stack / Queue / Deque",
-      snippets: [
-        {
-          title: "ArrayDeque — use for BOTH stack and queue",
-          note: "Faster than Stack/LinkedList. No nulls allowed.",
-          code: `Deque<Integer> dq = new ArrayDeque<>();
-
-// as STACK (LIFO):
-dq.push(1);     // add front
-dq.pop();       // remove front
-dq.peek();      // look front
-
-// as QUEUE (FIFO):
-dq.offer(1);    // add back
-dq.poll();      // remove front -> null if empty
-dq.peek();      // look front
-
-// both ends:
-dq.offerFirst(x); dq.offerLast(x);
-dq.pollFirst();   dq.pollLast();
-dq.peekFirst();   dq.peekLast();`,
-        },
+      title: "Deque — Stack & Queue (ArrayDeque)",
+      intro: "Deque<Integer> dq = new ArrayDeque<>(). Faster than Stack/LinkedList. No nulls. Use for stack, queue, and sliding-window deque.",
+      methods: [
+        { name: "dq.push(e)", desc: "STACK: add to front (= addFirst).", ex: "dq.push(1); dq.push(2)", out: "front -> [2, 1]" },
+        { name: "dq.pop()", desc: "STACK: remove from front. Throws if empty.", ex: "dq.pop()", out: "2" },
+        { name: "dq.peek()", desc: "Look at front without removing. null if empty.", ex: "dq.peek()", out: "2" },
+        { name: "dq.offer(e)", desc: "QUEUE: add to back (= offerLast).", ex: "dq.offer(1); dq.offer(2)", out: "[1, 2]" },
+        { name: "dq.poll()", desc: "QUEUE: remove from front. null if empty.", ex: "dq.poll()", out: "1" },
+        { name: "dq.offerFirst / offerLast", desc: "Add to a specific end (both O(1)).", ex: "dq.offerLast(9)" },
+        { name: "dq.pollFirst / pollLast", desc: "Remove from a specific end; null if empty.", ex: "dq.pollLast()" },
+        { name: "dq.peekFirst / peekLast", desc: "Look at a specific end; null if empty.", ex: "dq.peekLast()" },
+        { name: "dq.isEmpty() / dq.size()", desc: "Emptiness / count.", ex: "dq.size()", out: "2" },
+        { name: "throwing vs null family", desc: "add/remove/getFirst THROW on empty; offer/poll/peek return false/null.", note: "Prefer offer/poll/peek in algorithms so empty is a value, not an exception." },
       ],
     },
     {
       id: "java-heap",
       title: "PriorityQueue (heap)",
-      snippets: [
-        {
-          title: "Min-heap (DEFAULT) & max-heap",
-          note: "Java default is MIN-heap (smallest on top). C++ is the opposite!",
-          code: `PriorityQueue<Integer> min = new PriorityQueue<>();   // min-heap
-PriorityQueue<Integer> max =
-    new PriorityQueue<>(Collections.reverseOrder());  // max-heap
-
-min.offer(5); min.offer(1);
-min.peek();    // 1  (smallest)
-min.poll();    // 1  (remove smallest)
-min.size();`,
-        },
-        {
-          title: "Heap of custom objects / by a key",
-          code: `// min-heap of int[] by first element:
-PriorityQueue<int[]> pq =
-    new PriorityQueue<>((x, y) -> x[0] - y[0]);
-
-// k largest -> keep a min-heap of size k:
-PriorityQueue<Integer> kh = new PriorityQueue<>();
-for (int v : nums) { kh.offer(v); if (kh.size() > k) kh.poll(); }`,
-        },
+      intro: "MIN-heap by default (opposite of C++). offer/poll O(log n), peek O(1). Iteration is NOT sorted — only the head is ordered.",
+      methods: [
+        { name: "new PriorityQueue<>()", desc: "Min-heap (smallest on top).", ex: "pq.offer(5); pq.offer(1); pq.peek()", out: "1" },
+        { name: "new PriorityQueue<>(Collections.reverseOrder())", desc: "Max-heap (largest on top).", ex: "max.offer(5); max.offer(1); max.peek()", out: "5" },
+        { name: "pq.offer(e) / add(e)", desc: "Insert, O(log n).", ex: "pq.offer(3)" },
+        { name: "pq.poll()", desc: "Remove and return the head, O(log n).", ex: "// heap {1,3,5}\npq.poll()", out: "1" },
+        { name: "pq.peek()", desc: "View the head, O(1). null if empty.", ex: "pq.peek()", out: "1" },
+        { name: "pq.size() / isEmpty()", desc: "Count / emptiness.", ex: "pq.size()", out: "3" },
+        { name: "new PriorityQueue<>((a, b) -> ...)", desc: "Custom order (objects, arrays, multi-key).", ex: "// min-heap of int[] by a[0]:\nnew PriorityQueue<>((a, b) -> a[0] - b[0])" },
+        { name: "Comparator chain", desc: "Order by field, with tie-breakers.", ex: "new PriorityQueue<>(\n  (a,b) -> a[1]!=b[1] ? b[1]-a[1] : a[0]-b[0])" },
+        { name: "pq.remove(o) / contains(o)", desc: "Arbitrary element — O(n)!", note: "The heap only accelerates the ROOT. Don't rely on remove(x)/contains(x) in a hot loop." },
+        { name: "k-largest idiom", desc: "Keep a MIN-heap capped at size k.", ex: "for (int v : nums) {\n  pq.offer(v);\n  if (pq.size() > k) pq.poll();\n}\n// pq.peek() = k-th largest" },
       ],
     },
     {
       id: "java-map",
-      title: "HashMap & HashSet",
-      snippets: [
-        {
-          title: "HashMap",
-          code: `Map<String, Integer> m = new HashMap<>();
-m.put("a", 1);
-m.get("a");                 // 1   (null if absent)
-m.getOrDefault("z", 0);     // 0   (no null check)
-m.containsKey("a");
-m.remove("a");
-m.putIfAbsent("a", 9);
-for (Map.Entry<String,Integer> e : m.entrySet())
-    System.out.println(e.getKey() + "=" + e.getValue());
-m.forEach((k, v) -> { ... });`,
-        },
-        {
-          title: "The two idioms to memorize",
-          note: "merge = frequency count. computeIfAbsent = group into buckets.",
-          code: `// frequency count:
-for (int x : nums) m.merge(x, 1, Integer::sum);
-
-// group into lists (map of lists):
-Map<Integer, List<String>> g = new HashMap<>();
-g.computeIfAbsent(key, k -> new ArrayList<>()).add(value);`,
-        },
-        {
-          title: "HashSet",
-          code: `Set<Integer> set = new HashSet<>();
-set.add(1);
-set.contains(1);
-set.remove(1);
-set.size();
-Set<Integer> b = new HashSet<>(listA);   // dedupe a list`,
-        },
+      title: "HashMap",
+      intro: "Assume Map<String,Integer> m = {a=1, b=2}. O(1) average get/put/remove. containsValue is O(n).",
+      methods: [
+        { name: "m.put(k, v)", desc: "Insert/overwrite; returns PREVIOUS value or null.", ex: 'm.put("a", 9)', out: "1  (m = {a=9, b=2})" },
+        { name: "m.get(k)", desc: "Value, or null if absent (no exception).", ex: 'm.get("a")', out: "1" },
+        { name: "m.getOrDefault(k, def)", desc: "Value, or a default — skips the null check.", ex: 'm.getOrDefault("z", 0)', out: "0" },
+        { name: "m.containsKey(k)", desc: "Key present? O(1).", ex: 'm.containsKey("a")', out: "true" },
+        { name: "m.containsValue(v)", desc: "Value present? O(n).", ex: "m.containsValue(2)", out: "true" },
+        { name: "m.remove(k)", desc: "Delete a key; returns its value or null.", ex: 'm.remove("a")', out: "1" },
+        { name: "m.putIfAbsent(k, v)", desc: "Set only if the key is missing.", ex: 'm.putIfAbsent("a", 99)', out: "1  (unchanged)" },
+        { name: "m.merge(k, v, fn)", desc: "FREQUENCY COUNT: insert v, or combine with the old value.", ex: 'm.merge("a", 1, Integer::sum)', out: "2  (m = {a=2, ...})" },
+        { name: "m.computeIfAbsent(k, fn)", desc: "MAP-OF-LISTS: create+cache on first access, return it.", ex: 'g.computeIfAbsent(1, x -> new ArrayList<>()).add(2)', out: "{1=[2]}" },
+        { name: "m.compute(k, (k,v) -> ...)", desc: "Transform present-or-absent value uniformly.", ex: 'm.compute("a", (k,v) -> v==null?1:v+1)', out: "2" },
+        { name: "m.computeIfPresent(k, fn)", desc: "Update only if the key exists.", ex: 'm.computeIfPresent("a", (k,v) -> v*10)', out: "10" },
+        { name: "m.entrySet()", desc: "Iterate key+value pairs.", ex: "for (var e : m.entrySet())\n  use(e.getKey(), e.getValue());" },
+        { name: "m.keySet() / m.values()", desc: "Live views of keys / values.", ex: "m.keySet()", out: "[a, b]" },
+        { name: "m.forEach((k, v) -> ...)", desc: "Lambda iteration.", ex: "m.forEach((k, v) -> print(k, v));" },
+        { name: "m.getOrDefault + array/list", desc: "Common: build adjacency or counts without null checks.", ex: 'freq.merge(c, 1, Integer::sum);  // count chars' },
+      ],
+    },
+    {
+      id: "java-set",
+      title: "HashSet & LinkedHashSet",
+      intro: "Assume Set<Integer> s = {1, 2}. O(1) add/contains/remove, no order. LinkedHashSet keeps insertion order.",
+      methods: [
+        { name: "s.add(e)", desc: "Insert; returns FALSE if already present (doubles as a check).", ex: "s.add(1)", out: "false  (already there)" },
+        { name: "s.contains(e)", desc: "Membership, O(1).", ex: "s.contains(2)", out: "true" },
+        { name: "s.remove(e)", desc: "Delete; returns whether it was present.", ex: "s.remove(2)", out: "true  (s = {1})" },
+        { name: "s.size() / isEmpty()", desc: "Count / emptiness.", ex: "s.size()", out: "2" },
+        { name: "new HashSet<>(list)", desc: "Dedupe a list (order NOT preserved).", ex: "new HashSet<>(List.of(1,1,2))", out: "{1, 2}" },
+        { name: "new LinkedHashSet<>(list)", desc: "Dedupe AND preserve first-seen order.", ex: "new LinkedHashSet<>(List.of(4,1,4,2))", out: "[4, 1, 2]" },
+        { name: "s.addAll(b)", desc: "UNION into s.", ex: "s.addAll(Set.of(2, 3))", out: "{1, 2, 3}" },
+        { name: "s.retainAll(b)", desc: "INTERSECTION (keep only common).", ex: "s.retainAll(Set.of(2, 3))", out: "{2}" },
+        { name: "s.removeAll(b)", desc: "DIFFERENCE (remove b's elements).", ex: "s.removeAll(Set.of(2))", out: "{1}" },
       ],
     },
     {
       id: "java-tree",
       title: "TreeMap & TreeSet (sorted)",
-      snippets: [
-        {
-          title: "Sorted, with nearest-key search",
-          note: "Use these when you need order or 'find nearest value'. All O(log n).",
-          code: `TreeMap<Integer, String> tm = new TreeMap<>();
-tm.firstKey(); tm.lastKey();
-tm.floorKey(x);    // greatest key <= x  (null if none)
-tm.ceilingKey(x);  // smallest key >= x
-tm.lowerKey(x);    // greatest key <  x  (strict)
-tm.higherKey(x);   // smallest key >  x  (strict)
-
-TreeSet<Integer> ts = new TreeSet<>();
-ts.add(5);
-ts.first(); ts.last();
-ts.floor(x); ts.ceiling(x); ts.lower(x); ts.higher(x);
-ts.pollFirst(); ts.pollLast();`,
-        },
+      intro: "Assume TreeMap tm with keys {10, 20, 30}. Red-black tree: O(log n), sorted iteration, and nearest-key search a HashMap can't do.",
+      methods: [
+        { name: "tm.firstKey() / lastKey()", desc: "Min / max key.", ex: "tm.firstKey()", out: "10" },
+        { name: "tm.floorKey(x)", desc: "Greatest key <= x, else null.", ex: "tm.floorKey(25)", out: "20" },
+        { name: "tm.ceilingKey(x)", desc: "Smallest key >= x, else null.", ex: "tm.ceilingKey(25)", out: "30" },
+        { name: "tm.lowerKey(x)", desc: "Greatest key < x (strict).", ex: "tm.lowerKey(20)", out: "10" },
+        { name: "tm.higherKey(x)", desc: "Smallest key > x (strict).", ex: "tm.higherKey(20)", out: "30", note: "All four return null if none exists — check before unboxing to int." },
+        { name: "tm.floorEntry / ceilingEntry", desc: "Same, but returns the whole Entry (key+value).", ex: "tm.floorEntry(25).getValue()" },
+        { name: "tm.pollFirstEntry / pollLastEntry", desc: "Remove-and-return the extreme entry.", ex: "tm.pollFirstEntry()" },
+        { name: "tm.headMap / tailMap / subMap", desc: "Live range VIEWS by key.", ex: "tm.subMap(10, 30)", out: "{10=.., 20=..}" },
+        { name: "tm.descendingMap()", desc: "Reverse-order view.", ex: "tm.descendingMap()", out: "{30.., 20.., 10..}" },
+        { name: "ts.floor/ceiling/lower/higher(x)", desc: "TreeSet nearest-value queries.", ex: "ts.ceiling(12)  // {5,10,15}", out: "15" },
+        { name: "ts.first / last / pollFirst / pollLast", desc: "Ends of a TreeSet.", ex: "ts.first()", out: "5" },
+        { name: "new TreeMap<>(cmp)", desc: "Custom order (e.g. reverse).", ex: "new TreeMap<>(Collections.reverseOrder())" },
       ],
     },
     {
-      id: "java-sort",
-      title: "Sorting & Comparators",
-      snippets: [
-        {
-          title: "Comparators",
-          code: `list.sort(Comparator.naturalOrder());
-list.sort(Comparator.reverseOrder());
-people.sort(Comparator.comparingInt(p -> p.age));
-people.sort(Comparator.comparing((Person p) -> p.name)
-                      .thenComparingInt(p -> p.age));   // tie-break
-people.sort(Comparator.comparingInt((Person p) -> p.age).reversed());`,
-        },
+      id: "java-linkedhashmap",
+      title: "LinkedHashMap & the LRU hack",
+      intro: "A HashMap that also remembers order — insertion order by default, or access order (for LRU) with the 3-arg constructor.",
+      methods: [
+        { name: "new LinkedHashMap<>()", desc: "Predictable INSERTION-order iteration.", ex: 'put("b",1); put("a",2)', out: "iterates b, a" },
+        { name: "new LinkedHashMap<>(16, .75f, true)", desc: "ACCESS order — get() moves a key to the end.", ex: "get(\"a\") refreshes a's recency" },
+        { name: "override removeEldestEntry", desc: "Return true to auto-evict the oldest — a full LRU cache.", ex: "protected boolean removeEldestEntry(e) {\n  return size() > capacity;\n}" },
+        { name: "LRU cache (complete)", desc: "accessOrder + removeEldestEntry = LeetCode 146 in ~10 lines.", ex: "class LRU extends LinkedHashMap<Integer,Integer> {\n  int cap;\n  LRU(int c){ super(16,.75f,true); cap=c; }\n  int get(int k){ return getOrDefault(k,-1); }\n  protected boolean removeEldestEntry(var e){\n    return size() > cap;\n  }\n}" },
       ],
     },
     {
-      id: "java-math",
-      title: "Math & numbers",
-      snippets: [
-        {
-          title: "Math",
-          code: `Math.max(a, b); Math.min(a, b); Math.abs(x);
-Math.pow(2, 10);   // double 1024.0
-Math.sqrt(x);
-Math.floorDiv(7, 2);  // 3
-Math.floorMod(-1, 5); // 4  (true modulo)
-Integer.MAX_VALUE; Integer.MIN_VALUE;
-Long.MAX_VALUE;       // for overflow safety`,
-        },
+      id: "java-collections",
+      title: "Collections utility",
+      intro: "Static algorithms over any Collection. Assume List<Integer> l = [3, 1, 2].",
+      methods: [
+        { name: "Collections.sort(l) / sort(l, cmp)", desc: "Stable sort (Timsort).", ex: "Collections.sort(l)", out: "[1, 2, 3]" },
+        { name: "Collections.reverse(l)", desc: "Reverse in place.", ex: "Collections.reverse(l)", out: "[2, 1, 3]" },
+        { name: "Collections.max(c) / min(c)", desc: "Extreme element (optional Comparator).", ex: "Collections.max(l)", out: "3" },
+        { name: "Collections.frequency(c, x)", desc: "Count occurrences.", ex: "Collections.frequency(List.of(1,1,2), 1)", out: "2" },
+        { name: "Collections.binarySearch(l, key)", desc: "O(log n) — list must be sorted.", ex: "Collections.binarySearch(List.of(1,2,3), 2)", out: "1" },
+        { name: "Collections.swap(l, i, j)", desc: "Swap two indices.", ex: "Collections.swap(l, 0, 2)" },
+        { name: "Collections.nCopies(n, e)", desc: "Immutable list of n copies.", ex: "Collections.nCopies(3, 0)", out: "[0, 0, 0]" },
+        { name: "Collections.shuffle(l)", desc: "Random permutation in place.", ex: "Collections.shuffle(l)" },
+        { name: "Collections.disjoint(a, b)", desc: "True if no shared element.", ex: "Collections.disjoint([1], [2])", out: "true" },
+        { name: "Collections.reverseOrder()", desc: "A descending Comparator.", ex: "l.sort(Collections.reverseOrder())" },
+      ],
+    },
+    {
+      id: "java-comparator",
+      title: "Comparator & Sorting",
+      intro: "Build sort orders declaratively. compare(a,b) < 0 means 'a comes before b'.",
+      methods: [
+        { name: "Comparator.naturalOrder() / reverseOrder()", desc: "Ascending / descending default.", ex: "l.sort(Comparator.reverseOrder())" },
+        { name: "Comparator.comparingInt(keyFn)", desc: "Order by an int field.", ex: "people.sort(Comparator.comparingInt(p -> p.age))" },
+        { name: "Comparator.comparing(keyFn)", desc: "Order by any Comparable field.", ex: "people.sort(Comparator.comparing(p -> p.name))" },
+        { name: ".thenComparing(keyFn)", desc: "Tie-breaker chain.", ex: "comparing(p -> p.name).thenComparingInt(p -> p.age)" },
+        { name: ".reversed()", desc: "Flip any comparator.", ex: "comparingInt((P p) -> p.age).reversed()" },
+        { name: "Comparator.nullsFirst(cmp)", desc: "Sort nulls first instead of NPE.", ex: "l.sort(nullsFirst(naturalOrder()))" },
+        { name: "sort 2D int[][]", desc: "int[][] IS objects, so Comparator works here.", ex: "Arrays.sort(intervals, (a, b) -> a[0] - b[0])" },
+        { name: "sort int[] descending", desc: "No Comparator for primitives — box first.", ex: "Integer[] b = Arrays.stream(a).boxed().toArray(Integer[]::new);\nArrays.sort(b, Collections.reverseOrder());", note: "Arrays.sort(int[], cmp) does NOT exist. Box to Integer[], or sort an index array." },
+      ],
+    },
+    {
+      id: "java-mathbits",
+      title: "Math & Bit Manipulation",
+      intro: "Numeric helpers and bit tricks. floorMod gives a TRUE (non-negative) modulo.",
+      methods: [
+        { name: "Math.max / min / abs", desc: "Basic numeric ops.", ex: "Math.max(3, 7)", out: "7" },
+        { name: "Math.pow(a, b)", desc: "Returns a DOUBLE — cast for an int result.", ex: "(int) Math.pow(2, 10)", out: "1024" },
+        { name: "Math.sqrt / cbrt", desc: "Roots.", ex: "Math.sqrt(16)", out: "4.0" },
+        { name: "Math.floorDiv(a, b)", desc: "Floored division (differs from / for negatives).", ex: "Math.floorDiv(-7, 2)", out: "-4" },
+        { name: "Math.floorMod(a, b)", desc: "TRUE modulo — always non-negative.", ex: "Math.floorMod(-1, 5)", out: "4", note: "-1 % 5 is -1 in Java. Use floorMod for circular indexing." },
+        { name: "1 << k", desc: "2^k.", ex: "1 << 4", out: "16" },
+        { name: "x & (x - 1)", desc: "Clear the lowest set bit.", ex: "12 & 11", out: "8" },
+        { name: "(x & (x - 1)) == 0", desc: "Is x a power of two? (x != 0).", ex: "(8 & 7) == 0", out: "true" },
+        { name: "x & -x", desc: "Isolate the lowest set bit.", ex: "12 & -12", out: "4" },
+        { name: "x >> 1  vs  x >>> 1", desc: "Arithmetic (keeps sign) vs logical (fills 0) shift.", ex: "-8 >> 1  vs  -8 >>> 1", out: "-4  vs  2147483644" },
+        { name: "a ^ b ^ a", desc: "XOR self-cancels -> b. Basis of 'single number'.", ex: "5 ^ 3 ^ 5", out: "3" },
       ],
     },
     {
       id: "java-stream",
-      title: "Streams (one-liners)",
-      snippets: [
-        {
-          title: "Common pipelines",
-          code: `int sum = Arrays.stream(a).sum();
-int max = Arrays.stream(a).max().getAsInt();
-List<Integer> evens = list.stream()
-    .filter(x -> x % 2 == 0).collect(Collectors.toList());
-Map<Boolean, List<Integer>> parts = list.stream()
-    .collect(Collectors.partitioningBy(x -> x > 0));
-String joined = list.stream().map(String::valueOf)
-    .collect(Collectors.joining(", "));`,
-        },
+      title: "Streams",
+      intro: "Lazy pipelines: intermediate ops (filter/map/sorted) then a terminal op (collect/sum/count). Assume List<Integer> l = [1, 2, 3, 4].",
+      methods: [
+        { name: ".filter(pred)", desc: "Keep matching elements.", ex: "l.stream().filter(x -> x%2==0).toList()", out: "[2, 4]" },
+        { name: ".map(fn)", desc: "Transform each element.", ex: "l.stream().map(x -> x*x).toList()", out: "[1, 4, 9, 16]" },
+        { name: ".mapToInt(fn).sum()", desc: "Reduce to a primitive sum.", ex: "l.stream().mapToInt(x -> x).sum()", out: "10" },
+        { name: "Arrays.stream(a).max()", desc: "Max — returns an OptionalInt.", ex: "Arrays.stream(a).max().getAsInt()", out: "4" },
+        { name: ".anyMatch / allMatch / noneMatch", desc: "Boolean tests.", ex: "l.stream().anyMatch(x -> x > 3)", out: "true" },
+        { name: ".count()", desc: "Number of elements (after filtering).", ex: "l.stream().filter(x -> x>2).count()", out: "2" },
+        { name: ".sorted() / .distinct()", desc: "Sort / dedupe the stream.", ex: "Stream.of(3,1,3).distinct().sorted().toList()", out: "[1, 3]" },
+        { name: ".collect(Collectors.toList()) / .toList()", desc: "Materialize into a List.", ex: "l.stream().map(x -> x+1).toList()", out: "[2, 3, 4, 5]" },
+        { name: "Collectors.joining(sep)", desc: "Concatenate strings.", ex: 'l.stream().map(String::valueOf)\n  .collect(Collectors.joining(","))', out: '"1,2,3,4"' },
+        { name: "Collectors.groupingBy(keyFn)", desc: "Bucket by key -> Map<K, List<V>>.", ex: "words.stream().collect(groupingBy(String::length))" },
+        { name: "Collectors.groupingBy(k, counting())", desc: "Count per group.", ex: "s.chars().boxed()\n  .collect(groupingBy(c->c, counting()))" },
+        { name: "Collectors.partitioningBy(pred)", desc: "Split into true/false buckets.", ex: "l.stream().collect(partitioningBy(x -> x>2))", out: "{false=[1,2], true=[3,4]}" },
+      ],
+    },
+    {
+      id: "java-idioms",
+      title: "Interview idioms & hacks",
+      intro: "Full working patterns you'll reuse constantly.",
+      methods: [
+        { name: "Frequency count (array)", desc: "Fastest when the alphabet is small & known.", ex: "int[] f = new int[26];\nfor (char c : s.toCharArray()) f[c - 'a']++;" },
+        { name: "Frequency count (map)", desc: "Any key type.", ex: 'Map<Character,Integer> f = new HashMap<>();\nfor (char c : s.toCharArray())\n  f.merge(c, 1, Integer::sum);' },
+        { name: "Adjacency list (graph)", desc: "Build with computeIfAbsent.", ex: "Map<Integer,List<Integer>> g = new HashMap<>();\nfor (int[] e : edges) {\n  g.computeIfAbsent(e[0], k -> new ArrayList<>()).add(e[1]);\n  g.computeIfAbsent(e[1], k -> new ArrayList<>()).add(e[0]);\n}" },
+        { name: "Dedupe, keep order", desc: "LinkedHashSet round-trip.", ex: "new ArrayList<>(new LinkedHashSet<>(nums))", out: "[4, 1, 2, 3] from [4,1,4,2,1,3]" },
+        { name: "Monotonic stack (next greater)", desc: "Stack of indices, decreasing by value.", ex: "Deque<Integer> st = new ArrayDeque<>();\nfor (int i = 0; i < n; i++) {\n  while (!st.isEmpty() && nums[st.peek()] < nums[i])\n    res[st.pop()] = nums[i];\n  st.push(i);\n}", out: "nextGreater([2,1,3]) = [3, 3, -1]" },
+        { name: "Prefix sums (O(1) range sum)", desc: "Precompute once, subtract to query.", ex: "int[] pre = new int[n + 1];\nfor (int i = 0; i < n; i++) pre[i+1] = pre[i] + a[i];\nint rangeSum = pre[j] - pre[i];  // sum of a[i..j)" },
+        { name: "Fast power (mod)", desc: "O(log n) exponent, needed with a modulus.", ex: "long p = 1; base %= mod;\nwhile (exp > 0) {\n  if ((exp & 1) == 1) p = p*base % mod;\n  base = base*base % mod;\n  exp >>= 1;\n}" },
+        { name: "GCD / LCM", desc: "Euclid; divide before multiply for LCM.", ex: "long gcd(long a, long b){ return b==0 ? a : gcd(b, a%b); }\nlong lcm = a / gcd(a, b) * b;" },
       ],
     },
   ],
@@ -327,236 +367,173 @@ const CPP: Sheet = {
   sections: [
     {
       id: "cpp-io",
-      title: "Boilerplate & fast I/O",
-      snippets: [
-        {
-          title: "Template",
-          note: "The two sync lines make cin/cout fast. Use them for big inputs.",
-          code: `#include <bits/stdc++.h>
-using namespace std;
-
-int main() {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
-
-    int n; cin >> n;
-    vector<int> a(n);
-    for (int i = 0; i < n; i++) cin >> a[i];
-
-    cout << n << "\\n";
-    return 0;
-}`,
-        },
-        {
-          title: "Read a whole line",
-          code: `string line;
-getline(cin, line);          // reads rest of current line
-// after cin >> x, do cin.ignore() before getline`,
-        },
+      title: "Fast I/O",
+      intro: "The two sync lines make cin/cout fast. Prefer \"\\n\" over endl (endl also flushes).",
+      methods: [
+        { name: "ios::sync_with_stdio(false); cin.tie(nullptr);", desc: "Unsync from C stdio — big speedup.", ex: "int main(){ ios::sync_with_stdio(false); cin.tie(nullptr); }" },
+        { name: "cin >> x", desc: "Read whitespace-delimited value(s).", ex: "int n; cin >> n;\nvector<int> a(n);\nfor (auto& x : a) cin >> x;" },
+        { name: "getline(cin, s)", desc: "Read a whole line incl. spaces.", ex: "cin >> n; cin.ignore();\ngetline(cin, s);", note: "After cin >> x, call cin.ignore() to drop the leftover newline before getline." },
+        { name: "cout << x << \"\\n\"", desc: "Print; avoid endl in loops.", ex: 'cout << ans << "\\n";' },
+        { name: "istringstream split", desc: "No built-in split — stream a string.", ex: 'istringstream iss(s); string w;\nwhile (iss >> w) words.push_back(w);' },
+        { name: "getline with delimiter", desc: "Split on a custom char.", ex: "while (getline(iss, tok, ',')) parts.push_back(tok);" },
       ],
     },
     {
       id: "cpp-string",
-      title: "string",
-      snippets: [
-        {
-          title: "string (mutable already)",
-          code: `string s = "hello";
-s.size();  s.length();
-s[1];                      // 'e'
-s.substr(1, 3);            // "ell"  (pos, len) -> copy
-s.find("ll");              // index, or string::npos
-s += " world";             // append
-s.push_back('!');
-s.insert(0, "X");
-s.erase(0, 1);             // erase(pos, len)
-s.replace(0, 2, "YY");
-reverse(s.begin(), s.end());
-sort(s.begin(), s.end());
-stoi("42"); stoll("9e9"); stod("3.14");
-to_string(42);`,
-        },
+      title: "string (mutable)",
+      intro: 'Assume string s = "hello". Mutable in place — no StringBuilder needed, += is amortized O(1).',
+      methods: [
+        { name: "s.size() / s.length()", desc: "Length (identical).", ex: "s.size()", out: "5" },
+        { name: "s[i]", desc: "Char access (no bounds check).", ex: "s[1]", out: "'e'" },
+        { name: "s.at(i)", desc: "Bounds-checked access (throws).", ex: "s.at(1)", out: "'e'" },
+        { name: "s.substr(pos, len)", desc: "Copy of len chars from pos.", ex: 's.substr(1, 3)', out: '"ell"' },
+        { name: "s.find(str)", desc: "Index, or string::npos if absent.", ex: 's.find("ll")', out: "2" },
+        { name: "s.find(str) == string::npos", desc: "The correct 'not found' check.", ex: 's.find("z") == string::npos', out: "true" },
+        { name: "s += / s.push_back(c)", desc: "Append, amortized O(1).", ex: 's += " world"', out: '"hello world"' },
+        { name: "s.insert(pos, str)", desc: "Insert (O(n)).", ex: 's.insert(0, "X")', out: '"Xhello"' },
+        { name: "s.erase(pos, len)", desc: "Remove len chars from pos.", ex: "s.erase(0, 1)", out: '"ello"' },
+        { name: "s.replace(pos, len, str)", desc: "Replace a range.", ex: 's.replace(0, 1, "H")', out: '"Hello"' },
+        { name: "reverse(s.begin(), s.end())", desc: "Reverse in place (<algorithm>).", ex: 'reverse(s.begin(), s.end())', out: '"olleh"' },
+        { name: "sort(s.begin(), s.end())", desc: "Sort chars — anagram signatures.", ex: 'sort(s.begin(), s.end())', out: '"ehllo"' },
+        { name: "stoi / stoll / stod(str)", desc: "String -> number.", ex: 'stoi("42")', out: "42" },
+        { name: "to_string(x)", desc: "Number -> string.", ex: "to_string(42)", out: '"42"' },
+        { name: '"abc" < "abd"', desc: "Operators do lexicographic compare directly.", ex: '"abc" < "abd"', out: "true" },
       ],
     },
     {
       id: "cpp-vector",
       title: "vector",
-      snippets: [
-        {
-          title: "Dynamic array (default container)",
-          code: `vector<int> v;
-v.push_back(5);
-v.emplace_back(6);         // construct in place
-v.pop_back();              // void!
-v[0];  v.at(0);            // at() bounds-checks
-v.front(); v.back();
-v.size(); v.empty();
-v.insert(v.begin()+1, 9);  // O(n)
-v.erase(v.begin());        // O(n)
-v.clear();
-sort(v.begin(), v.end());
-reverse(v.begin(), v.end());`,
-        },
-        {
-          title: "Init patterns",
-          code: `vector<int> a(n, 0);              // n zeros
-vector<vector<int>> grid(r, vector<int>(c, 0));  // 2D
-vector<int> b = {1, 2, 3};
-// loop:
-for (int x : v) cout << x;
-for (auto& x : v) x *= 2;         // by ref to modify`,
-        },
-        {
-          title: "erase-remove idiom",
-          note: "remove() only shuffles; erase() actually shrinks.",
-          code: `v.erase(remove(v.begin(), v.end(), val), v.end());`,
-        },
+      intro: "Assume vector<int> v = {3, 1, 2}. Contiguous, cache-friendly. push_back/pop_back O(1) amortized; middle insert/erase O(n).",
+      methods: [
+        { name: "v.push_back(x)", desc: "Append.", ex: "v.push_back(5)", out: "{3, 1, 2, 5}" },
+        { name: "v.emplace_back(args)", desc: "Construct in place (avoids a copy).", ex: "v.emplace_back(5)" },
+        { name: "v.pop_back()", desc: "Remove last — returns VOID.", ex: "v.pop_back()", out: "{3, 1}", note: "Returns nothing — read v.back() first if you need the value." },
+        { name: "v[i] / v.at(i)", desc: "Access; at() bounds-checks.", ex: "v[0]", out: "3" },
+        { name: "v.front() / v.back()", desc: "First / last element.", ex: "v.back()", out: "2" },
+        { name: "v.size() / v.empty()", desc: "Count / emptiness.", ex: "v.size()", out: "3" },
+        { name: "v.insert(v.begin()+i, x)", desc: "Insert at index (O(n)).", ex: "v.insert(v.begin()+1, 9)", out: "{3, 9, 1, 2}" },
+        { name: "v.erase(v.begin()+i)", desc: "Remove at index (O(n)).", ex: "v.erase(v.begin())", out: "{1, 2}" },
+        { name: "v.clear()", desc: "Remove all elements.", ex: "v.clear()", out: "{}" },
+        { name: "v.resize(n) / v.resize(n, val)", desc: "Grow/shrink; new slots default 0 or val.", ex: "v.resize(5, -1)", out: "{3,1,2,-1,-1}" },
+        { name: "v.reserve(n)", desc: "Pre-allocate capacity (size unchanged) — avoids reallocs.", ex: "v.reserve(1000)" },
+        { name: "v.assign(n, val)", desc: "Replace contents with n copies of val.", ex: "v.assign(3, 7)", out: "{7, 7, 7}" },
+        { name: "sort(v.begin(), v.end())", desc: "Ascending, NOT stable.", ex: "sort(v.begin(), v.end())", out: "{1, 2, 3}" },
+        { name: "vector<vector<int>> g(r, vector<int>(c, 0))", desc: "2D grid, r×c, all 0.", ex: "vector<vector<int>> g(2, vector<int>(3, 0))" },
+        { name: "erase-remove idiom", desc: "remove() reorders; erase() shrinks. Both needed!", ex: "v.erase(remove(v.begin(), v.end(), 2), v.end());", out: "removes all 2s", note: "remove() alone does NOT change v.size() — pair it with erase()." },
       ],
     },
     {
       id: "cpp-pair",
-      title: "pair / tuple",
-      snippets: [
-        {
-          title: "pair & structured bindings",
-          code: `pair<int,string> p = {1, "a"};
-p.first; p.second;
-auto [num, str] = p;             // C++17 unpack
-
-tuple<int,int,int> t = {1, 2, 3};
-auto [x, y, z] = t;
-get<0>(t);
-// pairs compare lexicographically -> great heap/map keys`,
-        },
+      title: "pair & tuple",
+      intro: "Bundle values. Both compare lexicographically -> great as map/heap keys with no custom comparator.",
+      methods: [
+        { name: "pair<int,string> p = {1, \"a\"}", desc: "Two-value bundle.", ex: "p.first", out: "1" },
+        { name: "auto [a, b] = p", desc: "Structured binding (C++17) unpack.", ex: "auto [num, str] = p;" },
+        { name: "make_pair(a, b)", desc: "Build a pair (type inferred).", ex: "make_pair(1, 2)" },
+        { name: "tuple + get<i>(t)", desc: "N values; access by index.", ex: "tuple<int,int,int> t={1,2,3}; get<0>(t)", out: "1" },
+        { name: "sort by .first then .second", desc: "Automatic for vector<pair>.", ex: "sort(v.begin(), v.end());  // v is vector<pair<int,int>>" },
       ],
     },
     {
       id: "cpp-adaptor",
       title: "stack / queue / priority_queue",
-      snippets: [
-        {
-          title: "stack & queue",
-          note: "pop() returns VOID — read top()/front() first.",
-          code: `stack<int> st;
-st.push(1); st.top(); st.pop(); st.empty();
-
-queue<int> q;
-q.push(1); q.front(); q.back(); q.pop(); q.empty();`,
-        },
-        {
-          title: "priority_queue (heap)",
-          note: "DEFAULT is MAX-heap (largest on top). Opposite of Java!",
-          code: `priority_queue<int> maxh;          // max-heap (default)
-maxh.push(5); maxh.top(); maxh.pop();
-
-// min-heap:
-priority_queue<int, vector<int>, greater<int>> minh;
-
-// by custom key (min-heap of pair by first):
-priority_queue<pair<int,int>,
-   vector<pair<int,int>>, greater<>> pq;`,
-        },
+      intro: "Adaptors over deque. priority_queue is a MAX-heap by default (opposite of Java). pop() returns void everywhere.",
+      methods: [
+        { name: "stack<int> st", desc: "LIFO.", ex: "st.push(1); st.top(); st.pop();", out: "top() = 1" },
+        { name: "st.top() / st.pop() / st.empty()", desc: "Peek / remove (void) / test.", ex: "st.top()" },
+        { name: "queue<int> q", desc: "FIFO.", ex: "q.push(1); q.front(); q.pop();", out: "front() = 1" },
+        { name: "q.front() / q.back() / q.pop()", desc: "Peek ends / remove front (void).", ex: "q.front()" },
+        { name: "priority_queue<int> maxh", desc: "MAX-heap (largest on top).", ex: "maxh.push(1); maxh.push(5); maxh.top()", out: "5" },
+        { name: "priority_queue<int, vector<int>, greater<int>> minh", desc: "MIN-heap — note 3 template args.", ex: "minh.push(5); minh.push(1); minh.top()", out: "1" },
+        { name: "pq.push / top / pop", desc: "O(log n) push/pop, O(1) top.", ex: "pq.top()", note: "pop() returns void — read top() BEFORE pop()." },
+        { name: "custom comparator (lambda)", desc: "Needs decltype (a lambda's type is unnamed).", ex: "auto cmp = [](auto&a, auto&b){ return a.first > b.first; };\npriority_queue<P, vector<P>, decltype(cmp)> pq(cmp);" },
       ],
     },
     {
       id: "cpp-ordered",
-      title: "map / set (ordered, sorted)",
-      snippets: [
-        {
-          title: "map & set — O(log n), sorted iteration",
-          code: `map<string,int> m;
-m["a"] = 1;                 // inserts default if absent!
-m.count("a");               // 0 or 1
-m.contains("a");            // C++20
-m.find("a");                // iterator or m.end()
-m.erase("a");
-for (auto& [k, v] : m) ...  // iterates in sorted key order
-
-set<int> s;
-s.insert(5); s.count(5); s.erase(5);
-*s.begin();                 // smallest
-*s.rbegin();                // largest`,
-        },
-        {
-          title: "nearest-key search (member versions!)",
-          note: "C++ analog of Java floor/ceiling. Use the .member, not std::lower_bound.",
-          code: `auto it = s.lower_bound(x);  // first key >= x  (== ceiling)
-auto it2 = s.upper_bound(x);  // first key >  x  (== higher)
-// floor (<= x):  if it!=begin, --it after lower_bound
-if (it != s.begin()) { auto f = prev(it); /* greatest < x */ }`,
-        },
+      title: "map / set (red-black tree)",
+      intro: "Assume map<int,string> m with keys {10,20,30}. O(log n), always sorted. Use member lower_bound, NOT std::lower_bound.",
+      methods: [
+        { name: "m[k] = v", desc: "Insert/update — but INSERTS a default on mere access!", ex: 'm[10] = "a"', note: 'Even reading `if (m[k] > 0)` inserts k with value 0. Use .find()/.count()/.at() for pure lookups.' },
+        { name: "m.count(k) / m.contains(k)", desc: "Key present? (contains is C++20.)", ex: "m.count(10)", out: "1" },
+        { name: "m.find(k)", desc: "Iterator to key, or m.end().", ex: "m.find(10) != m.end()", out: "true" },
+        { name: "m.at(k)", desc: "Like [], but THROWS instead of inserting.", ex: "m.at(10)" },
+        { name: "m.erase(k)", desc: "Remove by key.", ex: "m.erase(10)" },
+        { name: "for (auto& [k, v] : m)", desc: "Iterates in SORTED key order.", ex: "for (auto& [k, v] : m) use(k, v);" },
+        { name: "s.insert(x) / count / erase", desc: "set basics.", ex: "s.insert(5); s.count(5)", out: "1" },
+        { name: "*s.begin() / *s.rbegin()", desc: "Smallest / largest element.", ex: "*s.begin()  // {10,20,30}", out: "10" },
+        { name: "s.lower_bound(x)", desc: "First element >= x (== ceiling). MEMBER version!", ex: "*s.lower_bound(15)", out: "20", note: "Use s.lower_bound(x), NOT std::lower_bound(...) — the free function is O(n) on trees." },
+        { name: "s.upper_bound(x)", desc: "First element > x (== higher).", ex: "*s.upper_bound(20)", out: "30" },
+        { name: "floor via lower_bound", desc: "No direct method — step back.", ex: "auto it = s.lower_bound(25);\nif (it != s.begin()) --it;  // floor(25) = 20" },
+        { name: "multiset erase", desc: "erase(key) removes ALL copies; erase(iterator) removes one.", ex: "ms.erase(ms.find(3));  // just one", note: "ms.erase(3) deletes EVERY 3. Use erase(find(3)) for a single occurrence." },
       ],
     },
     {
       id: "cpp-unordered",
       title: "unordered_map / unordered_set (hash)",
-      snippets: [
-        {
-          title: "Average O(1) lookup — your default for counting",
-          code: `unordered_map<int,int> freq;
-for (int x : v) freq[x]++;        // frequency count
-freq.count(k); freq.contains(k);  // C++20
-freq.erase(k);
-
-unordered_set<int> seen;
-seen.insert(x); seen.count(x);
-// NO lower_bound / ordered iteration here.`,
-        },
+      intro: "Average O(1), no ordering. Your default for counting & lookup unless you need sorted order.",
+      methods: [
+        { name: "freq[x]++", desc: "Frequency count — inserts 0 first if absent.", ex: "for (int x : v) freq[x]++;" },
+        { name: "m.count(k) / m.contains(k)", desc: "Membership (contains is C++20).", ex: "m.count(k)" },
+        { name: "m.find(k) / m.erase(k)", desc: "Locate / remove.", ex: "m.erase(k)" },
+        { name: "seen.insert(x) / seen.count(x)", desc: "unordered_set basics.", ex: "seen.insert(x)" },
+        { name: "m.reserve(n)", desc: "Pre-size buckets to avoid rehashing mid-loop.", ex: "m.reserve(1000)" },
+        { name: "no lower_bound / order", desc: "Iteration order is unspecified — never rely on it.", note: "Need sorted order or nearest-key? Use map/set instead." },
       ],
     },
     {
       id: "cpp-algorithm",
       title: "<algorithm>",
-      snippets: [
-        {
-          title: "Sort & order",
-          code: `sort(v.begin(), v.end());                 // ascending
-sort(v.begin(), v.end(), greater<int>());  // descending
-sort(v.begin(), v.end(), [](int a, int b){ return a > b; });
-stable_sort(b, e);                          // keep equal order
-nth_element(v.begin(), v.begin()+k, v.end());  // k-th in O(n)
-partial_sort(b, b+k, e);                    // top-k sorted`,
-        },
-        {
-          title: "Search (sorted ranges)",
-          code: `binary_search(b, e, x);            // bool
-auto lo = lower_bound(b, e, x);    // first >= x
-auto hi = upper_bound(b, e, x);    // first > x
-int idx = lower_bound(b, e, x) - b;`,
-        },
-        {
-          title: "Scan any range",
-          code: `*max_element(b, e);  *min_element(b, e);
-count(b, e, x);  count_if(b, e, pred);
-find(b, e, x);   find_if(b, e, pred);
-all_of(b,e,p);  any_of(b,e,p);  none_of(b,e,p);
-reverse(b, e);
-next_permutation(b, e);   // loop over permutations`,
-        },
+      intro: "Assume vector<int> v. Most take iterator ranges [begin, end) and an optional predicate/comparator.",
+      methods: [
+        { name: "sort(b, e)", desc: "Ascending, NOT stable (introsort).", ex: "sort(v.begin(), v.end())" },
+        { name: "sort(b, e, greater<int>())", desc: "Descending.", ex: "sort(v.begin(), v.end(), greater<int>())" },
+        { name: "sort(b, e, lambda)", desc: "Custom comparator.", ex: "sort(v.begin(), v.end(), [](int a, int b){ return a > b; })" },
+        { name: "stable_sort(b, e)", desc: "Preserves order of equal elements.", ex: "stable_sort(v.begin(), v.end())" },
+        { name: "nth_element(b, b+k, e)", desc: "O(n) avg — v[k] as if sorted, nothing else.", ex: "nth_element(v.begin(), v.begin()+k, v.end())" },
+        { name: "partial_sort(b, b+k, e)", desc: "First k sorted, O(n log k) — top-k.", ex: "partial_sort(v.begin(), v.begin()+3, v.end())" },
+        { name: "binary_search(b, e, x)", desc: "bool — range must be sorted.", ex: "binary_search(v.begin(), v.end(), 5)", out: "true/false" },
+        { name: "lower_bound(b, e, x)", desc: "First >= x (iterator).", ex: "lower_bound(v.begin(), v.end(), x) - v.begin()", out: "index" },
+        { name: "upper_bound(b, e, x)", desc: "First > x.", ex: "upper_bound(v.begin(), v.end(), x)" },
+        { name: "count of x", desc: "upper - lower on a sorted range.", ex: "upper_bound(b,e,x) - lower_bound(b,e,x)" },
+        { name: "max_element / min_element(b, e)", desc: "Iterator to extreme.", ex: "*max_element(v.begin(), v.end())" },
+        { name: "count / count_if(b, e, ...)", desc: "How many equal x / match pred.", ex: "count_if(v.begin(), v.end(), [](int x){return x>0;})" },
+        { name: "find / find_if(b, e, ...)", desc: "Iterator to first match, else end().", ex: "find(v.begin(), v.end(), 5)" },
+        { name: "all_of / any_of / none_of", desc: "Boolean over a predicate.", ex: "all_of(v.begin(), v.end(), [](int x){return x>0;})" },
+        { name: "reverse / rotate(b, [m,] e)", desc: "Reverse / rotate left so m is new front.", ex: "reverse(v.begin(), v.end())" },
+        { name: "unique(b, e)", desc: "Drop CONSECUTIVE dupes — sort first, pair with erase.", ex: "v.erase(unique(v.begin(),v.end()), v.end())" },
+        { name: "next_permutation(b, e)", desc: "Advance to next lexicographic permutation.", ex: "sort(v.begin(), v.end());\ndo { use(v); } while (next_permutation(v.begin(), v.end()));" },
+        { name: "set_union / set_intersection / set_difference", desc: "On two SORTED ranges, one pass.", ex: "set_intersection(a.begin(),a.end(), b.begin(),b.end(), out.begin())" },
       ],
     },
     {
       id: "cpp-numeric",
-      title: "<numeric>, math & bit tricks",
-      snippets: [
-        {
-          title: "numeric",
-          code: `accumulate(b, e, 0);            // sum
-accumulate(b, e, 0LL);          // sum as long long (overflow!)
-partial_sum(b, e, out.begin()); // prefix sums
-iota(b, e, 0);                  // fill 0,1,2,3...
-gcd(a, b); lcm(a, b);           // C++17`,
-        },
-        {
-          title: "math & bits",
-          code: `max(a, b); min(a, b); abs(x);
-pow(2, 10); sqrt(x); floor(x); ceil(x); round(x);
-clamp(x, lo, hi);                  // C++17
-__builtin_popcount(x);             // set bits (int)
-__builtin_popcountll(x);           // long long
-__builtin_clz(x);                  // leading zeros
-1 << k;   x & (x-1);   x & -x;     // bit idioms`,
-        },
+      title: "<numeric>, math & bits",
+      intro: "Reductions, prefix sums, and single-instruction bit counts.",
+      methods: [
+        { name: "accumulate(b, e, 0)", desc: "Sum (int accumulator).", ex: "accumulate(v.begin(), v.end(), 0)", out: "6" },
+        { name: "accumulate(b, e, 0LL)", desc: "Sum as long long — avoids overflow.", ex: "accumulate(v.begin(), v.end(), 0LL)", note: "Seed with 0LL when the sum can exceed ~2.1e9." },
+        { name: "accumulate(b, e, 1, multiplies<int>())", desc: "Product.", ex: "accumulate(v.begin(), v.end(), 1, multiplies<int>())" },
+        { name: "partial_sum(b, e, out)", desc: "Prefix sums in one call.", ex: "partial_sum(v.begin(), v.end(), pre.begin())" },
+        { name: "iota(b, e, start)", desc: "Fill 0,1,2,... — index arrays.", ex: "iota(v.begin(), v.end(), 0)", out: "{0, 1, 2}" },
+        { name: "gcd(a, b) / lcm(a, b)", desc: "C++17, in <numeric>.", ex: "gcd(12, 18)", out: "6" },
+        { name: "min / max / abs / clamp", desc: "clamp(x, lo, hi) is C++17.", ex: "clamp(15, 0, 10)", out: "10" },
+        { name: "__builtin_popcount(x)", desc: "Set bits (one CPU instr).", ex: "__builtin_popcount(7)", out: "3" },
+        { name: "__builtin_ctz(x) / __builtin_clz(x)", desc: "Trailing / leading zero count.", ex: "__builtin_ctz(8)", out: "3", note: "Undefined for x == 0 — guard it." },
+        { name: "x & (x-1), x & -x", desc: "Clear / isolate the lowest set bit.", ex: "12 & 11", out: "8" },
+      ],
+    },
+    {
+      id: "cpp-idioms",
+      title: "Interview idioms & hacks",
+      intro: "Full working patterns.",
+      methods: [
+        { name: "Frequency count", desc: "Array for small alphabet, map otherwise.", ex: "int f[26] = {0};\nfor (char c : s) f[c - 'a']++;" },
+        { name: "Grid direction array", desc: "Loop offsets instead of 4 branches.", ex: "vector<pair<int,int>> dirs = {{-1,0},{1,0},{0,-1},{0,1}};\nfor (auto& [dr, dc] : dirs) { nr=r+dr; nc=c+dc; }" },
+        { name: "Monotonic stack", desc: "Indices, decreasing by value.", ex: "stack<int> st;\nfor (int i = 0; i < n; i++) {\n  while (!st.empty() && nums[st.top()] < nums[i]) {\n    res[st.top()] = nums[i]; st.pop();\n  }\n  st.push(i);\n}" },
+        { name: "Prefix sums", desc: "O(1) range sum after O(n) build.", ex: "vector<int> pre(n+1, 0);\nfor (int i = 0; i < n; i++) pre[i+1] = pre[i] + a[i];\nint sum = pre[j] - pre[i];  // a[i..j)" },
+        { name: "Union-Find (DSU)", desc: "Path compression + union by rank ~ O(1).", ex: "int find(int x){ return p[x]==x ? x : p[x]=find(p[x]); }\nbool unite(int a,int b){\n  a=find(a); b=find(b);\n  if(a==b) return false;\n  if(rnk[a]<rnk[b]) swap(a,b);\n  p[b]=a; if(rnk[a]==rnk[b]) rnk[a]++;\n  return true;\n}" },
+        { name: "Fast power (mod)", desc: "O(log n).", ex: "long long p = 1; base %= mod;\nwhile (exp) {\n  if (exp & 1) p = p*base % mod;\n  base = base*base % mod; exp >>= 1;\n}" },
       ],
     },
   ],
@@ -568,216 +545,177 @@ __builtin_clz(x);                  // leading zeros
 const JS: Sheet = {
   lang: "JavaScript",
   key: "javascript",
-  hint: "Node.js runtime — no imports needed for built-ins.",
+  hint: "Node.js runtime — no imports for built-ins.",
   sections: [
     {
       id: "js-io",
-      title: "Boilerplate & I/O (Node)",
-      snippets: [
-        {
-          title: "Read all stdin (competitive style)",
-          code: `const data = require("fs").readFileSync(0, "utf8");
-const lines = data.trim().split("\\n");
-const n = Number(lines[0]);
-const a = lines[1].split(" ").map(Number);
-
-const out = [];
-out.push("answer");
-console.log(out.join("\\n"));`,
-        },
-        {
-          title: "Logging",
-          code: `console.log("hi", 42, [1,2]);
-console.log(\`x = \${x}\`);          // template string`,
-        },
+      title: "I/O & logging (Node)",
+      intro: "For stdin judges, read everything at once. LeetCode-style just implements a function.",
+      methods: [
+        { name: 'readFileSync(0, "utf8")', desc: "Read ALL stdin (0 = stdin fd).", ex: 'const data = require("fs").readFileSync(0, "utf8");\nconst lines = data.trim().split("\\n");' },
+        { name: ".split(\" \").map(Number)", desc: "Line of numbers -> number array.", ex: 'lines[1].split(" ").map(Number)', out: "[1, 2, 3]" },
+        { name: "console.log(...)", desc: "Print; multiple args auto-spaced.", ex: 'console.log("x", 42)', out: "x 42" },
+        { name: "`${expr}` template literal", desc: "Embed expressions in a backtick string.", ex: "console.log(`sum = ${a + b}`)", out: "sum = 5" },
+        { name: "out.join(\"\\n\")", desc: "Batch output, one print.", ex: 'console.log(out.join("\\n"))' },
       ],
     },
     {
       id: "js-number",
       title: "Numbers & Math",
-      snippets: [
-        {
-          title: "Parsing & numbers",
-          code: `Number("42");      // 42
-parseInt("42px");  // 42  (stops at non-digit)
-parseFloat("3.14");
-(255).toString(2); // "11111111" (binary)
-parseInt("ff", 16);// 255
-Number.isInteger(x);
-x.toFixed(2);      // "3.14" (string)
-Number.MAX_SAFE_INTEGER;  // 2^53-1`,
-        },
-        {
-          title: "Math",
-          code: `Math.max(1, 2, 3);  Math.min(...arr);   // spread for arrays!
-Math.abs(-5);  Math.floor(2.9);  Math.ceil(2.1);
-Math.round(2.5);  Math.trunc(2.9);     // 2
-Math.pow(2, 10);  2 ** 10;             // 1024
-Math.sqrt(16);  Math.sign(-3);         // -1
-Math.floor(Math.random() * n);         // 0..n-1`,
-        },
+      intro: "One numeric type (double). Integers stay exact up to 2^53-1; beyond that use BigInt.",
+      methods: [
+        { name: "Number(s)", desc: "Strict string -> number (whole string or NaN).", ex: 'Number("42px")', out: "NaN" },
+        { name: "parseInt(s, 10)", desc: "Parse leading int; ALWAYS pass radix.", ex: 'parseInt("42px", 10)', out: "42" },
+        { name: "parseFloat(s)", desc: "Parse leading float.", ex: 'parseFloat("3.14abc")', out: "3.14" },
+        { name: "(255).toString(2)", desc: "Number -> binary/other-base string.", ex: "(255).toString(2)", out: '"11111111"' },
+        { name: 'parseInt("ff", 16)', desc: "Hex string -> number.", ex: 'parseInt("ff", 16)', out: "255" },
+        { name: "Number.isInteger(x)", desc: "Whole number?", ex: "Number.isInteger(4.0)", out: "true" },
+        { name: "Number.isNaN(x)", desc: "Safe NaN check (global isNaN coerces!).", ex: "Number.isNaN(NaN)", out: "true" },
+        { name: "x.toFixed(2)", desc: "Round to n decimals — returns a STRING.", ex: "(3.14159).toFixed(2)", out: '"3.14"' },
+        { name: "Number.MAX_SAFE_INTEGER", desc: "2^53 - 1. Beyond it, integer math loses precision.", ex: "Number.MAX_SAFE_INTEGER", out: "9007199254740991", note: "For bigger integers use BigInt: 123n or BigInt(123)." },
+        { name: "Math.max(...arr) / Math.min(...arr)", desc: "SPREAD required — they take args, not an array.", ex: "Math.max(...[1, 5, 3])", out: "5" },
+        { name: "Math.floor / ceil / round / trunc", desc: "trunc cuts the decimal (no rounding).", ex: "Math.trunc(2.9)", out: "2" },
+        { name: "2 ** 10  /  Math.pow(2, 10)", desc: "Exponent.", ex: "2 ** 10", out: "1024" },
+        { name: "Math.floor(Math.random() * n)", desc: "Random integer in [0, n).", ex: "Math.floor(Math.random() * 6)", out: "0..5" },
       ],
     },
     {
       id: "js-string",
       title: "Strings (immutable)",
-      snippets: [
-        {
-          title: "String methods",
-          code: `const s = "hello";
-s.length;                 // 5 (property, no parens)
-s[1]; s.charAt(1);        // 'e'
-s.charCodeAt(0);          // 104
-s.slice(1, 3);            // "el"  ([from, to), allows negatives)
-s.substring(1, 3);        // "el"
-s.indexOf("l");           // 2  (-1 if absent)
-s.includes("ell");        // true
-s.startsWith("he"); s.endsWith("lo");
-s.toUpperCase(); s.toLowerCase();
-s.trim();
-s.replace("l", "L");      // first only
-s.replaceAll("l", "L");   // all
-s.repeat(3);
-s.split("");              // ['h','e','l','l','o']
-s.split(",");`,
-        },
-        {
-          title: "Build strings",
-          note: "Strings are immutable — build with an array, then join.",
-          code: `const parts = [];
-parts.push("a"); parts.push("b");
-const result = parts.join("");      // "ab"
-
-[...s].reverse().join("");          // reverse a string`,
-        },
+      intro: 'Assume s = "hello world". Immutable — every method returns a new string.',
+      methods: [
+        { name: "s.length", desc: "Char count — a PROPERTY (no parens).", ex: "s.length", out: "11" },
+        { name: "s[i] / s.charAt(i)", desc: "Char at index.", ex: "s[1]", out: '"e"' },
+        { name: "s.charCodeAt(i)", desc: "UTF-16 code unit.", ex: 's.charCodeAt(0)', out: "104" },
+        { name: "s.slice(i, j)", desc: "[i, j); supports NEGATIVE indices.", ex: "s.slice(-5)", out: '"world"' },
+        { name: "s.substring(i, j)", desc: "Like slice but clamps negatives to 0.", ex: "s.substring(0, 5)", out: '"hello"' },
+        { name: "s.indexOf(x) / lastIndexOf(x)", desc: "First / last index, -1 if absent.", ex: 's.indexOf("o")', out: "4" },
+        { name: "s.includes(x)", desc: "Substring present?", ex: 's.includes("wor")', out: "true" },
+        { name: "s.startsWith / endsWith", desc: "Prefix / suffix test.", ex: 's.startsWith("he")', out: "true" },
+        { name: "s.toUpperCase / toLowerCase", desc: "Case conversion.", ex: '"Hi".toUpperCase()', out: '"HI"' },
+        { name: "s.trim / trimStart / trimEnd", desc: "Strip whitespace.", ex: '"  hi ".trim()', out: '"hi"' },
+        { name: "s.replace(a, b)", desc: "Replaces the FIRST match only.", ex: '"aa".replace("a", "b")', out: '"ba"', note: 'For all matches use replaceAll or a /g regex: s.replace(/a/g, "b").' },
+        { name: "s.replaceAll(a, b)", desc: "Replace all (ES2021+).", ex: '"aa".replaceAll("a", "b")', out: '"bb"' },
+        { name: "s.repeat(n)", desc: "Repeat n times.", ex: '"ab".repeat(3)', out: '"ababab"' },
+        { name: "s.padStart / padEnd(len, pad)", desc: "Pad to a length.", ex: '"5".padStart(3, "0")', out: '"005"' },
+        { name: "s.split(sep)", desc: "String -> array (literal or regex).", ex: 's.split(" ")', out: '["hello", "world"]' },
+        { name: "[...s]", desc: "Spread into a char array (Unicode-safe).", ex: '[..."hi"]', out: '["h", "i"]' },
       ],
     },
     {
       id: "js-array",
       title: "Arrays — core",
-      snippets: [
-        {
-          title: "Create & mutate",
-          code: `const a = [1, 2, 3];
-const b = new Array(n).fill(0);          // n zeros
-const grid = Array.from({length: r}, () => new Array(c).fill(0)); // 2D
-a.push(4);    // add end       a.pop();   // remove end
-a.unshift(0); // add front     a.shift(); // remove front
-a.length;
-a.splice(1, 2);          // remove 2 items at index 1
-a.splice(1, 0, "x");     // insert without removing
-a.slice(1, 3);           // COPY [from, to)
-a.includes(2);  a.indexOf(2);
-a.reverse();  a.flat();  a.concat(b);`,
-        },
-        {
-          title: "Stack & queue with arrays",
-          code: `// stack: push/pop (fast)
-st.push(x); st.pop();
-// queue: push/shift  (shift is O(n) — fine for small n)
-q.push(x); q.shift();`,
-        },
+      intro: "Assume a = [3, 1, 2]. Dynamic, mixed-type. push/pop O(1); unshift/shift O(n).",
+      methods: [
+        { name: "a.push(x)", desc: "Append; returns new length.", ex: "a.push(5)", out: "4  (a = [3,1,2,5])" },
+        { name: "a.pop()", desc: "Remove & return last.", ex: "a.pop()", out: "2  (a = [3,1])" },
+        { name: "a.unshift(x) / a.shift()", desc: "Add/remove at FRONT — O(n).", ex: "a.shift()", out: "3  (a = [1,2])" },
+        { name: "a.length", desc: "Property — SETTABLE: a.length=1 truncates!", ex: "a.length", out: "3" },
+        { name: "a.at(-1)", desc: "Negative indexing — last element.", ex: "a.at(-1)", out: "2" },
+        { name: "a.slice(i, j)", desc: "COPY of [i, j); does not mutate.", ex: "a.slice(0, 2)", out: "[3, 1]" },
+        { name: "a.splice(i, count)", desc: "Remove `count` at i, RETURNS them (mutates).", ex: "a.splice(1, 1)", out: "[1]  (a = [3, 2])" },
+        { name: "a.splice(i, 0, x)", desc: "Insert x at i without removing.", ex: "a.splice(1, 0, 9)", out: "a = [3, 9, 1, 2]" },
+        { name: "a.includes(x) / a.indexOf(x)", desc: "Membership / index.", ex: "a.includes(2)", out: "true" },
+        { name: "a.reverse()", desc: "Reverse IN PLACE.", ex: "[1,2,3].reverse()", out: "[3, 2, 1]" },
+        { name: "a.concat(b)", desc: "New joined array (no mutation).", ex: "[1].concat([2, 3])", out: "[1, 2, 3]" },
+        { name: "a.flat(depth)", desc: "Flatten nested arrays.", ex: "[1, [2, [3]]].flat(Infinity)", out: "[1, 2, 3]" },
+        { name: "new Array(n).fill(0)", desc: "n copies of a value.", ex: "new Array(3).fill(0)", out: "[0, 0, 0]" },
+        { name: "Array.from({length: r}, () => new Array(c).fill(0))", desc: "2D grid — factory runs per row.", ex: "Array.from({length: 2}, () => new Array(3).fill(0))", note: "new Array(r).fill(new Array(c)) shares ONE inner array across all rows! Use Array.from with a factory." },
       ],
     },
     {
       id: "js-functional",
       title: "Arrays — map / filter / reduce",
-      snippets: [
-        {
-          title: "The functional toolkit",
-          code: `a.map(x => x * 2);                 // transform -> new array
-a.filter(x => x > 0);             // keep matching
-a.reduce((acc, x) => acc + x, 0); // fold to one value (sum)
-a.forEach((x, i) => { ... });
-a.find(x => x > 2);               // first match (or undefined)
-a.findIndex(x => x > 2);
-a.some(x => x > 2);               // any?
-a.every(x => x > 0);              // all?
-a.flatMap(x => [x, x]);`,
-        },
+      intro: "Assume a = [1, 2, 3, 4]. None mutate — each returns a new array/value.",
+      methods: [
+        { name: "a.map(fn)", desc: "Transform each -> new array.", ex: "a.map(x => x * 2)", out: "[2, 4, 6, 8]" },
+        { name: "a.filter(pred)", desc: "Keep matching -> new array.", ex: "a.filter(x => x % 2 === 0)", out: "[2, 4]" },
+        { name: "a.reduce((acc, x) => ..., init)", desc: "Fold to one value.", ex: "a.reduce((s, x) => s + x, 0)", out: "10" },
+        { name: "a.forEach((x, i) => ...)", desc: "Side effects; returns undefined.", ex: "a.forEach(x => console.log(x))" },
+        { name: "a.find(pred)", desc: "First matching ELEMENT, else undefined.", ex: "a.find(x => x > 2)", out: "3" },
+        { name: "a.findIndex(pred)", desc: "First matching INDEX, else -1.", ex: "a.findIndex(x => x > 2)", out: "2" },
+        { name: "a.some(pred) / a.every(pred)", desc: "Any / all match?", ex: "a.some(x => x > 3)", out: "true" },
+        { name: "a.flatMap(fn)", desc: "map then flatten one level.", ex: "a.flatMap(x => [x, -x])", out: "[1,-1,2,-2,...]" },
+        { name: "a.sort((x,y) => x - y)", desc: "Numeric sort (see the sort section!).", ex: "[10, 2].sort((x, y) => x - y)", out: "[2, 10]" },
+        { name: "reduce group-by", desc: "JS has no groupingBy — build with reduce.", ex: 'words.reduce((acc, w) => {\n  (acc[w[0]] ??= []).push(w);\n  return acc;\n}, {})', out: "{ c: [...], d: [...] }" },
       ],
     },
     {
       id: "js-sort",
-      title: "Sorting (READ THE GOTCHA)",
-      snippets: [
-        {
-          title: "Always pass a comparator for numbers",
-          note: "Default sort() converts to STRINGS: [10,2,1].sort() -> [1,10,2]. Wrong!",
-          code: `nums.sort((a, b) => a - b);        // ascending numbers
-nums.sort((a, b) => b - a);        // descending
-strs.sort();                       // strings are fine alphabetically
-strs.sort((a, b) => a.localeCompare(b));
-
-// sort objects by field, with tie-break:
-people.sort((p, q) => p.age - q.age || p.name.localeCompare(q.name));`,
-        },
+      title: "Sorting (read this first)",
+      intro: "sort() defaults to STRING comparison, mutates in place, and is stable (ES2019+).",
+      methods: [
+        { name: "[10, 2, 1].sort()", desc: "Default = sort as STRINGS. Wrong for numbers!", ex: "[10, 2, 1].sort()", out: "[1, 10, 2]", note: "Always pass a comparator for numbers: (a, b) => a - b." },
+        { name: "sort((a, b) => a - b)", desc: "Ascending numeric.", ex: "[10, 2, 1].sort((a, b) => a - b)", out: "[1, 2, 10]" },
+        { name: "sort((a, b) => b - a)", desc: "Descending numeric.", ex: "[1, 2, 3].sort((a, b) => b - a)", out: "[3, 2, 1]" },
+        { name: "sort((a, b) => a.localeCompare(b))", desc: "Proper alphabetical (locale-aware).", ex: '["b", "A"].sort((a,b)=>a.localeCompare(b))', out: '["A", "b"]' },
+        { name: "multi-key sort", desc: "Fallback with || when the first key ties.", ex: "people.sort((p, q) => p.age - q.age || p.name.localeCompare(q.name))" },
+        { name: "[...a].sort(...)", desc: "Sort a COPY (sort mutates).", ex: "const sorted = [...a].sort((x, y) => x - y);" },
       ],
     },
     {
       id: "js-object",
       title: "Objects",
-      snippets: [
-        {
-          title: "Plain object (string keys)",
-          code: `const o = { a: 1, b: 2 };
-o.a; o["a"];
-o.c = 3;  delete o.b;
-"a" in o;  o.hasOwnProperty("a");
-Object.keys(o);     // ['a','c']
-Object.values(o);   // [1, 3]
-Object.entries(o);  // [['a',1],['c',3]]
-for (const [k, v] of Object.entries(o)) { ... }
-const copy = { ...o };             // shallow clone`,
-        },
+      intro: "Assume o = { a: 1, b: 2 }. Works as a string-keyed map; prefer Map for other keys.",
+      methods: [
+        { name: "o.a / o[\"a\"]", desc: "Access (bracket for dynamic keys).", ex: "o.a", out: "1" },
+        { name: "o.c = 3 / delete o.b", desc: "Add / remove a property.", ex: "delete o.b", out: "{ a: 1 }" },
+        { name: '"a" in o', desc: "Key present (own OR inherited)?", ex: '"a" in o', out: "true" },
+        { name: "o.hasOwnProperty(k)", desc: "OWN property only — safer for arbitrary keys.", ex: 'o.hasOwnProperty("a")', out: "true" },
+        { name: "Object.keys(o)", desc: "Array of keys.", ex: "Object.keys(o)", out: '["a", "b"]' },
+        { name: "Object.values(o)", desc: "Array of values.", ex: "Object.values(o)", out: "[1, 2]" },
+        { name: "Object.entries(o)", desc: "Array of [k, v] pairs.", ex: "Object.entries(o)", out: "[['a',1], ['b',2]]" },
+        { name: "for (const [k, v] of Object.entries(o))", desc: "Iterate key+value.", ex: "for (const [k, v] of Object.entries(o)) use(k, v);" },
+        { name: "{ ...o }", desc: "Shallow clone.", ex: "{ ...o }", out: "{ a: 1, b: 2 }" },
+        { name: "{ ...o, ...other }", desc: "Shallow merge (other wins on clashes).", ex: "{ ...{a:1}, ...{a:9} }", out: "{ a: 9 }" },
+        { name: "user?.address?.city", desc: "Optional chaining — undefined instead of crashing.", ex: "null?.city", out: "undefined" },
+        { name: "x ?? default", desc: "Fallback ONLY for null/undefined (not 0/'').", ex: "0 ?? 10  vs  0 || 10", out: "0  vs  10", note: "Use ?? for numeric defaults — || also replaces 0, '', false." },
       ],
     },
     {
       id: "js-mapset",
       title: "Map & Set",
-      snippets: [
-        {
-          title: "Map (any key type, keeps insertion order)",
-          note: "Prefer Map over plain object for counting / non-string keys.",
-          code: `const m = new Map();
-m.set("a", 1);
-m.get("a");         // 1 (undefined if absent)
-m.has("a");
-m.delete("a");
-m.size;
-for (const [k, v] of m) { ... }
-
-// frequency count idiom:
-for (const x of arr) m.set(x, (m.get(x) || 0) + 1);`,
-        },
-        {
-          title: "Set (unique values)",
-          code: `const s = new Set();
-s.add(1); s.has(1); s.delete(1); s.size;
-const uniq = [...new Set(arr)];    // dedupe an array
-for (const x of s) { ... }`,
-        },
+      intro: "Map: any key type, real .size, insertion order. Set: unique values, O(1) has.",
+      methods: [
+        { name: "new Map()", desc: "Key/value store, any key type.", ex: 'const m = new Map(); m.set("a", 1);' },
+        { name: "m.set(k, v) / m.get(k)", desc: "Insert / read (undefined if absent).", ex: 'm.get("a")', out: "1" },
+        { name: "m.has(k) / m.delete(k)", desc: "Membership / remove.", ex: 'm.has("a")', out: "true" },
+        { name: "m.size", desc: "Count (a property, unlike an object).", ex: "m.size", out: "1" },
+        { name: "for (const [k, v] of m)", desc: "Iterate in INSERTION order.", ex: "for (const [k, v] of m) use(k, v);" },
+        { name: "freq count", desc: "The Map counting idiom.", ex: 'for (const c of s) m.set(c, (m.get(c) || 0) + 1);' },
+        { name: "new Set(arr)", desc: "Dedupe.", ex: "new Set([1, 1, 2])", out: "Set {1, 2}" },
+        { name: "[...new Set(arr)]", desc: "Dedupe -> array in one line.", ex: "[...new Set([1, 1, 2])]", out: "[1, 2]" },
+        { name: "s.add / s.has / s.delete / s.size", desc: "Set operations, O(1).", ex: "s.add(1); s.has(1)", out: "true" },
+        { name: "union / intersection / difference", desc: "No built-ins — spread + filter.", ex: "const inter = new Set([...a].filter(x => b.has(x)));" },
+        { name: "LRU via Map order", desc: "delete+set moves a key to the newest end.", ex: "get(k){ const v=map.get(k); map.delete(k); map.set(k,v); return v; }\n// evict oldest: map.delete(map.keys().next().value)" },
       ],
     },
     {
-      id: "js-json",
-      title: "JSON & misc",
-      snippets: [
-        {
-          title: "JSON",
-          code: `JSON.stringify(obj);          // object -> string
-JSON.stringify(obj, null, 2); // pretty
-JSON.parse(str);              // string -> object
-const deepCopy = JSON.parse(JSON.stringify(obj)); // (simple values)`,
-        },
-        {
-          title: "Destructuring & spread",
-          code: `const [x, y, ...rest] = arr;
-const { a, b } = obj;
-const merged = [...arr1, ...arr2];
-const max = Math.max(...nums);
-fn(...args);`,
-        },
+      id: "js-misc",
+      title: "Destructuring, classes & JSON",
+      intro: "Everyday syntax for unpacking, defining data structures, and serializing.",
+      methods: [
+        { name: "const [x, y, ...rest] = arr", desc: "Array destructuring + rest.", ex: "const [a, b, ...rest] = [1, 2, 3, 4]", out: "a=1, b=2, rest=[3,4]" },
+        { name: "const { a, b } = obj", desc: "Object destructuring.", ex: "const { a } = { a: 1 }", out: "a = 1" },
+        { name: "[a, b] = [b, a]", desc: "Swap without a temp.", ex: "[a, b] = [b, a]" },
+        { name: "f(...args) / [...a, ...b]", desc: "Spread into args / concat arrays.", ex: "Math.max(...[1, 5, 3])", out: "5" },
+        { name: "class + constructor", desc: "Define a data structure.", ex: "class Node {\n  constructor(val, next = null) {\n    this.val = val; this.next = next;\n  }\n}" },
+        { name: "extends / static", desc: "Inheritance / class-level method.", ex: "class Dog extends Animal { speak(){ return 'woof'; } }" },
+        { name: "JSON.stringify(o)", desc: "Object -> string.", ex: "JSON.stringify({ a: 1 })", out: '\'{"a":1}\'' },
+        { name: "JSON.parse(s)", desc: "String -> object.", ex: 'JSON.parse(\'{"a":1}\')', out: "{ a: 1 }" },
+        { name: "structuredClone(o)", desc: "Proper deep clone (handles Map/Set/Date).", ex: "structuredClone(obj)", note: "JSON.parse(JSON.stringify(o)) also deep-clones but DROPS functions, undefined, Map/Set." },
+      ],
+    },
+    {
+      id: "js-idioms",
+      title: "Interview idioms & hacks",
+      intro: "Full working patterns.",
+      methods: [
+        { name: "Frequency count", desc: "Map for any key.", ex: 'const f = new Map();\nfor (const c of s) f.set(c, (f.get(c) || 0) + 1);' },
+        { name: "Grid direction array", desc: "Loop offsets.", ex: "const dirs = [[-1,0],[1,0],[0,-1],[0,1]];\nfor (const [dr, dc] of dirs) { const nr=r+dr, nc=c+dc; }" },
+        { name: "Monotonic stack", desc: "Indices, increasing top-to-bottom.", ex: "const st = [];\nfor (let i = 0; i < n; i++) {\n  while (st.length && nums[st.at(-1)] < nums[i])\n    res[st.pop()] = nums[i];\n  st.push(i);\n}" },
+        { name: "Prefix sums", desc: "O(1) range sum.", ex: "const pre = new Array(n + 1).fill(0);\nfor (let i = 0; i < n; i++) pre[i+1] = pre[i] + a[i];\nconst sum = pre[j] - pre[i];  // a[i..j)" },
+        { name: "Memoized recursion", desc: "Cache by args -> exponential becomes linear.", ex: "function fib(n, memo = new Map()) {\n  if (n <= 1) return n;\n  if (memo.has(n)) return memo.get(n);\n  const r = fib(n-1, memo) + fib(n-2, memo);\n  memo.set(n, r); return r;\n}" },
       ],
     },
   ],

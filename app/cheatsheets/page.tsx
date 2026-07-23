@@ -1,22 +1,41 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { Search } from "lucide-react";
 import { CHEATSHEETS } from "@/lib/cheatsheets";
-import { CodeBlock } from "@/components/CodeBlock";
+import { CheatTable } from "@/components/CheatTable";
 import { SqlSheet } from "@/components/SqlSheet";
 import { ScrollSpyNav } from "@/components/ScrollSpyNav";
 import { PageHeader } from "@/components/ui";
+
+// React Flow measures the DOM — render the class-tree client-only.
+const ClassHierarchy = dynamic(
+  () => import("@/components/ClassHierarchy").then((m) => m.ClassHierarchy),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="grid h-[560px] place-items-center rounded-2xl border border-white/10 bg-slate-950/40 text-sm text-slate-500">
+        Loading class tree…
+      </div>
+    ),
+  }
+);
 
 const TAB_COLORS: Record<string, string> = {
   java: "from-orange-500 to-amber-600",
   cpp: "from-sky-500 to-blue-600",
   javascript: "from-yellow-400 to-amber-500",
   sql: "from-indigo-500 to-violet-600",
+  hierarchy: "from-teal-500 to-emerald-600",
 };
 
-// Tabs: the code-snippet sheets (Java/C++/JS) plus SQL (its own richer view).
-const TABS = [...CHEATSHEETS.map((s) => ({ key: s.key, lang: s.lang })), { key: "sql", lang: "SQL" }];
+// Tabs: the code-snippet sheets (Java/C++/JS), SQL, and the Class Tree diagram.
+const TABS = [
+  ...CHEATSHEETS.map((s) => ({ key: s.key, lang: s.lang })),
+  { key: "sql", lang: "SQL" },
+  { key: "hierarchy", lang: "Class Tree" },
+];
 
 export default function CheatSheetsPage() {
   const [active, setActive] = useState(CHEATSHEETS[0].key);
@@ -29,7 +48,16 @@ export default function CheatSheetsPage() {
     if (tab && TABS.some((t) => t.key === tab)) setActive(tab);
   }, []);
 
+  // node in the Class Tree -> switch to that language tab and scroll to its section
+  const openSection = useCallback((tab: string, section: string) => {
+    setActive(tab);
+    setTimeout(() => {
+      document.getElementById(section)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+  }, []);
+
   const isSql = active === "sql";
+  const isHierarchy = active === "hierarchy";
   const sheet = CHEATSHEETS.find((s) => s.key === active);
   const query = q.trim().toLowerCase();
 
@@ -37,17 +65,22 @@ export default function CheatSheetsPage() {
     if (!sheet) return [];
     if (!query) return sheet.sections;
     return sheet.sections
-      .map((sec) => ({
-        ...sec,
-        snippets: sec.snippets.filter(
-          (sn) =>
-            sn.title.toLowerCase().includes(query) ||
-            sn.code.toLowerCase().includes(query) ||
-            (sn.note ?? "").toLowerCase().includes(query) ||
-            sec.title.toLowerCase().includes(query)
-        ),
-      }))
-      .filter((sec) => sec.snippets.length > 0);
+      .map((sec) => {
+        // if the section title matches, keep ALL its rows; else keep matching rows
+        const sectionHit = sec.title.toLowerCase().includes(query);
+        const methods = sectionHit
+          ? sec.methods
+          : sec.methods.filter(
+              (m) =>
+                m.name.toLowerCase().includes(query) ||
+                m.desc.toLowerCase().includes(query) ||
+                (m.ex ?? "").toLowerCase().includes(query) ||
+                (m.out ?? "").toLowerCase().includes(query) ||
+                (m.note ?? "").toLowerCase().includes(query)
+            );
+        return { ...sec, methods };
+      })
+      .filter((sec) => sec.methods.length > 0);
   }, [sheet, query]);
 
   return (
@@ -82,7 +115,9 @@ export default function CheatSheetsPage() {
         )}
       </div>
 
-      {isSql ? (
+      {isHierarchy ? (
+        <ClassHierarchy onOpen={openSection} />
+      ) : isSql ? (
         <SqlSheet />
       ) : (
         <div className="flex gap-8">
@@ -108,23 +143,14 @@ export default function CheatSheetsPage() {
               )}
               {sections.map((sec) => (
                 <section key={sec.id} id={sec.id} className="scroll-mt-6">
-                  <h2 className="mb-3 flex items-center gap-2 text-lg font-bold text-white">
+                  <h2 className="mb-1.5 flex items-center gap-2 text-lg font-bold text-white">
                     <span className="h-4 w-1 rounded-full bg-gradient-to-b from-indigo-400 to-violet-500" />
                     {sec.title}
                   </h2>
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    {sec.snippets.map((sn, i) => (
-                      <div key={i} className="overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-slate-900/70 to-slate-950/40 p-4 shadow-card">
-                        <div className="mb-2 text-sm font-semibold text-slate-100">{sn.title}</div>
-                        {sn.note && (
-                          <div className="mb-3 rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2 text-xs text-amber-200/90">
-                            {sn.note}
-                          </div>
-                        )}
-                        <CodeBlock code={sn.code} />
-                      </div>
-                    ))}
-                  </div>
+                  {sec.intro && (
+                    <p className="mb-3 pl-3 text-[13px] leading-relaxed text-slate-400">{sec.intro}</p>
+                  )}
+                  <CheatTable methods={sec.methods} />
                 </section>
               ))}
             </div>
