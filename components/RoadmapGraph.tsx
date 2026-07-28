@@ -212,7 +212,13 @@ export function RoadmapGraph({ roadmap }: { roadmap: Roadmap }) {
 
   return (
     <div className="h-full min-h-[520px] w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40">
+      {/* key = full remount when switching roadmaps. fitView only auto-runs
+          ONCE per ReactFlow instance (on mount) — without this key, navigating
+          client-side between roadmaps (e.g. DSA -> Java) keeps the previous
+          roadmap's pan/zoom, so the new graph renders at the wrong scale and
+          its nodes look cramped/overlapping. */}
       <ReactFlow
+        key={roadmap.key}
         nodes={nodes}
         edges={layout.edges}
         nodeTypes={nodeTypes}

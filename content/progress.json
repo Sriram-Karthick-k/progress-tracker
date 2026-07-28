@@ -205,22 +205,31 @@
       "notes": "",
       "attempts": 0,
       "touched": 1784770799650
+    },
+    "p-lc30": {
+      "status": "ATTEMPTED",
+      "confidence": 0,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785202471355
     }
   },
   "activity": {
     "2026-07-20": 36,
     "2026-07-21": 14,
     "2026-07-22": 69,
-    "2026-07-23": 20
+    "2026-07-23": 20,
+    "2026-07-28": 1
   },
   "goal": 3,
   "customCards": [],
-  "lastRoute": "/cheatsheets",
+  "lastRoute": "/problems?pattern=Sliding+Window",
   "scroll": {
     "/problems?pattern=Two+Pointers": 0,
     "/problems?pattern=Sliding%20Window": 0,
     "/problems?pattern=Sliding+Window&status=TODO": 0,
-    "/problems?pattern=Sliding+Window": 100,
-    "/cheatsheets": 0
+    "/problems?pattern=Sliding+Window": 500,
+    "/cheatsheets": 11842
   }
 }

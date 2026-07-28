@@ -169,7 +169,12 @@ export function ClassHierarchy({ onOpen }: { onOpen?: (tab: string, section: str
       <p className="mb-3 text-[13px] leading-relaxed text-slate-400">{h.intro}</p>
 
       <div className="h-[74vh] min-h-[560px] w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40">
+        {/* key = full remount on Java<->C++ switch. fitView only auto-runs ONCE
+            per ReactFlow instance (on mount) — without this key, switching
+            graphs keeps the OLD graph's pan/zoom, so the new one renders at
+            the wrong scale/offset and its nodes look jumbled/overlapping. */}
         <ReactFlow
+          key={key}
           nodes={nodes}
           edges={layout.edges}
           nodeTypes={nodeTypes}
