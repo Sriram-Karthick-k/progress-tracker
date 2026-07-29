@@ -207,12 +207,28 @@
       "touched": 1784770799650
     },
     "p-lc30": {
-      "status": "ATTEMPTED",
-      "confidence": 0,
+      "status": "DONE",
+      "confidence": 2,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785284356973
+    },
+    "p-lc187": {
+      "status": "DONE",
+      "confidence": 4,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785286810822
+    },
+    "p-lc1456": {
+      "status": "DONE",
+      "confidence": 5,
       "revisit": false,
       "notes": "",
       "attempts": 0,
-      "touched": 1785202471355
+      "touched": 1785287213725
     }
   },
   "activity": {
@@ -220,7 +236,8 @@
     "2026-07-21": 14,
     "2026-07-22": 69,
     "2026-07-23": 20,
-    "2026-07-28": 1
+    "2026-07-28": 1,
+    "2026-07-29": 17
   },
   "goal": 3,
   "customCards": [],
@@ -230,6 +247,6 @@
     "/problems?pattern=Sliding%20Window": 0,
     "/problems?pattern=Sliding+Window&status=TODO": 0,
     "/problems?pattern=Sliding+Window": 500,
-    "/cheatsheets": 11842
+    "/cheatsheets": 13053
   }
 }
