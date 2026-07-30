@@ -229,6 +229,62 @@
       "notes": "",
       "attempts": 0,
       "touched": 1785287213725
+    },
+    "p-lc220": {
+      "status": "DONE",
+      "confidence": 2,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785367913887
+    },
+    "p-lc3": {
+      "status": "DONE",
+      "confidence": 4,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785368621856
+    },
+    "p-lc424": {
+      "status": "DONE",
+      "confidence": 3,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785372139296
+    },
+    "p-lc209": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785373146300
+    },
+    "p-lc1004": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785374190944
+    },
+    "p-lc904": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785374877622
+    },
+    "p-lc340": {
+      "status": "TODO",
+      "confidence": 0,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785374889056
     }
   },
   "activity": {
@@ -237,7 +293,8 @@
     "2026-07-22": 69,
     "2026-07-23": 20,
     "2026-07-28": 1,
-    "2026-07-29": 17
+    "2026-07-29": 31,
+    "2026-07-30": 18
   },
   "goal": 3,
   "customCards": [],
@@ -246,7 +303,7 @@
     "/problems?pattern=Two+Pointers": 0,
     "/problems?pattern=Sliding%20Window": 0,
     "/problems?pattern=Sliding+Window&status=TODO": 0,
-    "/problems?pattern=Sliding+Window": 500,
-    "/cheatsheets": 13053
+    "/problems?pattern=Sliding+Window": 1986,
+    "/cheatsheets": 14386
   }
 }
