@@ -285,6 +285,38 @@
       "notes": "",
       "attempts": 0,
       "touched": 1785374889056
+    },
+    "p-lc76": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785458422355
+    },
+    "p-lc992": {
+      "status": "DONE",
+      "confidence": 3,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785458423307
+    },
+    "p-lc1248": {
+      "status": "DONE",
+      "confidence": 4,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785458424940
+    },
+    "p-lc930": {
+      "status": "DONE",
+      "confidence": 3,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785459643929
     }
   },
   "activity": {
@@ -294,16 +326,17 @@
     "2026-07-23": 20,
     "2026-07-28": 1,
     "2026-07-29": 31,
-    "2026-07-30": 18
+    "2026-07-30": 22,
+    "2026-07-31": 17
   },
   "goal": 3,
   "customCards": [],
   "lastRoute": "/problems?pattern=Sliding+Window",
   "scroll": {
-    "/problems?pattern=Two+Pointers": 0,
+    "/problems?pattern=Two+Pointers": 1065,
     "/problems?pattern=Sliding%20Window": 0,
     "/problems?pattern=Sliding+Window&status=TODO": 0,
-    "/problems?pattern=Sliding+Window": 1986,
-    "/cheatsheets": 14386
+    "/problems?pattern=Sliding+Window": 1184,
+    "/cheatsheets": 11642
   }
 }
