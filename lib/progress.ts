@@ -15,6 +15,18 @@ export type ProgressMap = Record<string, Partial<Progress>>;
 export type ActivityMap = Record<string, number>; // "YYYY-MM-DD" -> update count
 export type StoredCustomCard = { id: string; front: string; back: string };
 
+/** One row in the Activity Log: what changed on one item, and what it changed from/to. */
+export type ActivityEvent = {
+  id: string;
+  ts: number; // epoch ms
+  itemId: string; // the progress id that changed, e.g. "p-lc1"
+  changes: {
+    status?: { from: Status; to: Status };
+    confidence?: { from: number; to: number };
+    revisit?: { from: boolean; to: boolean };
+  };
+};
+
 type Store = {
   progress: ProgressMap;
   activity: ActivityMap;
@@ -24,6 +36,8 @@ type Store = {
   lastRoute: string | null;
   /** Scroll Y per exact route, captured only when you leave that route. */
   scroll: Record<string, number>;
+  /** Chronological log of real changes (newest first), capped — see recordEvent. */
+  events: ActivityEvent[];
 };
 
 export const DEFAULT_PROGRESS: Progress = {
@@ -42,7 +56,8 @@ export const DEFAULT_PROGRESS: Progress = {
 // once per page load, and debounce-saves the whole store after every change.
 // ---------------------------------------------------------------------------
 
-const EMPTY: Store = { progress: {}, activity: {}, goal: null, customCards: [], lastRoute: null, scroll: {} };
+const EMPTY: Store = { progress: {}, activity: {}, goal: null, customCards: [], lastRoute: null, scroll: {}, events: [] };
+const MAX_EVENTS = 400; // caps content/progress.json growth; oldest events drop off
 
 let store: Store = { ...EMPTY };
 let hydrating: Promise<void> | null = null;
@@ -142,8 +157,16 @@ function mergeLegacy(server: Store, legacy: Partial<Store>): Store {
     ...server.customCards,
     ...(legacy.customCards ?? []).filter((c) => !ids.has(c.id)),
   ];
-  // lastRoute/scroll are new fields legacy data never had — always server's
-  return { progress, activity, goal: server.goal ?? legacy.goal ?? null, customCards, lastRoute: server.lastRoute, scroll: server.scroll };
+  // lastRoute/scroll/events are new fields legacy data never had — always server's
+  return {
+    progress,
+    activity,
+    goal: server.goal ?? legacy.goal ?? null,
+    customCards,
+    lastRoute: server.lastRoute,
+    scroll: server.scroll,
+    events: server.events,
+  };
 }
 
 function clearLegacy() {
@@ -218,6 +241,27 @@ export function recordActivity() {
   if (typeof window === "undefined") return;
   const key = new Date().toISOString().slice(0, 10);
   store.activity = { ...store.activity, [key]: (store.activity[key] ?? 0) + 1 };
+  scheduleSave();
+  window.dispatchEvent(new Event("prep-activity"));
+}
+
+/* ---- activity LOG (what actually changed, not just a per-day count) ---- */
+
+export function loadEvents(): ActivityEvent[] {
+  return store.events;
+}
+
+/** Append one entry to the activity log. `changes` must be non-empty. */
+export function recordEvent(itemId: string, changes: ActivityEvent["changes"]) {
+  if (typeof window === "undefined") return;
+  if (Object.keys(changes).length === 0) return;
+  const ev: ActivityEvent = {
+    id: `ev-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    ts: Date.now(),
+    itemId,
+    changes,
+  };
+  store.events = [ev, ...store.events].slice(0, MAX_EVENTS);
   scheduleSave();
   window.dispatchEvent(new Event("prep-activity"));
 }

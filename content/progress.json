@@ -28,7 +28,7 @@
       "revisit": false,
       "notes": "",
       "attempts": 0,
-      "touched": 1784507664399
+      "touched": 1785714754237
     },
     "p-lc680": {
       "status": "DONE",
@@ -473,10 +473,66 @@
     "p-lc974": {
       "status": "DONE",
       "confidence": 3,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785583166157
+    },
+    "p-lc1732": {
+      "status": "DONE",
+      "confidence": 5,
       "revisit": false,
       "notes": "",
       "attempts": 0,
-      "touched": 1785583036021
+      "touched": 1785588396009
+    },
+    "p-lc238": {
+      "status": "DONE",
+      "confidence": 4,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785590549144
+    },
+    "p-lc437": {
+      "status": "DONE",
+      "confidence": 3,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785630517964
+    },
+    "p-lc1109": {
+      "status": "DONE",
+      "confidence": 2,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785591703290
+    },
+    "p-lc303": {
+      "status": "DONE",
+      "confidence": 4,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785629758585
+    },
+    "p-lc724": {
+      "status": "DONE",
+      "confidence": 5,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785630785841
+    },
+    "p-lc370": {
+      "status": "TODO",
+      "confidence": 0,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1785630802260
     }
   },
   "activity": {
@@ -488,11 +544,12 @@
     "2026-07-29": 31,
     "2026-07-30": 22,
     "2026-07-31": 17,
-    "2026-08-01": 90
+    "2026-08-01": 114,
+    "2026-08-02": 17
   },
   "goal": 3,
   "customCards": [],
-  "lastRoute": "/problems?pattern=Prefix+Sum",
+  "lastRoute": "/activity",
   "scroll": {
     "/problems?pattern=Two+Pointers": 1065,
     "/problems?pattern=Sliding%20Window": 0,
@@ -500,6 +557,33 @@
     "/problems?pattern=Sliding+Window": 500,
     "/cheatsheets": 11642,
     "/problems?pattern=Fast+%26+Slow+Pointers": 771,
-    "/problems?pattern=Prefix+Sum": 400
-  }
+    "/problems?pattern=Prefix+Sum": 734,
+    "/problems": 0,
+    "/": 1007,
+    "/activity": 0
+  },
+  "events": [
+    {
+      "id": "ev-1785714754237-745rwm",
+      "ts": 1785714754237,
+      "itemId": "p-lc125",
+      "changes": {
+        "revisit": {
+          "from": true,
+          "to": false
+        }
+      }
+    },
+    {
+      "id": "ev-1785714737265-c1og6i",
+      "ts": 1785714737265,
+      "itemId": "p-lc125",
+      "changes": {
+        "revisit": {
+          "from": false,
+          "to": true
+        }
+      }
+    }
+  ]
 }

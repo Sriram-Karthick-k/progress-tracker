@@ -14,6 +14,7 @@ import {
   Bookmark,
   Database,
   Brain,
+  History,
   PanelLeftClose,
   Search as SearchIcon,
   type LucideIcon,
@@ -117,6 +118,7 @@ export function Sidebar({
 
       {link("/", "Dashboard", LayoutDashboard, null, path === "/")}
       {link("/today", "Study Today", CalendarCheck, null, path === "/today")}
+      {link("/activity", "Activity Log", History, null, path === "/activity")}
       {link("/flashcards", "Flashcards", Brain, null, path === "/flashcards" || path.startsWith("/flashcards/"))}
       {link("/notebook", "Notebook", BookText, null, path === "/notebook" || path.startsWith("/notebook/"))}
       {link("/roadmap", "Roadmaps", GitBranch, null, path === "/roadmap" || path.startsWith("/roadmap/"))}

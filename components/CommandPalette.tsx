@@ -22,6 +22,7 @@ function buildIndex(): Hit[] {
   [
     { title: "Dashboard", href: "/" },
     { title: "Study Today", href: "/today" },
+    { title: "Activity Log", href: "/activity" },
     { title: "Flashcards", href: "/flashcards" },
     { title: "Notebook", href: "/notebook" },
     { title: "Roadmaps", href: "/roadmap" },

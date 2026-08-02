@@ -15,6 +15,8 @@ import {
   loadAll,
   persist,
   recordActivity,
+  recordEvent,
+  type ActivityEvent,
 } from "@/lib/progress";
 
 type Ctx = {
@@ -53,10 +55,26 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 
   const update = useCallback((id: string, patch: Partial<Progress>) => {
     setMap((prev) => {
+      const before: Progress = { ...DEFAULT_PROGRESS, ...(prev[id] || {}) };
       const stamped = { ...patch, touched: Date.now() };
-      const merged: Progress = { ...DEFAULT_PROGRESS, ...(prev[id] || {}), ...stamped };
+      const merged: Progress = { ...before, ...stamped };
       const next = { ...prev, [id]: merged };
       persist(next, id, stamped);
+
+      // Activity Log: record only real changes to the fields that matter —
+      // status/confidence/revisit. (notes/attempts/touched are noise here.)
+      const changes: ActivityEvent["changes"] = {};
+      if (patch.status !== undefined && patch.status !== before.status) {
+        changes.status = { from: before.status, to: patch.status };
+      }
+      if (patch.confidence !== undefined && patch.confidence !== before.confidence) {
+        changes.confidence = { from: before.confidence, to: patch.confidence };
+      }
+      if (patch.revisit !== undefined && patch.revisit !== before.revisit) {
+        changes.revisit = { from: before.revisit, to: patch.revisit };
+      }
+      if (Object.keys(changes).length) recordEvent(id, changes);
+
       return next;
     });
     recordActivity();

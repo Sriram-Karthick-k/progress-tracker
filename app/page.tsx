@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Flag, ChevronRight, Download, Upload, CalendarCheck, ArrowRight } from "lucide-react";
+import { Flag, ChevronRight, Download, Upload, CalendarCheck, ArrowRight, History, CheckCircle2, Star, RefreshCw } from "lucide-react";
 import { PROBLEMS, TOPICS, topicsForRound } from "@/lib/seed-data";
 import { SQL_PROBLEMS } from "@/lib/sql-problems";
 import { RESOURCE_DOMAINS, allTopics, topicProgressId } from "@/lib/learn";
@@ -13,12 +13,28 @@ import { StatusDonut, HorizontalBars } from "@/components/Charts";
 import { Heatmap } from "@/components/Heatmap";
 import { useProgress } from "@/components/ProgressProvider";
 import { exportJson } from "@/lib/progress";
+import type { ActivityEvent } from "@/lib/progress";
 import { patternMastery, dueForReview } from "@/lib/study";
+import { getFeed, FeedEntry } from "@/lib/activityFeed";
 import { domainIcon } from "@/components/learn/domainIcons";
+
+function recentIcon(changes: ActivityEvent["changes"]) {
+  if (changes.status) return changes.status.to === "DONE" ? CheckCircle2 : RefreshCw;
+  if (changes.confidence) return Star;
+  return Flag;
+}
 
 export default function Dashboard() {
   const { get, map, replaceAll } = useProgress();
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const [recent, setRecent] = useState<FeedEntry[]>([]);
+  useEffect(() => {
+    const refresh = () => setRecent(getFeed().slice(0, 6));
+    refresh();
+    window.addEventListener("prep-activity", refresh);
+    return () => window.removeEventListener("prep-activity", refresh);
+  }, [map]);
 
   const problemStatuses = PROBLEMS.map((p) => get(p.id).status);
   const sqlStatuses = SQL_PROBLEMS.map((p) => get(p.id).status);
@@ -174,6 +190,35 @@ export default function Dashboard() {
         <div className="lg:col-span-2">
           <Heatmap />
         </div>
+
+        <Card className="p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <SectionTitle>Recent activity</SectionTitle>
+            <Link href="/activity" className="text-xs font-medium text-indigo-300 transition hover:text-indigo-200">
+              View all
+            </Link>
+          </div>
+          {recent.length === 0 ? (
+            <p className="flex items-center gap-2 text-sm text-slate-500">
+              <History size={14} className="shrink-0" /> Nothing logged yet.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {recent.map((e) => {
+                const Icon = recentIcon(e.event.changes);
+                return (
+                  <Link key={e.event.id} href={e.item.href} className="group flex items-start gap-2.5">
+                    <Icon size={14} className="mt-0.5 shrink-0 text-slate-500 group-hover:text-indigo-300" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-medium text-slate-200 group-hover:text-white">{e.item.label}</div>
+                      <div className="truncate text-[11px] text-slate-500">{e.summary}</div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </Card>
 
         <Card className="p-5">
           <SectionTitle>Problems by difficulty</SectionTitle>
