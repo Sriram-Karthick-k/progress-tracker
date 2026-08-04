@@ -143,6 +143,20 @@ const JAVA: Sheet = {
       ],
     },
     {
+      id: "java-pair",
+      title: "Pair (Java has none built in!)",
+      intro: "Unlike C++'s std::pair, java.util has NO Pair class. Four idiomatic stand-ins, weakest to strongest — pick based on whether you need it as a map/heap key, and whether you need field NAMES.",
+      methods: [
+        { name: "int[] / Object[] of size 2", desc: "Zero ceremony — the #1 choice for coordinates or (value, index).", ex: "int[] p = {row, col};\nint r = p[0], c = p[1];", note: "No .equals()/hashCode() beyond reference identity for Object[] — fine for a local var, risky as a HashSet/HashMap key (use a List<Integer> or record instead — see below)." },
+        { name: "List.of(a, b) — for HashMap/HashSet keys", desc: "Immutable, and List already has real equals()/hashCode() (element-wise) — safe to put in a Set/Map, unlike int[].", ex: 'Set<List<Integer>> seen = new HashSet<>();\nseen.add(List.of(r, c));\nseen.contains(List.of(r, c));', out: "true — int[] would fail this (reference equality)" },
+        { name: "AbstractMap.SimpleEntry<K,V>", desc: "The closest thing to a REAL Pair — mutable, in java.util. Same type Map.Entry uses.", ex: 'var p = new AbstractMap.SimpleEntry<>(1, "a");\np.getKey();  p.getValue();\np.setValue("b");   // mutable!', out: "1,  then \"b\" after setValue" },
+        { name: "AbstractMap.SimpleImmutableEntry<K,V>", desc: "Same shape, but locked — setValue() throws. Prefer this when you don't need to mutate.", ex: 'var p = new AbstractMap.SimpleImmutableEntry<>(1, "a");\np.getKey();  p.getValue();', out: "1, \"a\"" },
+        { name: "record Pair(int a, int b) {}  — Java 16+", desc: "The BEST option when allowed: named fields, free equals/hashCode/toString, and you write it yourself in one line.", ex: 'record Pair(int a, int b) {}\nPair p = new Pair(1, 2);\np.a();  p.b();          // accessors are a()/b(), not getA()', out: "1, 2" },
+        { name: "PriorityQueue<int[]> — heap 'pair' by first element", desc: "The array-of-2 idiom extends straight into heaps — no wrapper type needed.", ex: 'PriorityQueue<int[]> pq = new PriorityQueue<>((x, y) -> x[0] - y[0]);\npq.offer(new int[]{dist, node});' },
+        { name: "Map.Entry<K,V> — what entrySet() already gives you", desc: "You don't need to build one to READ a map's pairs — just iterate entrySet().", ex: "for (Map.Entry<String,Integer> e : m.entrySet())\n  use(e.getKey(), e.getValue());" },
+      ],
+    },
+    {
       id: "java-list",
       title: "List — ArrayList",
       intro: "Assume List<Integer> l = [3, 1, 2]. Backed by a resizable array: O(1) get/set, O(n) middle insert/remove. Default container.",
