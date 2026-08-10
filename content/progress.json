@@ -781,6 +781,14 @@
       "notes": "",
       "attempts": 0,
       "touched": 1786177584427
+    },
+    "p-lc496": {
+      "status": "DONE",
+      "confidence": 4,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1786326058322
     }
   },
   "activity": {
@@ -799,7 +807,8 @@
     "2026-08-05": 53,
     "2026-08-06": 27,
     "2026-08-07": 5,
-    "2026-08-08": 11
+    "2026-08-08": 11,
+    "2026-08-10": 5
   },
   "goal": 3,
   "customCards": [],
@@ -816,9 +825,65 @@
     "/": 1007,
     "/problems?pattern=Hashing+%2F+Hash+Map": 1757.77783203125,
     "/roadmap/dsa": 0,
-    "/problems?pattern=Stack": 1111.111083984375
+    "/problems?pattern=Stack": 1434.4444580078125,
+    "/topics/cs-basics": 1222.2222900390625
   },
   "events": [
+    {
+      "id": "ev-1786326058322-ltr237",
+      "ts": 1786326058322,
+      "itemId": "p-lc496",
+      "changes": {
+        "revisit": {
+          "from": false,
+          "to": true
+        }
+      }
+    },
+    {
+      "id": "ev-1786326057457-9vsmhs",
+      "ts": 1786326057457,
+      "itemId": "p-lc496",
+      "changes": {
+        "status": {
+          "from": "LEARNING",
+          "to": "DONE"
+        }
+      }
+    },
+    {
+      "id": "ev-1786326057273-ygbffu",
+      "ts": 1786326057273,
+      "itemId": "p-lc496",
+      "changes": {
+        "status": {
+          "from": "ATTEMPTED",
+          "to": "LEARNING"
+        }
+      }
+    },
+    {
+      "id": "ev-1786326057057-2cim3w",
+      "ts": 1786326057057,
+      "itemId": "p-lc496",
+      "changes": {
+        "status": {
+          "from": "TODO",
+          "to": "ATTEMPTED"
+        }
+      }
+    },
+    {
+      "id": "ev-1786326056400-duf3we",
+      "ts": 1786326056400,
+      "itemId": "p-lc496",
+      "changes": {
+        "confidence": {
+          "from": 0,
+          "to": 4
+        }
+      }
+    },
     {
       "id": "ev-1786177584427-ewlxhe",
       "ts": 1786177584427,
