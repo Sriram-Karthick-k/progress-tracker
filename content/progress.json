@@ -1263,12 +1263,20 @@
       "touched": 1787103100007
     },
     "p-lc199": {
+      "status": "TODO",
+      "confidence": 0,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1787104264309
+    },
+    "p-lc515": {
       "status": "DONE",
       "confidence": 5,
       "revisit": false,
       "notes": "",
       "attempts": 0,
-      "touched": 1787104197755
+      "touched": 1787104262137
     }
   },
   "activity": {
@@ -1296,7 +1304,7 @@
     "2026-08-16": 20,
     "2026-08-17": 14,
     "2026-08-18": 28,
-    "2026-08-19": 17
+    "2026-08-19": 24
   },
   "goal": 3,
   "customCards": [],
@@ -1317,9 +1325,86 @@
     "/topics/cs-basics": 1222.2222900390625,
     "/problems?pattern=Binary+Search": 2001.1112060546875,
     "/problems?pattern=Trees+%E2%80%93+DFS": 1698.888916015625,
-    "/problems?pattern=Trees+%E2%80%93+BFS": 300
+    "/problems?pattern=Trees+%E2%80%93+BFS": 391
   },
   "events": [
+    {
+      "id": "ev-1787104264309-7qtfth",
+      "ts": 1787104264309,
+      "itemId": "p-lc199",
+      "changes": {
+        "status": {
+          "from": "DONE",
+          "to": "TODO"
+        }
+      }
+    },
+    {
+      "id": "ev-1787104262137-u1vnb7",
+      "ts": 1787104262137,
+      "itemId": "p-lc515",
+      "changes": {
+        "status": {
+          "from": "LEARNING",
+          "to": "DONE"
+        }
+      }
+    },
+    {
+      "id": "ev-1787104261984-mygnv8",
+      "ts": 1787104261984,
+      "itemId": "p-lc515",
+      "changes": {
+        "status": {
+          "from": "ATTEMPTED",
+          "to": "LEARNING"
+        }
+      }
+    },
+    {
+      "id": "ev-1787104261795-hkuv6f",
+      "ts": 1787104261795,
+      "itemId": "p-lc515",
+      "changes": {
+        "status": {
+          "from": "TODO",
+          "to": "ATTEMPTED"
+        }
+      }
+    },
+    {
+      "id": "ev-1787104259392-8x6ik0",
+      "ts": 1787104259392,
+      "itemId": "p-lc199",
+      "changes": {
+        "confidence": {
+          "from": 1,
+          "to": 0
+        }
+      }
+    },
+    {
+      "id": "ev-1787104259057-b69xia",
+      "ts": 1787104259057,
+      "itemId": "p-lc199",
+      "changes": {
+        "confidence": {
+          "from": 5,
+          "to": 1
+        }
+      }
+    },
+    {
+      "id": "ev-1787104254164-cvscde",
+      "ts": 1787104254164,
+      "itemId": "p-lc515",
+      "changes": {
+        "confidence": {
+          "from": 0,
+          "to": 5
+        }
+      }
+    },
     {
       "id": "ev-1787104197755-kpzwea",
       "ts": 1787104197755,
@@ -5640,83 +5725,6 @@
         "confidence": {
           "from": 0,
           "to": 5
-        }
-      }
-    },
-    {
-      "id": "ev-1785945588213-elsu6t",
-      "ts": 1785945588213,
-      "itemId": "p-lc217",
-      "changes": {
-        "status": {
-          "from": "LEARNING",
-          "to": "DONE"
-        }
-      }
-    },
-    {
-      "id": "ev-1785945588051-3pfxrz",
-      "ts": 1785945588051,
-      "itemId": "p-lc217",
-      "changes": {
-        "status": {
-          "from": "ATTEMPTED",
-          "to": "LEARNING"
-        }
-      }
-    },
-    {
-      "id": "ev-1785945587877-ap33es",
-      "ts": 1785945587877,
-      "itemId": "p-lc217",
-      "changes": {
-        "status": {
-          "from": "TODO",
-          "to": "ATTEMPTED"
-        }
-      }
-    },
-    {
-      "id": "ev-1785945586970-viad6n",
-      "ts": 1785945586970,
-      "itemId": "p-lc217",
-      "changes": {
-        "confidence": {
-          "from": 0,
-          "to": 5
-        }
-      }
-    },
-    {
-      "id": "ev-1785942495120-y9va98",
-      "ts": 1785942495120,
-      "itemId": "p-lc1207",
-      "changes": {
-        "revisit": {
-          "from": true,
-          "to": false
-        }
-      }
-    },
-    {
-      "id": "ev-1785942493926-qh8kut",
-      "ts": 1785942493926,
-      "itemId": "p-lc1207",
-      "changes": {
-        "revisit": {
-          "from": false,
-          "to": true
-        }
-      }
-    },
-    {
-      "id": "ev-1785942493441-qh2s55",
-      "ts": 1785942493441,
-      "itemId": "p-lc1207",
-      "changes": {
-        "status": {
-          "from": "LEARNING",
-          "to": "DONE"
         }
       }
     }
