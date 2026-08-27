@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { AppShell } from "@/components/AppShell";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NoteEditorHost } from "@/components/notebook/NoteEditorHost";
+import { AutoSync } from "@/components/notebook/AutoSync";
 import { RouteResume } from "@/components/RouteResume";
 
 export const metadata: Metadata = {
@@ -35,6 +36,7 @@ export default function RootLayout({
             <AppShell>{children}</AppShell>
             <CommandPalette />
             <NoteEditorHost />
+            <AutoSync />
           </ProgressProvider>
         </ThemeProvider>
       </body>

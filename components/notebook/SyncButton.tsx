@@ -15,6 +15,7 @@ export function SyncButton({ compact = false }: { compact?: boolean }) {
       const res = await fetch("/api/sync", { method: "POST" });
       const j = await res.json();
       setStatus(j.message || j.error || "done");
+      window.dispatchEvent(new CustomEvent("prep-sync", { detail: { message: j.message, auto: false } }));
     } catch (e) {
       setStatus((e as Error).message);
     } finally {

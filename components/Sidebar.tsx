@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -43,6 +44,37 @@ export function Sidebar({
 }) {
   const path = usePathname();
   const { get, ready } = useProgress();
+  const [lastSyncTs, setLastSyncTs] = useState<number | null | undefined>(undefined); // undefined = not fetched yet
+  const [, forceTick] = useState(0); // re-render every minute so "X ago" stays fresh
+
+  useEffect(() => {
+    if (!NOTES_EDITABLE) return;
+    function refresh() {
+      fetch("/api/sync", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((j) => setLastSyncTs(j.disabled ? undefined : j.lastSyncTs))
+        .catch(() => {});
+    }
+    refresh(); // initial
+    window.addEventListener("prep-sync", refresh); // after manual OR auto sync
+    const tick = setInterval(() => forceTick((n) => n + 1), 60_000);
+    return () => {
+      window.removeEventListener("prep-sync", refresh);
+      clearInterval(tick);
+    };
+  }, []);
+
+  function timeAgo(ts: number | null | undefined): string {
+    if (ts === undefined) return "…";
+    if (ts === null) return "never";
+    const diff = Date.now() - ts;
+    if (diff < 60_000) return "just now";
+    const mins = Math.floor(diff / 60_000);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+  }
 
   const link = (
     href: string,
@@ -151,6 +183,9 @@ export function Sidebar({
         <div className="mb-2">
           <div className="mb-1.5 px-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">Notes</div>
           <SyncButton />
+          <div className="mt-1.5 px-1 text-[11px] text-slate-600">
+            Last synced: <span className="text-slate-400">{timeAgo(lastSyncTs)}</span>
+          </div>
         </div>
       )}
       <div className="mb-2">
@@ -158,7 +193,10 @@ export function Sidebar({
         <ThemeToggle />
       </div>
       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs text-slate-500">
-        Progress saves to <span className="text-slate-300">content/progress.json</span> — use Sync to commit it with your notes.
+        Progress saves to <span className="text-slate-300">content/progress.json</span>.
+        {NOTES_EDITABLE
+          ? " Auto-syncs once a day, or hit Sync anytime."
+          : " Use Sync to commit it with your notes."}
       </div>
     </aside>
   );
