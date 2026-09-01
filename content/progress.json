@@ -1501,6 +1501,30 @@
       "notes": "",
       "attempts": 0,
       "touched": 1788028179635
+    },
+    "p-lc433": {
+      "status": "DONE",
+      "confidence": 4,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1788133368636
+    },
+    "p-lc207": {
+      "status": "DONE",
+      "confidence": 3,
+      "revisit": true,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1788137643633
+    },
+    "p-lc210": {
+      "status": "DONE",
+      "confidence": 4,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1788137641647
     }
   },
   "activity": {
@@ -1536,11 +1560,13 @@
     "2026-08-25": 18,
     "2026-08-27": 9,
     "2026-08-28": 21,
-    "2026-08-29": 5
+    "2026-08-29": 5,
+    "2026-08-30": 5,
+    "2026-08-31": 10
   },
   "goal": 3,
   "customCards": [],
-  "lastRoute": "/problems?pattern=Graphs+%E2%80%93+Traversal",
+  "lastRoute": "/problems?pattern=Graphs+%E2%80%93+Topological+Sort",
   "scroll": {
     "/problems?pattern=Two+Pointers": 0,
     "/problems?pattern=Sliding%20Window": 0,
@@ -1559,9 +1585,175 @@
     "/problems?pattern=Trees+%E2%80%93+DFS": 1698.888916015625,
     "/problems?pattern=Trees+%E2%80%93+BFS": 791,
     "/problems?pattern=Heap+%2F+Priority+Queue": 1620,
-    "/problems?pattern=Graphs+%E2%80%93+Traversal": 2195
+    "/problems?pattern=Graphs+%E2%80%93+Traversal": 2195,
+    "/problems?pattern=Graphs+%E2%80%93+Topological+Sort": 0
   },
   "events": [
+    {
+      "id": "ev-1788137643633-fvwf1k",
+      "ts": 1788137643633,
+      "itemId": "p-lc207",
+      "changes": {
+        "revisit": {
+          "from": false,
+          "to": true
+        }
+      }
+    },
+    {
+      "id": "ev-1788137642639-937xfp",
+      "ts": 1788137642639,
+      "itemId": "p-lc207",
+      "changes": {
+        "status": {
+          "from": "LEARNING",
+          "to": "DONE"
+        }
+      }
+    },
+    {
+      "id": "ev-1788137642466-fg7ilp",
+      "ts": 1788137642466,
+      "itemId": "p-lc207",
+      "changes": {
+        "status": {
+          "from": "ATTEMPTED",
+          "to": "LEARNING"
+        }
+      }
+    },
+    {
+      "id": "ev-1788137642266-s8cjcq",
+      "ts": 1788137642266,
+      "itemId": "p-lc207",
+      "changes": {
+        "status": {
+          "from": "TODO",
+          "to": "ATTEMPTED"
+        }
+      }
+    },
+    {
+      "id": "ev-1788137641647-md94x0",
+      "ts": 1788137641647,
+      "itemId": "p-lc210",
+      "changes": {
+        "status": {
+          "from": "LEARNING",
+          "to": "DONE"
+        }
+      }
+    },
+    {
+      "id": "ev-1788137641472-hw1t1l",
+      "ts": 1788137641472,
+      "itemId": "p-lc210",
+      "changes": {
+        "status": {
+          "from": "ATTEMPTED",
+          "to": "LEARNING"
+        }
+      }
+    },
+    {
+      "id": "ev-1788137641290-cuoz8g",
+      "ts": 1788137641290,
+      "itemId": "p-lc210",
+      "changes": {
+        "status": {
+          "from": "TODO",
+          "to": "ATTEMPTED"
+        }
+      }
+    },
+    {
+      "id": "ev-1788137640516-gavosw",
+      "ts": 1788137640516,
+      "itemId": "p-lc210",
+      "changes": {
+        "confidence": {
+          "from": 0,
+          "to": 4
+        }
+      }
+    },
+    {
+      "id": "ev-1788137639333-urz2t8",
+      "ts": 1788137639333,
+      "itemId": "p-lc207",
+      "changes": {
+        "confidence": {
+          "from": 5,
+          "to": 3
+        }
+      }
+    },
+    {
+      "id": "ev-1788137638437-so9byl",
+      "ts": 1788137638437,
+      "itemId": "p-lc207",
+      "changes": {
+        "confidence": {
+          "from": 0,
+          "to": 5
+        }
+      }
+    },
+    {
+      "id": "ev-1788133368636-eynm3b",
+      "ts": 1788133368636,
+      "itemId": "p-lc433",
+      "changes": {
+        "status": {
+          "from": "LEARNING",
+          "to": "DONE"
+        }
+      }
+    },
+    {
+      "id": "ev-1788133368455-dsjfgi",
+      "ts": 1788133368455,
+      "itemId": "p-lc433",
+      "changes": {
+        "status": {
+          "from": "ATTEMPTED",
+          "to": "LEARNING"
+        }
+      }
+    },
+    {
+      "id": "ev-1788133368070-3ti7bk",
+      "ts": 1788133368070,
+      "itemId": "p-lc433",
+      "changes": {
+        "status": {
+          "from": "TODO",
+          "to": "ATTEMPTED"
+        }
+      }
+    },
+    {
+      "id": "ev-1788133367398-obrmr0",
+      "ts": 1788133367398,
+      "itemId": "p-lc433",
+      "changes": {
+        "confidence": {
+          "from": 5,
+          "to": 4
+        }
+      }
+    },
+    {
+      "id": "ev-1788133366686-aycpdt",
+      "ts": 1788133366686,
+      "itemId": "p-lc433",
+      "changes": {
+        "confidence": {
+          "from": 0,
+          "to": 5
+        }
+      }
+    },
     {
       "id": "ev-1788028179635-l2hiz2",
       "ts": 1788028179635,
@@ -5794,171 +5986,6 @@
         "confidence": {
           "from": 0,
           "to": 5
-        }
-      }
-    },
-    {
-      "id": "ev-1786498951525-3e0u20",
-      "ts": 1786498951525,
-      "itemId": "p-lc367",
-      "changes": {
-        "status": {
-          "from": "LEARNING",
-          "to": "DONE"
-        }
-      }
-    },
-    {
-      "id": "ev-1786498951357-d09g46",
-      "ts": 1786498951357,
-      "itemId": "p-lc367",
-      "changes": {
-        "status": {
-          "from": "ATTEMPTED",
-          "to": "LEARNING"
-        }
-      }
-    },
-    {
-      "id": "ev-1786498951160-diu457",
-      "ts": 1786498951160,
-      "itemId": "p-lc367",
-      "changes": {
-        "status": {
-          "from": "TODO",
-          "to": "ATTEMPTED"
-        }
-      }
-    },
-    {
-      "id": "ev-1786498950706-z1lwqj",
-      "ts": 1786498950706,
-      "itemId": "p-lc367",
-      "changes": {
-        "confidence": {
-          "from": 0,
-          "to": 4
-        }
-      }
-    },
-    {
-      "id": "ev-1786498941225-k05uad",
-      "ts": 1786498941225,
-      "itemId": "p-lc69",
-      "changes": {
-        "status": {
-          "from": "LEARNING",
-          "to": "DONE"
-        }
-      }
-    },
-    {
-      "id": "ev-1786498941047-2ds7ae",
-      "ts": 1786498941047,
-      "itemId": "p-lc69",
-      "changes": {
-        "status": {
-          "from": "ATTEMPTED",
-          "to": "LEARNING"
-        }
-      }
-    },
-    {
-      "id": "ev-1786498940875-fgfw5u",
-      "ts": 1786498940875,
-      "itemId": "p-lc69",
-      "changes": {
-        "status": {
-          "from": "TODO",
-          "to": "ATTEMPTED"
-        }
-      }
-    },
-    {
-      "id": "ev-1786498940496-d9trgd",
-      "ts": 1786498940496,
-      "itemId": "p-lc69",
-      "changes": {
-        "confidence": {
-          "from": 0,
-          "to": 5
-        }
-      }
-    },
-    {
-      "id": "ev-1786498937086-spgbas",
-      "ts": 1786498937086,
-      "itemId": "p-lc34",
-      "changes": {
-        "revisit": {
-          "from": false,
-          "to": true
-        }
-      }
-    },
-    {
-      "id": "ev-1786498936279-v1wvyu",
-      "ts": 1786498936279,
-      "itemId": "p-lc34",
-      "changes": {
-        "status": {
-          "from": "LEARNING",
-          "to": "DONE"
-        }
-      }
-    },
-    {
-      "id": "ev-1786498936063-6wxqax",
-      "ts": 1786498936063,
-      "itemId": "p-lc34",
-      "changes": {
-        "status": {
-          "from": "ATTEMPTED",
-          "to": "LEARNING"
-        }
-      }
-    },
-    {
-      "id": "ev-1786498935882-b5i6wb",
-      "ts": 1786498935882,
-      "itemId": "p-lc34",
-      "changes": {
-        "status": {
-          "from": "TODO",
-          "to": "ATTEMPTED"
-        }
-      }
-    },
-    {
-      "id": "ev-1786498935300-w2ewvz",
-      "ts": 1786498935300,
-      "itemId": "p-lc34",
-      "changes": {
-        "confidence": {
-          "from": 0,
-          "to": 4
-        }
-      }
-    },
-    {
-      "id": "ev-1786498933387-3j28ms",
-      "ts": 1786498933387,
-      "itemId": "p-lc278",
-      "changes": {
-        "revisit": {
-          "from": false,
-          "to": true
-        }
-      }
-    },
-    {
-      "id": "ev-1786498932878-79ns2q",
-      "ts": 1786498932878,
-      "itemId": "p-lc278",
-      "changes": {
-        "status": {
-          "from": "LEARNING",
-          "to": "DONE"
         }
       }
     }
