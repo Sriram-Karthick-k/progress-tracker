@@ -1621,6 +1621,14 @@
       "notes": "",
       "attempts": 0,
       "touched": 1789485468312
+    },
+    "p-lc1976": {
+      "status": "DONE",
+      "confidence": 3,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1789573825953
     }
   },
   "activity": {
@@ -1665,7 +1673,8 @@
     "2026-09-08": 5,
     "2026-09-09": 5,
     "2026-09-10": 6,
-    "2026-09-15": 9
+    "2026-09-15": 9,
+    "2026-09-16": 4
   },
   "goal": 3,
   "customCards": [],
@@ -1691,9 +1700,53 @@
     "/problems?pattern=Graphs+%E2%80%93+Traversal": 2195,
     "/problems?pattern=Graphs+%E2%80%93+Topological+Sort": 494,
     "/problems?pattern=Graphs+%E2%80%93+Union-Find": 361,
-    "/problems?pattern=Graphs+%E2%80%93+Shortest+Path": 0
+    "/problems?pattern=Graphs+%E2%80%93+Shortest+Path": 496
   },
   "events": [
+    {
+      "id": "ev-1789573825953-exvfwb",
+      "ts": 1789573825953,
+      "itemId": "p-lc1976",
+      "changes": {
+        "status": {
+          "from": "LEARNING",
+          "to": "DONE"
+        }
+      }
+    },
+    {
+      "id": "ev-1789573825765-gvhd61",
+      "ts": 1789573825765,
+      "itemId": "p-lc1976",
+      "changes": {
+        "status": {
+          "from": "ATTEMPTED",
+          "to": "LEARNING"
+        }
+      }
+    },
+    {
+      "id": "ev-1789573825547-5ueawq",
+      "ts": 1789573825547,
+      "itemId": "p-lc1976",
+      "changes": {
+        "status": {
+          "from": "TODO",
+          "to": "ATTEMPTED"
+        }
+      }
+    },
+    {
+      "id": "ev-1789573824386-k3mtx6",
+      "ts": 1789573824386,
+      "itemId": "p-lc1976",
+      "changes": {
+        "confidence": {
+          "from": 0,
+          "to": 3
+        }
+      }
+    },
     {
       "id": "ev-1789485468312-e5ulf7",
       "ts": 1789485468312,
@@ -6047,50 +6100,6 @@
         "status": {
           "from": "TODO",
           "to": "ATTEMPTED"
-        }
-      }
-    },
-    {
-      "id": "ev-1786770870778-edhwry",
-      "ts": 1786770870778,
-      "itemId": "p-lc378",
-      "changes": {
-        "confidence": {
-          "from": 0,
-          "to": 4
-        }
-      }
-    },
-    {
-      "id": "ev-1786636968354-fbc752",
-      "ts": 1786636968354,
-      "itemId": "p-lc1011",
-      "changes": {
-        "revisit": {
-          "from": false,
-          "to": true
-        }
-      }
-    },
-    {
-      "id": "ev-1786636967553-t10zkd",
-      "ts": 1786636967553,
-      "itemId": "p-lc875",
-      "changes": {
-        "revisit": {
-          "from": false,
-          "to": true
-        }
-      }
-    },
-    {
-      "id": "ev-1786636963437-uh6iwe",
-      "ts": 1786636963437,
-      "itemId": "p-lc1011",
-      "changes": {
-        "status": {
-          "from": "LEARNING",
-          "to": "DONE"
         }
       }
     }
