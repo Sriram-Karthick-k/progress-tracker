@@ -1,7 +1,7 @@
 # Spring Boot & System Design: Progress
 
 ## Where we are
-**Stage:** 2. Persistence (Postgres, JDBC, Flyway, JPA) · **Next step:** transactions in depth (`@Transactional` rollback, propagation, isolation), a `V2` migration, tests for the JPA layer against a throwaway database. Stage 1 leftover: auto-configuration in depth.
+**Stage:** 2. Persistence (Postgres, JDBC, Flyway, JPA) · **Next step:** tests for the JPA layer against a throwaway Postgres (Testcontainers), then retire the demo/JdbcTemplate leftovers (ask first). Not yet covered in Stage 2: propagation (`REQUIRES_NEW`), isolation levels in practice, pessimistic locking (`FOR UPDATE`). Stage 1 leftover: auto-configuration in depth.
 
 **Stage 2 checklist:**
 - [x] Postgres container (`add-infra`), reachable at `postgres:5432` in-network and `localhost:5433` from the host
@@ -11,9 +11,11 @@
 - [x] Tests for the new layers (service unit tests with a Mockito mock, controller slice tests)
 - [x] JPA: `@Entity`, Hibernate-generated Postgres DDL compared with `V1`, `ddl-auto=validate`, Spring Data repository, SQL logging
 - [x] Dirty checking and why it needs `@Transactional` (silent lost update without it)
-- [ ] `V2` migration (add a column, see only `V2` applied) and a roll-forward revert
-- [ ] Transactions in depth (rollback rules, propagation, isolation)
-- [ ] Retire the now-unused `JdbcTemplate` repositories (`MessageRepository`, `JdbcDemoRepository`, `/db/version`): ask before deleting
+- [x] `V2` migration (add `version` column; expand step before the code change); viewed with the Flyway CLI `info`
+- [x] Transactions: atomicity and rollback, checked vs unchecked exceptions, self-invocation trap, lost update, optimistic locking (`@Version`) mapped to HTTP 409
+- [ ] Transactions, remaining: propagation (`REQUIRES_NEW`), isolation levels in practice, pessimistic locking
+- [ ] A roll-forward revert of a migration (a `V3` that undoes `V2`)
+- [ ] Retire the temporary leftovers, ask before deleting: `MessageRepository` (JdbcTemplate), `JdbcDemoRepository` + `DbController` (`/db/version`), `TransactionDemoService` + `TransactionDemoController` (`/demo/tx/*`)
 - [ ] Tests for the JPA layer (`@DataJpaTest` with a real throwaway Postgres)
 - [ ] Throwaway test database (Testcontainers) so `@SpringBootTest` stops using the dev DB
 
@@ -21,7 +23,7 @@
 - [x] Controllers and routing
 - [x] Request params, path variables, JSON responses, content negotiation
 - [x] Dependency injection (beans, constructor injection) and the controller -> service layer
-- [ ] Repository layer (arrives with Stage 2 persistence)
+- [x] Repository layer (delivered in Stage 2: JdbcTemplate, then Spring Data JPA)
 - [x] `@RequestBody`, validation (`@Valid`), error handling (`@RestControllerAdvice` + `ResponseEntityExceptionHandler`)
 - [x] Config and profiles (`@Value`, `@ConfigurationProperties`, `dev` profile, env-var precedence)
 - [x] Testing (unit, `@WebMvcTest` slice, `@SpringBootTest`, `@MockitoBean`, `@ActiveProfiles`)
@@ -43,6 +45,23 @@
 Capstone: Order & Payment Platform (order, inventory, payment, notification services). Infra planned: Postgres, Redis, Kafka (KRaft) + UI, RabbitMQ, Prometheus/Grafana/Zipkin.
 
 ## Lesson log
+### 2026-10-14 · Transactions, locking and the V2 migration
+- **Did:** Temporary demo classes `TransactionDemoService` / `TransactionDemoController` (`/demo/tx/*`) to reproduce each failure. Added `V2__add_version_to_messages.sql` (`ALTER TABLE messages ADD COLUMN version BIGINT NOT NULL DEFAULT 0`), then `@Version` on `MessageEntity`, a `409 Conflict` handler for `ObjectOptimisticLockingFailureException` in `GlobalExceptionHandler`, and a controller slice test for the 409. Viewed migrations with the Flyway CLI (`flyway/flyway:12.4.0` in a throwaway container, `info`). Suite: 20 green.
+- **Learned:**
+  - **Atomicity:** `@Transactional` + a runtime exception after the first `save` leaves nothing (the INSERT was sent, then rolled back). Without it, the first row stays committed while the client sees a 500: partial data.
+  - **Sequences are not transactional:** a rolled-back INSERT still consumed its id (ids 5, 9 skipped). Never assume gap-free ids.
+  - **Default rollback rule:** rollback on `RuntimeException`/`Error`, **commit on checked exceptions**. Fix: `@Transactional(rollbackFor = Exception.class)`.
+  - **Self-invocation:** `outer()` calling `this.inner()` (`@Transactional`) bypasses the proxy, so no transaction (row stayed). Annotate the entry method that outside callers use (or call through another bean).
+  - **Lost update:** two overlapping transactions both read, last commit silently wins; both returned 200. `UPDATE ... where id=?` cannot notice a concurrent change.
+  - **Optimistic locking:** `@Version` makes it `UPDATE ... set version=? where id=? and version=?`; 0 rows -> `ObjectOptimisticLockingFailureException`. Winner 200 (version 0 -> 1), loser conflict. Unhandled it is a 500; map it to **409**.
+  - **Expand then contract:** the column was added by `V2` first; the old entity code kept working (`validate` allows extra DB columns). Only then did the entity gain `@Version`.
+  - Flyway CLI `info` shows each migration with state `Success`/`Pending`/..., plus an `Undoable` column.
+- **Broke / gotchas:**
+  - An unhandled exception inside a controller gives a 500 in Spring's default shape (no generic `Exception` handler by design; see the error-handling lesson).
+  - Predicted every outcome correctly this lesson (see "Solid so far").
+  - Editor "cannot be resolved" errors appear between two-step edits (import added by a later edit); the compile result is the real check.
+- **Verified by:** `psql` after every scenario; Hibernate SQL log (`update ... where id=? and version=?`); a real two-request race with `curl` in parallel (A slow, B fast) before and after `@Version`; Flyway log and CLI `info` for `V2`; `mvn test`: 20 tests, BUILD SUCCESS.
+
 ### 2026-10-14 · Persistence part 2: JPA, Hibernate and Spring Data
 - **Did:** Added `spring-boot-starter-data-jpa`. Wrote `model/MessageEntity` mapped to the Flyway-built `messages` table. Had Hibernate write its Postgres DDL to a file and compared it with `V1`. Set `spring.jpa.hibernate.ddl-auto=validate`. Added `repository/MessageJpaRepository extends JpaRepository<MessageEntity, Long>` and switched `MessageService` to it (controller/DTOs untouched). Turned on `spring.jpa.show-sql` in the dev profile. Added `PUT /messages/{id}` with `@Transactional` `MessageService.rename` to show dirty checking. Updated `MessageServiceTest`. Suite: 19 green.
 - **Learned:**
@@ -189,11 +208,12 @@ Capstone: Order & Payment Platform (order, inventory, payment, notification serv
 - **A passing check can be invalid.** I reported "validate passes" while validation was not actually running (suppressed by script-generation settings). Lesson: prove a check can fail before trusting that it passed.
 - **Adopting Flyway on an existing database.** Predicted Flyway would silently accept the existing schema; real answer: startup fails (`non-empty schema ... no schema history table`), even with zero migrations. Predicted the checksum-mismatch failure correctly. Re-test in a later quiz.
 - **Environment leaks into tests.** Predicted tests ignore the container's `SPRING_PROFILES_ACTIVE`; real answer: the `dev` profile is active in tests unless pinned with `@ActiveProfiles`. Re-test in a later quiz.
-- (Solid so far: DI/missing-bean startup failure, config precedence, and "which test fails when `@Valid` is removed" were all predicted correctly.)
+- (Solid so far: DI/missing-bean startup failure, config precedence, "which test fails when `@Valid` is removed", Flyway checksum mismatch, dirty checking and the lost update without `@Transactional`, and every transaction scenario in the transactions lesson were predicted correctly.)
 - **Which exceptions an advice covers.** Predicted a wrong `Content-Type` would use our `ErrorResponse`; real answer 415 in Spring's default shape. Re-test in a later quiz.
 
 ## Concept notes
 - `request-input-and-json.md`: where request input comes from, how Spring converts it, how objects become JSON, content negotiation.
+- `transactions-in-spring.md`: ACID, the `@Transactional` proxy, rollback rules, self-invocation, propagation, isolation levels, lost updates and optimistic vs pessimistic locking, with what we reproduced.
 - `jpa-hibernate-and-spring-data.md`: JPA vs Hibernate vs Spring Data, entities, the persistence context and dirty checking, `ddl-auto` values, generated DDL vs Flyway, what we saw.
 - `persistence-postgres-jpa-flyway.md`: why a database, the JDBC objects, `JdbcTemplate`, Flyway migrations and checksums, Postgres setup and networking, lesson order (JDBC -> JdbcTemplate -> Flyway -> JPA).
 - `testing-spring-boot.md`: unit vs slice vs integration tests, MockMvc and `@MockitoBean`, pinning profiles in tests, running tests in Docker, Boot 4 package changes.

@@ -96,9 +96,45 @@ Same reason: `@Transactional` on `private` or `final` methods is ignored. Call i
 
 For things like **inventory stock** both appear in the capstone.
 
-## What we will do (hands-on plan)
-1. **Atomicity:** a service method that saves two messages and then fails. With `@Transactional` neither should exist; without it, the first one stays.
-2. **Checked vs unchecked:** a checked exception does not roll back; fix with `rollbackFor`.
-3. **Self-invocation:** a transactional method called from inside the same class.
-4. **Lost update:** add a `version` column with a **`V2` Flyway migration**, `@Version` on the entity, and two conflicting updates; handle the failure as HTTP 409.
-5. Tests where it makes sense, then record.
+## What we reproduced (all verified in Postgres)
+
+| Scenario | Result |
+|----------|--------|
+| `@Transactional`, save "first", then `RuntimeException` | **Nothing stored.** The INSERT was sent, then rolled back |
+| Same, but **no** `@Transactional` | `first` stays committed; client still got a 500: **partial data** |
+| `@Transactional`, then a **checked** `Exception` | **Committed** (default rule only rolls back unchecked) |
+| Same with `@Transactional(rollbackFor = Exception.class)` | Rolled back |
+| `outer()` (no annotation) calls `this.inner()` (`@Transactional`) which throws | Row stays: **no transaction** (call bypassed the proxy) |
+| Annotation moved to `outer()` | Rolled back |
+| Two overlapping renames, no version | Both 200, the later commit **silently overwrites** the earlier |
+| Same race with `@Version` | First commit 200, second **409**; first value survives |
+
+Side effect worth remembering: a rolled-back INSERT still consumed its sequence value, so ids have gaps (5, 9 skipped). Never rely on gap-free ids.
+
+## Optimistic locking, step by step
+
+```sql
+-- db/migration/V2__add_version_to_messages.sql  (schema first: "expand")
+ALTER TABLE messages ADD COLUMN version BIGINT NOT NULL DEFAULT 0;
+```
+```java
+@Version
+private Long version;      // then the entity: Hibernate now writes
+```
+```
+update messages set created_at=?,text=?,version=? where id=? and version=?
+```
+- 0 rows updated -> Hibernate throws `ObjectOptimisticLockingFailureException` -> map to **409 Conflict** in the central handler (unhandled it is a 500).
+- The old entity code kept working after `V2` (validate allows extra DB columns). Order: migration first, code second.
+- A controller slice test locks in the 409 behaviour.
+
+## Not covered yet
+- Propagation in practice (`REQUIRES_NEW` for an audit row that must survive a rollback).
+- Isolation levels in practice (two `psql` sessions at `REPEATABLE READ` / `SERIALIZABLE`, serialization failures and retry).
+- Pessimistic locking (`SELECT ... FOR UPDATE`), deadlocks.
+
+## Gotchas
+- Put `@Transactional` on the method outside callers invoke (usually the service entry point), not on a helper called via `this`.
+- Checked exceptions commit by default; use `rollbackFor` or throw unchecked exceptions from transactional code.
+- A transaction holds a pooled DB connection for its whole duration: keep transactions short and do not call slow remote services inside them. In the distributed stage this is why Kafka publishing needs the outbox pattern.
+- Optimistic locking needs a retry or a user-facing "reload and try again" (409).
