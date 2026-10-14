@@ -65,6 +65,45 @@ flowchart LR
 
 Plain JDBC is verbose and easy to leak connections (forgetting to close). `JdbcTemplate` removes that boilerplate while keeping SQL explicit. JPA then removes the SQL too, at the cost of hiding what happens.
 
+## Coming from Prisma: what is generated and what is not
+
+Prisma bundles the ORM and the migrations. In Java they are two separate tools.
+
+| Job | Prisma | Java / Spring |
+|-----|--------|---------------|
+| Describe the model | `schema.prisma` | JPA entity classes (`@Entity`) |
+| Generate query code | Prisma Client | Hibernate builds SQL at runtime in the driver's dialect; Spring Data generates repository implementations |
+| Generate migration SQL from model changes | `prisma migrate dev` diffs and writes a SQL file you review and commit | No single built-in equivalent |
+| Apply migrations, keep history | `prisma migrate deploy`, `_prisma_migrations` | Flyway or Liquibase, `flyway_schema_history` |
+
+- **Hibernate = ORM only.** **Flyway = runs SQL files you wrote; it never generates.**
+- Until JPA, all our SQL is hand-written and Postgres-specific (`insert ... returning`, `BIGSERIAL`). Hibernate will generate the DML (INSERT/SELECT/UPDATE) per dialect.
+- Ways to get schema SQL generated (known to exist, not tried here): Hibernate `ddl-auto=update` (applies directly, no files: prototype only); Hibernate's JPA script generation (a full create script, not a diff); Liquibase (database-agnostic YAML/XML changelogs, optional diff against entities); IDE tools such as JPA Buddy that write a Flyway/Liquibase migration from an entity change.
+- Common practice: hand-write the Flyway SQL, review it, run Hibernate in `validate` mode to check entities against the schema.
+- Plan for the JPA step: write the entity, have Hibernate generate the Postgres DDL into a file, and compare it with our hand-written `V1`.
+
+## Reverting a migration
+
+- Flyway is **forward-only**: it runs pending `V<n>__*.sql` files once, in order, and records them. It does not generate a revert.
+- Undo files (`U2__...sql`) are, as far as I know, a paid-edition feature, and you still write the SQL. Not verified for Flyway 12.4.0.
+- Normal practice: **roll forward**. Write `V3` that undoes `V2`; history keeps both.
+- Dev: rebuild from scratch (`docker compose down -v`, then start).
+- Data cannot be reverted by any migration tool: a dropped column's values need a backup.
+- Production pattern: **expand then contract**. Add the new column, copy data, deploy code that uses it, drop the old column in a *later* release.
+- Prisma Migrate is, as far as I know, also forward-only (`migrate reset` for dev). Liquibase supports rollback via per-change rollback instructions.
+- Postgres supports transactional DDL, so a failing migration should leave nothing half-applied (to be shown with a failing `V2`). MySQL cannot do this.
+
+## Two kinds of SQL Hibernate generates
+
+| | Row operations (DML) | Schema operations (DDL) |
+|---|----------------------|-------------------------|
+| Example | INSERT / UPDATE / SELECT | CREATE TABLE / ALTER TABLE |
+| When | On every entity save/load | Only if schema generation is requested |
+| Granularity | One statement per entity operation | A script for the whole schema |
+| Revert | Normal transaction rollback | None |
+
+Schema generation: **script to a file** = the full create script (not a diff); **`ddl-auto=update`** = a diff applied immediately to the live database, no file, no reverse. Neither gives incremental, reviewable migration files; that is why Flyway or Liquibase sit next to Hibernate.
+
 ## Lesson order (changed: JDBC first)
 1. **Postgres container** in `compose.yaml` (done, with `add-infra`): healthy, reachable at `postgres:5432` from the app and `localhost:5433` from the host.
 2. **JDBC connection:** add the driver and JDBC starter, configure `spring.datasource.*`, and run raw JDBC against the `DataSource`.
