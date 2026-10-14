@@ -78,3 +78,48 @@ Plain JDBC is verbose and easy to leak connections (forgetting to close). `JdbcT
 - App (in the `dev` container) connects to `jdbc:postgresql://postgres:5432/hello_db`.
 - Your host's own Postgres owns port 5432, so the container is published on **5433**.
 - Data in the named volume `pgdata`: `docker compose down` keeps it, `docker compose down -v` wipes it.
+
+## What we built (verified)
+
+```
+POST/GET /messages -> MessageController -> MessageService -> MessageRepository (JdbcTemplate) -> Hikari -> Postgres
+                      HTTP only            rules, 404         explicit SQL                                 schema owned by Flyway V1
+```
+
+```java
+// Raw JDBC: try-with-resources returns the connection to the pool
+try (Connection c = dataSource.getConnection();
+     PreparedStatement ps = c.prepareStatement("select version()");
+     ResultSet rs = ps.executeQuery()) { rs.next(); return rs.getString(1); }
+
+// JdbcTemplate: same job, boilerplate removed, SQL still explicit
+jdbc.queryForObject("insert into messages (text) values (?) returning id, text, created_at", MAPPER, text);
+```
+
+```sql
+-- db/migration/V1__create_messages.sql
+CREATE TABLE messages (
+    id         BIGSERIAL PRIMARY KEY,
+    text       TEXT        NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+## What we saw
+
+| Experiment | Result |
+|------------|--------|
+| App (in `dev` container) -> `postgres:5432` | Works (service-name DNS) |
+| App -> `localhost:5432` | Refused: `localhost` inside `dev` is `dev` itself |
+| Hikari pool | Starts lazily on the first query (log on the request thread) |
+| Add Flyway to a non-empty DB with no history table | **Startup fails**: `Found non-empty schema(s) "public" but no schema history table` (even with zero migration files) |
+| Edit applied `V1` (add a comment) | **Startup fails**: `Migration checksum mismatch for migration version 1` |
+| Restart app, then restart Docker daemon | Row still there; Flyway history intact |
+
+## Gotchas
+- Host port 5432 may already be taken (we had a native Postgres). Publish the container on another host port (`5433:5432`); the app inside the network is unaffected.
+- Adding Flyway makes the app connect **at startup**: a wrong password or a down database now fails the boot instead of the first request.
+- `@SpringBootTest` tests run Flyway against the real dev database; `@WebMvcTest` slices never touch it. A throwaway test database (Testcontainers) is a planned follow-up.
+- `insert ... returning` is Postgres-specific.
+- Never edit an applied migration. Add `V2__...`. To adopt Flyway on an existing database use baseline; for a throwaway dev DB, drop and let `V1` build it.
+- Dev-only credentials (`app`/`app`) live in `compose.yaml`; real services take them from the environment.
