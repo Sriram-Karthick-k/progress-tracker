@@ -1,12 +1,15 @@
 import Link from "next/link";
-import { getNotesTree, getAllNoteSlugs, getNote } from "@/lib/notes";
+import { getNotesTree, getNote } from "@/lib/notes";
 import { NotebookShell } from "@/components/notebook/NotebookShell";
 import { NotebookContent } from "@/components/notebook/NotebookContent";
 import { NoteEditButton } from "@/components/notebook/NoteEditButton";
 
-export function generateStaticParams() {
-  return getAllNoteSlugs().map((slug) => ({ slug }));
-}
+// No generateStaticParams: notes are edited on disk (in-app editor, or
+// externally e.g. by an AI) after the build. force-dynamic alone doesn't
+// override statically-listed params, so nothing gets pre-rendered here —
+// every request reads content/notes/**.md fresh.
+export const dynamic = "force-dynamic";
+export const dynamicParams = true;
 
 export default function NotePage({ params }: { params: { slug: string[] } }) {
   const tree = getNotesTree();

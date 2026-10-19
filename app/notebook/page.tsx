@@ -3,6 +3,10 @@ import { NotebookShell } from "@/components/notebook/NotebookShell";
 import { NotebookContent } from "@/components/notebook/NotebookContent";
 import { NoteEditButton } from "@/components/notebook/NoteEditButton";
 
+// Same reason as [...slug]/page.tsx: content/notes/**.md changes on disk
+// after the build, so this must render fresh per request.
+export const dynamic = "force-dynamic";
+
 export default function NotebookIndex() {
   const tree = getNotesTree();
   const welcome = getNote(["welcome"]);
