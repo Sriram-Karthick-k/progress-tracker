@@ -11,9 +11,9 @@ import { NoteEditButton } from "@/components/notebook/NoteEditButton";
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 
-export default function NotePage({ params }: { params: { slug: string[] } }) {
+export default async function NotePage({ params }: { params: { slug: string[] } }) {
   const tree = getNotesTree();
-  const note = getNote(params.slug);
+  const note = await getNote(params.slug);
   const active = params.slug.join("/");
   const editable = process.env.NEXT_PUBLIC_NOTES_READONLY !== "1";
 

@@ -10,7 +10,8 @@ import { CHEATSHEETS } from "@/lib/cheatsheets";
 import { CONCEPTS } from "@/lib/sqlsheet";
 import { SQL_PROBLEMS } from "@/lib/sql-problems";
 
-type Hit = { group: string; title: string; sub: string; href: string; external?: boolean };
+type Hit = { group: string; title: string; sub: string; href: string; external?: boolean; body?: string };
+type NoteSearchEntry = { title: string; slug: string[]; text: string };
 
 // Static search index, built once per session. Indexes everything: pages,
 // roadmaps, topic hubs, every topic, every external resource link, patterns,
@@ -95,7 +96,17 @@ function score(hit: Hit, q: string): number {
   if (t.startsWith(q)) return 3;
   if (t.includes(q)) return 2;
   if (s.includes(q)) return 1;
+  if (hit.body?.includes(q)) return 1;
   return 0;
+}
+
+// a short "...around the match..." preview so a content-only hit is explained
+function snippetAround(text: string, q: string): string {
+  const i = text.toLowerCase().indexOf(q);
+  if (i < 0) return text.slice(0, 80);
+  const start = Math.max(0, i - 30);
+  const end = Math.min(text.length, i + q.length + 50);
+  return `${start > 0 ? "…" : ""}${text.slice(start, end)}${end < text.length ? "…" : ""}`;
 }
 
 export function CommandPalette() {
@@ -104,7 +115,28 @@ export function CommandPalette() {
   const [q, setQ] = useState("");
   const [sel, setSel] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const index = useMemo(buildIndex, []);
+  const staticIndex = useMemo(buildIndex, []);
+  const [notes, setNotes] = useState<NoteSearchEntry[]>([]);
+
+  // Notes are edited live on disk, so they can't be baked into buildIndex()
+  // at module load — fetch the always-fresh index once per session.
+  useEffect(() => {
+    fetch("/api/notes/search")
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setNotes)
+      .catch(() => {});
+  }, []);
+
+  const index = useMemo<Hit[]>(() => {
+    const noteHits: Hit[] = notes.map((n) => ({
+      group: "Notebook",
+      title: n.title,
+      sub: n.slug.join(" / "),
+      href: `/notebook/${n.slug.join("/")}`,
+      body: n.text.toLowerCase(),
+    }));
+    return [...staticIndex, ...noteHits];
+  }, [staticIndex, notes]);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -212,6 +244,10 @@ export function CommandPalette() {
             results.map((r, i) => {
               const header = r.group !== lastGroup ? r.group : null;
               lastGroup = r.group;
+              const query = q.trim().toLowerCase();
+              // title/sub didn't match -> this hit only matched in note body; show why
+              const contentOnly = r.body && !r.title.toLowerCase().includes(query) && !r.sub.toLowerCase().includes(query);
+              const shown = contentOnly ? snippetAround(r.body!, query) : r.sub;
               return (
                 <div key={`${r.href}-${i}`}>
                   {header && (
@@ -227,7 +263,7 @@ export function CommandPalette() {
                     }`}
                   >
                     <span className="min-w-0 flex-1 truncate text-sm font-medium">{r.title}</span>
-                    <span className="shrink-0 text-xs text-slate-500">{r.sub}</span>
+                    <span className="min-w-0 max-w-[45%] shrink truncate text-xs text-slate-500">{shown}</span>
                     {r.external ? (
                       <ExternalLink size={12} className="shrink-0 text-slate-500" />
                     ) : (

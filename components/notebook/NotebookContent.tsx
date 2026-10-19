@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { useTheme } from "@/components/ThemeProvider";
+import type { IconifyJSON } from "@iconify/types";
+import "katex/dist/katex.min.css";
 
 // Renders pre-built markdown HTML and draws any ```mermaid diagrams client-side.
 export function NotebookContent({ html }: { html: string }) {
@@ -17,6 +19,13 @@ export function NotebookContent({ html }: { html: string }) {
     import("mermaid").then((m) => {
       if (cancelled) return;
       const mermaid = m.default;
+      // icon packs for `architecture-beta` diagrams (cloud/service boxes, à la
+      // Eraser's cloud-architecture diagrams) — loaded lazily, only when used.
+      const loadIconJson = (m: { default: IconifyJSON }) => m.default;
+      mermaid.registerIconPacks([
+        { name: "logos", loader: () => import("@iconify-json/logos/icons.json").then(loadIconJson) },
+        { name: "mdi", loader: () => import("@iconify-json/mdi/icons.json").then(loadIconJson) },
+      ]);
       mermaid.initialize({
         startOnLoad: false,
         theme: resolved === "dark" ? "dark" : "default",

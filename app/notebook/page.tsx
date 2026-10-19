@@ -7,9 +7,9 @@ import { NoteEditButton } from "@/components/notebook/NoteEditButton";
 // after the build, so this must render fresh per request.
 export const dynamic = "force-dynamic";
 
-export default function NotebookIndex() {
+export default async function NotebookIndex() {
   const tree = getNotesTree();
-  const welcome = getNote(["welcome"]);
+  const welcome = await getNote(["welcome"]);
   const total = countNotes();
   const editable = process.env.NEXT_PUBLIC_NOTES_READONLY !== "1";
 

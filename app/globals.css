@@ -158,3 +158,32 @@ body {
 }
 .md-body th { background: rgb(var(--c-white) / 0.04); color: rgb(var(--c-white)); font-weight: 600; }
 .md-body img { max-width: 100%; border-radius: 0.5rem; }
+
+/* GitHub-style alert callouts: > [!NOTE] / [!TIP] / [!IMPORTANT] / [!WARNING] / [!CAUTION] */
+.md-alert {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.6rem;
+  border: 1px solid;
+  border-left-width: 4px;
+}
+.md-alert > :last-child { margin-bottom: 0; }
+.md-alert-title { font-weight: 700; margin: 0 0 0.35rem; font-size: 0.9rem; }
+.md-alert-note { border-color: rgb(96 165 250 / 0.4); background: rgb(96 165 250 / 0.08); }
+.md-alert-note .md-alert-title { color: rgb(96 165 250); }
+.md-alert-tip { border-color: rgb(52 211 153 / 0.4); background: rgb(52 211 153 / 0.08); }
+.md-alert-tip .md-alert-title { color: rgb(52 211 153); }
+.md-alert-important { border-color: rgb(167 139 250 / 0.4); background: rgb(167 139 250 / 0.08); }
+.md-alert-important .md-alert-title { color: rgb(167 139 250); }
+.md-alert-warning { border-color: rgb(250 204 21 / 0.4); background: rgb(250 204 21 / 0.08); }
+.md-alert-warning .md-alert-title { color: rgb(250 204 21); }
+.md-alert-caution { border-color: rgb(248 113 113 / 0.4); background: rgb(248 113 113 / 0.08); }
+.md-alert-caution .md-alert-title { color: rgb(248 113 113); }
+
+/* Shiki-highlighted code: let its own inline colors show through the
+   existing dark code-block chrome (box/border/padding from the rule above). */
+.md-body pre.shiki { margin: 1rem 0; border-radius: 0.75rem; overflow-x: auto; }
+.md-body pre.shiki code { font-size: 13px; line-height: 1.6; }
+
+/* KaTeX: don't let the block-math wrapper add its own paragraph margin twice */
+.md-body .katex-display { margin: 1rem 0; overflow-x: auto; overflow-y: hidden; }
