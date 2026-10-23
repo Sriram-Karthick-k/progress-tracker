@@ -142,6 +142,13 @@ body {
   text-align: center;
   background: transparent;
 }
+.md-body .md-excalidraw {
+  margin: 1.25rem 0;
+  height: 440px;
+  border: 1px solid rgb(var(--c-white) / 0.1);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
 .md-body table {
   width: 100%;
   border-collapse: collapse;

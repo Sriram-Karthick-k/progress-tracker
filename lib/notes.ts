@@ -7,6 +7,8 @@
 //      swapped for plain placeholders so marked doesn't mangle the LaTeX.
 //   2. marked.parse() with GFM, with custom renderers for:
 //        - ```mermaid fences -> <pre class="mermaid"> (drawn client-side)
+//        - ```excalidraw fences -> <div class="md-excalidraw"> (scene JSON,
+//          mounted read-only client-side)
 //        - other fenced code -> placeholder, highlighted via Shiki after parse
 //        - > [!NOTE]/[!TIP]/[!WARNING]/[!IMPORTANT]/[!CAUTION] -> alert callouts
 //   3. Shiki placeholders resolved (async, dual light/dark theme).
@@ -72,6 +74,13 @@ function buildRenderer() {
         const lang = (token.lang || "").trim().toLowerCase();
         if (lang === "mermaid") {
           return `<pre class="mermaid">${token.text}</pre>`;
+        }
+        if (lang === "excalidraw") {
+          // token.text is a raw .excalidraw scene (JSON exported from
+          // excalidraw.com) — base64 so it survives as an HTML attribute
+          // untouched, decoded + mounted client-side in NotebookContent.
+          const scene = Buffer.from(token.text, "utf8").toString("base64");
+          return `<div class="md-excalidraw" data-scene="${scene}"></div>`;
         }
         const i = pending.length;
         pending.push({ lang, code: token.text });

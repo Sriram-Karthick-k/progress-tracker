@@ -83,11 +83,25 @@ architecture-beta
     server:B -- T:disk
 ```
 
+Mermaid diagrams now render in **hand-drawn look** (`look: "handDrawn"`, rough.js
+under the hood) — sketchier, more memorable than flat boxes, zero markup change.
+
+## Hand-drawn illustrations (Excalidraw)
+
+For freeform, ByteByteGo-style visual panels — not auto-laid-out flowcharts —
+draw at [excalidraw.com](https://excalidraw.com), then **File → Save to disk**
+and paste the downloaded `.excalidraw` file's JSON into a ` ```excalidraw ` fence:
+
+```excalidraw
+{"elements":[{"id":"r1","type":"rectangle","x":80,"y":120,"width":200,"height":90,"angle":0,"strokeColor":"#1e1e1e","backgroundColor":"#a5d8ff","fillStyle":"hachure","strokeWidth":2,"strokeStyle":"solid","roughness":1,"opacity":100,"groupIds":[],"frameId":null,"roundness":{"type":3},"seed":1,"version":1,"versionNonce":1,"isDeleted":false,"boundElements":null,"updated":1,"link":null,"locked":false},{"id":"t1","type":"text","x":120,"y":150,"width":120,"height":30,"angle":0,"strokeColor":"#1e1e1e","backgroundColor":"transparent","fillStyle":"hachure","strokeWidth":2,"strokeStyle":"solid","roughness":1,"opacity":100,"groupIds":[],"frameId":null,"roundness":null,"seed":2,"version":1,"versionNonce":2,"isDeleted":false,"boundElements":null,"updated":1,"link":null,"locked":false,"text":"Client","fontSize":24,"fontFamily":1,"textAlign":"center","verticalAlign":"middle","baseline":20,"containerId":null,"originalText":"Client","lineHeight":1.25},{"id":"r2","type":"rectangle","x":460,"y":120,"width":200,"height":90,"angle":0,"strokeColor":"#1e1e1e","backgroundColor":"#b2f2bb","fillStyle":"hachure","strokeWidth":2,"strokeStyle":"solid","roughness":1,"opacity":100,"groupIds":[],"frameId":null,"roundness":{"type":3},"seed":3,"version":1,"versionNonce":3,"isDeleted":false,"boundElements":null,"updated":1,"link":null,"locked":false},{"id":"t2","type":"text","x":500,"y":150,"width":120,"height":30,"angle":0,"strokeColor":"#1e1e1e","backgroundColor":"transparent","fillStyle":"hachure","strokeWidth":2,"strokeStyle":"solid","roughness":1,"opacity":100,"groupIds":[],"frameId":null,"roundness":null,"seed":4,"version":1,"versionNonce":4,"isDeleted":false,"boundElements":null,"updated":1,"link":null,"locked":false,"text":"Server","fontSize":24,"fontFamily":1,"textAlign":"center","verticalAlign":"middle","baseline":20,"containerId":null,"originalText":"Server","lineHeight":1.25},{"id":"a1","type":"arrow","x":280,"y":165,"width":180,"height":0,"angle":0,"strokeColor":"#1e1e1e","backgroundColor":"transparent","fillStyle":"hachure","strokeWidth":2,"strokeStyle":"solid","roughness":1,"opacity":100,"groupIds":[],"frameId":null,"roundness":{"type":2},"seed":5,"version":1,"versionNonce":5,"isDeleted":false,"boundElements":null,"updated":1,"link":null,"locked":false,"points":[[0,0],[180,0]],"lastCommittedPoint":null,"startBinding":null,"endBinding":null,"startArrowhead":null,"endArrowhead":"arrow"}],"appState":{}}
+```
+
 ## Tables, links, images — unchanged (GFM)
 
 | Feature | Library | Status |
 |---|---|---|
 | Code highlight | Shiki | ✅ |
 | Math | KaTeX | ✅ |
-| Diagrams | Mermaid | ✅ |
+| Diagrams | Mermaid (hand-drawn look) | ✅ |
+| Illustrations | Excalidraw | ✅ |
 | Callouts | custom | ✅ |
