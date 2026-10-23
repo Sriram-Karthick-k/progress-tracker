@@ -48,6 +48,22 @@ function unescapeHtml(s: string): string {
 // Extracted BEFORE marked sees the text (LaTeX's _, *, { } would otherwise be
 // read as markdown syntax), substituted back in AFTER marked + Shiki run.
 
+// Fenced blocks (``` or ~~~, closing fence at least as long as the opening, so a
+// ````markdown block can contain ``` lines) and inline `code` spans. Math must never be
+// extracted from these: Spring's `${key:default}` would otherwise open a "$…$" span that
+// runs to the next `$` and swallows the rest of the fence.
+const CODE_RE = /(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2[`~]*(?=\n|$)|``[^`]+``|`[^`\n]+`/g;
+
+function outsideCode(raw: string, fn: (segment: string) => string): string {
+  let out = "";
+  let last = 0;
+  for (const m of raw.matchAll(CODE_RE)) {
+    out += fn(raw.slice(last, m.index)) + m[0];
+    last = m.index + m[0].length;
+  }
+  return out + fn(raw.slice(last));
+}
+
 function extractMath(raw: string): { text: string; restore: (html: string) => string } {
   const nonce = Math.random().toString(36).slice(2, 8);
   const slots: string[] = [];
@@ -59,10 +75,13 @@ function extractMath(raw: string): { text: string; restore: (html: string) => st
     return `@@MATH${nonce}${i}@@`;
   };
 
-  let text = raw.replace(/\$\$([\s\S]+?)\$\$/g, (_, expr) => stash(expr, true));
-  // inline: $...$ with non-space immediately inside both delimiters, so
-  // "$5 and $10" (plain currency) is never mistaken for math.
-  text = text.replace(/\$([^\s$](?:[^$]*[^\s$])?)\$/g, (_, expr) => stash(expr, false));
+  const text = outsideCode(raw, (s) =>
+    s
+      .replace(/\$\$([\s\S]+?)\$\$/g, (_, expr) => stash(expr, true))
+      // inline: $...$ with non-space immediately inside both delimiters, so
+      // "$5 and $10" (plain currency) is never mistaken for math.
+      .replace(/\$([^\s$](?:[^$]*[^\s$])?)\$/g, (_, expr) => stash(expr, false))
+  );
 
   return {
     text,

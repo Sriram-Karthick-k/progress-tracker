@@ -135,7 +135,20 @@ Deleting is idempotent; the next read loads the committed row.
 </details>
 ```
 
-  Ask "why" and "what breaks if…" questions, not definitions. Answers: 2–4 sentences.
+  **Write scenario questions, not definitions.** Each question gives a concrete setup (a
+  request, a code shape, a symptom, an error message) and asks what happens and why, the way
+  interviewers probe understanding. Each answer names the **mechanism** (the exact class,
+  exception, or lifecycle step) and ends with the fix. 5–8 per note; answers 2–6 sentences or
+  a short list.
+
+  | ❌ Definition (don't) | ✅ Scenario (do) |
+  |---|---|
+  | What is the DispatcherServlet? | Walk me through what happens between Tomcat receiving `POST /messages` and your method running. |
+  | `@RequestParam` vs `@PathVariable`? | `GET /orders/abc` hits a `long id` path variable. What status, and does your method run? |
+  | Is a singleton thread-safe? | A teammate stores `currentUserId` in a `@Service` field; under load users see each other's data. Explain. |
+
+  Never mark an answer *(verified)* unless the note's own content records that it was reproduced.
+  Inside `<summary>`, write generics as `List&lt;T&gt;` (raw `<` is read as an HTML tag).
 
 ## 6. Excalidraw (freeform illustrations)
 

@@ -1,25 +1,63 @@
-# 4. Validation and error handling
+# 4. Validation and Error Handling — One Error Format for Every Failure
+
+Bad data must be rejected **before** it reaches business logic, and every failure, whether
+yours or Spring's, should come back in **one consistent JSON shape**. Two separate
+mechanisms make that happen: Bean Validation for the input, and a controller advice for the
+output.
+
+> [!TIP]
+> **TL;DR: the 30-second interview answer**
+> - Constraint annotations (`@NotBlank`, `@Size`…) only **describe** rules. **`@Valid`** on the parameter makes Spring **run** them.
+> - Two different 400s: malformed JSON fails in **Jackson** (`HttpMessageNotReadableException`), invalid values fail in **validation** (`MethodArgumentNotValidException`).
+> - For one error format: **extend `ResponseEntityExceptionHandler`** in a `@RestControllerAdvice`. Don't catch `Exception.class`.
+
+## At a glance
+
+```mermaid
+mindmap
+  root((Validation &<br/>errors))
+    Input
+      @RequestBody · Jackson
+      Constraints
+      @Valid triggers
+      @Validated groups
+    Failures
+      400 bad JSON
+      400 constraint
+      415 media type
+      405 method
+    Handling
+      @RestControllerAdvice
+      ResponseEntityExceptionHandler
+      @ExceptionHandler own types
+    Contract
+      ErrorResponse record
+      ProblemDetail option
+```
 
 ## The flow
 
-Bad data must be rejected **before** it reaches business logic, and in one consistent format.
-
 ```mermaid
 flowchart TD
-  A["Client sends POST with a JSON body"] --> B["@RequestBody: Jackson turns the JSON into a record"]
-  B --> C{"Is the JSON valid and does it fit the record?"}
-  C -->|no| X1["400 HttpMessageNotReadableException"]
-  C -->|yes| D{"@Valid on the parameter?"}
-  D -->|no| M["Your method runs, constraints NOT checked"]
-  D -->|yes| V{"All constraints pass?"}
-  V -->|yes| M
-  V -->|no| X2["400 MethodArgumentNotValidException"]
-  X1 --> H["@RestControllerAdvice or Spring's default handler"]
+  A(["POST with a JSON body"]) --> B["@RequestBody:<br/>Jackson → record"]:::step
+  B --> C{"Valid JSON that<br/>fits the record?"}
+  C -->|no| X1["400 HttpMessageNotReadable"]:::bad
+  C -->|yes| D{"@Valid on the<br/>parameter?"}
+  D -->|no| M0["Method runs:<br/>constraints NOT checked ⚠️"]:::warn
+  D -->|yes| V{"All constraints<br/>pass?"}
+  V -->|yes| M["Your method runs"]:::good
+  V -->|no| X2["400 MethodArgumentNotValid"]:::bad
+  X1 --> H["@RestControllerAdvice"]:::step
   X2 --> H
-  H --> R["Error response JSON"]
+  H --> R(["One error JSON shape"]):::good
+  classDef step fill:#e0e7ff,stroke:#6366f1,color:#1e1b4b
+  classDef good fill:#dcfce7,stroke:#16a34a,color:#14532d
+  classDef warn fill:#fef3c7,stroke:#d97706,color:#78350f
+  classDef bad fill:#fee2e2,stroke:#dc2626,color:#7f1d1d
 ```
 
-Two different failures can happen before your method runs: **malformed or mismatched JSON** fails in Jackson, and **valid JSON with invalid values** fails in Bean Validation, but only if `@Valid` triggers it.
+The yellow box is the trap: valid JSON with a blank field walks straight into your code if
+`@Valid` is missing.
 
 ## The pieces
 
@@ -31,7 +69,8 @@ Two different failures can happen before your method runs: **malformed or mismat
 | `@RestControllerAdvice` | One class that catches exceptions from all controllers |
 | `@ExceptionHandler` | A method inside it that handles one exception type |
 
-Validation is a separate library (Jakarta Bean Validation), so it has its own starter, `spring-boot-starter-validation`.
+Validation is a separate library (Jakarta Bean Validation), so it has its own starter,
+`spring-boot-starter-validation`.
 
 ```java
 public record CreateMessageRequest(@NotBlank @Size(max = 500) String text) {}
@@ -42,7 +81,8 @@ public MessageResponse create(@Valid @RequestBody CreateMessageRequest request) 
 ```
 
 > [!WARNING]
-> A constraint annotation only **describes** a rule. Without `@Valid` on the parameter nothing runs it, and a blank value reaches your method with a 200. We reproduced this *(verified)*.
+> **A constraint without `@Valid` is just a comment.** Nothing runs it, and a blank value
+> reaches your method with a 200. We reproduced this *(verified)*.
 
 ## What we saw *(verified)*
 
@@ -67,6 +107,14 @@ public record ErrorResponse(int status, String error, Map<String, String> fieldE
 {"status":400,"error":"Validation failed","fieldErrors":{"text":"must not be blank"}}
 ```
 
+## Three ways to write the advice
+
+| Approach | 415 / 405 shape | Client errors stay 4xx? | Verdict |
+|---|---|---|---|
+| A few `@ExceptionHandler`s for your exceptions | ❌ Spring's default shape | ✅ | Two error formats in one API |
+| `@ExceptionHandler(Exception.class)` catch-all | ✅ Your shape | ❌ Turns 415/405 into **500** | Hides client mistakes |
+| **Extend `ResponseEntityExceptionHandler`** + override hooks | ✅ Your shape | ✅ Correct status codes | ✅ Use this |
+
 ## The handler that covers everything
 
 ```java
@@ -84,24 +132,78 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 ```
 
 > [!IMPORTANT]
-> A first version had two `@ExceptionHandler` methods. They covered only those two exceptions, so 415 and 405 still came back in Spring's default shape: **two error formats in one API**. `@ExceptionHandler(Exception.class)` looks like the fix but also catches 415 and 405 and turns client mistakes into 500. Extend `ResponseEntityExceptionHandler` and override its hooks. Do **not** declare your own `@ExceptionHandler` for an exception the base class already handles (ambiguous-handler error at startup).
+> **Never add your own `@ExceptionHandler` for an exception the base class already
+> handles.** It's an ambiguous-handler error at startup. Override the base class's hook instead.
+
+> [!NOTE]
+> Spring 6 also supports the standard `ProblemDetail` error body (RFC 7807/9457). We used
+> our own `ErrorResponse`; `ProblemDetail` was not tried here.
 
 ## Interview questions
 
-**Why is `@Valid` needed?**
-The constraint annotations are only metadata. `@Valid` (or `@Validated`) tells Spring's argument resolver to call the validator on that object. Without it, no check runs.
+<details>
+<summary>POST {"text": ""} returns 200 and saves an empty message, although the record field has @NotBlank. Give two possible causes.</summary>
 
-**`@Valid` vs `@Validated`?**
-`@Valid` is the standard Jakarta annotation and also cascades into nested objects. `@Validated` is Spring's, adds validation **groups**, and enables method-level validation on beans (and `@ConfigurationProperties`).
+1. **No `@Valid`** on the `@RequestBody` parameter. The annotation is metadata, and nothing
+   asks the validator to run (our verified case).
+2. **No Bean Validation provider** on the classpath (`spring-boot-starter-validation`
+   missing). Without Hibernate Validator there is no validator, so even `@Valid` checks nothing.
 
-**`@ControllerAdvice` vs `@RestControllerAdvice`?**
-The second is `@ControllerAdvice` plus `@ResponseBody`: handler return values are written to the body (JSON) instead of resolved as view names.
+A `@WebMvcTest` asserting 400 on blank input catches both.
+</details>
 
-**How would you return one error format for every failure?**
-Extend `ResponseEntityExceptionHandler` (it already maps the standard MVC exceptions to the right status codes) and override `handleExceptionInternal`, then add handlers for your own exceptions.
+<details>
+<summary>One client sends broken JSON, another sends {"text": ""}. Both get 400. Which exception for each, and at which step?</summary>
 
-**Which exceptions does Jackson fail with, and which does validation fail with?**
-`HttpMessageNotReadableException` for unreadable or mismatched JSON, `MethodArgumentNotValidException` for constraint violations on a `@RequestBody`.
+Broken JSON fails while the **message converter** (Jackson) reads the body:
+`HttpMessageNotReadableException`. Valid JSON with a blank value binds fine, then fails in
+**validation**: `MethodArgumentNotValidException`, which carries the per-field errors.
+Different steps, so you get different handler hooks for each.
+</details>
 
-> [!NOTE]
-> Spring 6 also supports the standard `ProblemDetail` error body (RFC 7807/9457). We used our own `ErrorResponse`; `ProblemDetail` was not tried here.
+<details>
+<summary>The advice has @ExceptionHandler(Exception.class). A client sends the wrong Content-Type. What do they get, and why is that a problem?</summary>
+
+A **500**. The catch-all also grabs Spring's `HttpMediaTypeNotSupportedException`, which
+should be a 415. Clients can't tell their own mistake from a server bug, and your error-rate
+alerts fire on client errors. Extend `ResponseEntityExceptionHandler` instead, so standard
+exceptions keep their correct status codes.
+</details>
+
+<details>
+<summary>You add @ExceptionHandler(MethodArgumentNotValidException.class) to an advice that extends ResponseEntityExceptionHandler, and the app won't start. Why?</summary>
+
+The base class already declares a handler for that exception, so there are now two
+handlers for the same type: an ambiguous `@ExceptionHandler` mapping, rejected at startup.
+Override the base class's `handleMethodArgumentNotValid` hook instead.
+</details>
+
+<details>
+<summary>How do you validate a query parameter such as page ≥ 1? Does @Valid help?</summary>
+
+`@Valid` is for objects. Put the constraint on the parameter itself:
+`@RequestParam @Min(1) int page`. On Spring Framework 6.1+ (Boot 3.2+), MVC validates
+constraint-annotated controller parameters itself and raises `HandlerMethodValidationException`
+(a 400). On older versions you needed `@Validated` on the controller class, and violations
+surfaced as `ConstraintViolationException`, a 500 unless you handled it.
+</details>
+
+<details>
+<summary>An Order request has List&lt;OrderLine&gt; lines, and constraints on OrderLine are ignored. Why?</summary>
+
+Validation doesn't cascade into nested objects by default. Mark the element type or field for
+cascading: `List<@Valid OrderLine> lines`. Then each line is validated and errors come back
+with paths like `lines[2].quantity`.
+</details>
+
+## Key takeaways
+
+| Remember | Because |
+|---|---|
+| No `@Valid`, no validation | Constraints are only metadata |
+| Jackson fails first, validation second | Two different exceptions, both 400 |
+| Extend `ResponseEntityExceptionHandler` | One shape *and* correct status codes |
+| Don't catch `Exception.class` | Client errors become 500s |
+| `@ExceptionHandler` only for your own exceptions | Duplicates are ambiguous at startup |
+
+**Next:** [5. Configuration and profiles](/notebook/spring-boot-system-design/01-spring-boot-basics/configuration-and-profiles)
