@@ -98,7 +98,7 @@ function buildLayout(h: Hierarchy): { nodes: Node[]; edges: Edge[] } {
 
 export function ClassHierarchy({ onOpen }: { onOpen?: (tab: string, section: string) => void }) {
   const [key, setKey] = useState(HIERARCHIES[0].key);
-  const { resolved } = useTheme();
+  const { mode } = useTheme();
   const h = hierarchyByKey(key)!;
 
   const layout = useMemo(() => buildLayout(h), [key]);
@@ -178,7 +178,7 @@ export function ClassHierarchy({ onOpen }: { onOpen?: (tab: string, section: str
           nodes={nodes}
           edges={layout.edges}
           nodeTypes={nodeTypes}
-          colorMode={resolved}
+          colorMode={mode}
           fitView
           fitViewOptions={{ padding: 0.15 }}
           minZoom={0.2}

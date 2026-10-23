@@ -18,6 +18,18 @@ export async function readNote(slug: string[]): Promise<{ exists: boolean; conte
   return res.json();
 }
 
+/** Renders unsaved markdown through the real pipeline (mermaid/excalidraw/katex/shiki), for the editor's live preview. */
+export async function previewNote(content: string): Promise<string> {
+  const res = await fetch("/api/notes/preview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) return "";
+  const { html } = await res.json();
+  return html as string;
+}
+
 /** Open the full-screen editor for a note (creates it on save if new). */
 export function openNoteEditor(slug: string[], title?: string) {
   window.dispatchEvent(new CustomEvent("open-note-editor", { detail: { slug, title } }));

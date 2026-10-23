@@ -83,8 +83,8 @@ architecture-beta
     server:B -- T:disk
 ```
 
-Mermaid diagrams now render in **hand-drawn look** (`look: "handDrawn"`, rough.js
-under the hood) — sketchier, more memorable than flat boxes, zero markup change.
+Mermaid diagrams render in Mermaid's rounded **"neo" look**, themed to the site.
+Click a diagram or its ⤢ button to open it full-screen with zoom and pan.
 
 ## Hand-drawn illustrations (Excalidraw)
 
@@ -102,6 +102,6 @@ and paste the downloaded `.excalidraw` file's JSON into a ` ```excalidraw ` fenc
 |---|---|---|
 | Code highlight | Shiki | ✅ |
 | Math | KaTeX | ✅ |
-| Diagrams | Mermaid (hand-drawn look) | ✅ |
+| Diagrams | Mermaid (neo look, zoomable) | ✅ |
 | Illustrations | Excalidraw | ✅ |
 | Callouts | custom | ✅ |

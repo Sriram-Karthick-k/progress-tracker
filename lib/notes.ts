@@ -16,7 +16,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { Marked } from "marked";
+import { Marked, TextRenderer, type Tokens } from "marked";
 import katex from "katex";
 import { codeToHtml } from "shiki";
 
@@ -33,6 +33,15 @@ const ALERT_ICON: Record<(typeof ALERT_TYPES)[number], string> = {
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function unescapeHtml(s: string): string {
+  return s
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&");
 }
 
 /* ------------------------------- math (KaTeX) ------------------------------ */
@@ -63,24 +72,56 @@ function extractMath(raw: string): { text: string; restore: (html: string) => st
 
 /* ----------------------------- markdown -> HTML ----------------------------- */
 
+export type Heading = { depth: number; text: string; slug: string };
+
+function slugify(text: string): string {
+  return (
+    text
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "") || "section"
+  );
+}
+
 function buildRenderer() {
   const pending: { lang: string; code: string }[] = [];
+  const headings: Heading[] = [];
+  const slugCounts = new Map<string, number>();
 
   const marked = new Marked({
     gfm: true,
     breaks: false,
     renderer: {
+      heading(token: Tokens.Heading) {
+        // plain text (no `code`/**bold** markers) for the slug and the TOC label
+        const plain = unescapeHtml(this.parser.parseInline(token.tokens, new TextRenderer())).trim();
+        let slug = slugify(plain);
+        const n = slugCounts.get(slug) ?? 0;
+        slugCounts.set(slug, n + 1);
+        if (n > 0) slug = `${slug}-${n}`;
+        // only section-level headings are worth a table-of-contents entry
+        if (token.depth === 2 || token.depth === 3) headings.push({ depth: token.depth, text: plain, slug });
+        const body = this.parser.parseInline(token.tokens);
+        const anchor = token.depth > 1 ? `<a class="md-anchor" href="#${slug}" aria-label="Link to this section">#</a>` : "";
+        return `<h${token.depth} id="${slug}">${body}${anchor}</h${token.depth}>\n`;
+      },
       code(token: { lang?: string; text: string }) {
         const lang = (token.lang || "").trim().toLowerCase();
         if (lang === "mermaid") {
-          return `<pre class="mermaid">${token.text}</pre>`;
+          // escaped: mermaid reads textContent, and raw `<` (List<String>) would otherwise become markup
+          return `<figure class="md-diagram"><pre class="mermaid">${escapeHtml(token.text)}</pre></figure>`;
         }
         if (lang === "excalidraw") {
           // token.text is a raw .excalidraw scene (JSON exported from
           // excalidraw.com) — base64 so it survives as an HTML attribute
           // untouched, decoded + mounted client-side in NotebookContent.
           const scene = Buffer.from(token.text, "utf8").toString("base64");
-          return `<div class="md-excalidraw" data-scene="${scene}"></div>`;
+          // the wrap is a plain sibling container NotebookContent can safely
+          // append an "expand" button to — Excalidraw's own React root owns
+          // every child of .md-excalidraw once mounted, so nothing else can
+          // live inside it without risking being wiped on re-render.
+          return `<div class="md-excalidraw-wrap"><div class="md-excalidraw" data-scene="${scene}"></div></div>`;
         }
         const i = pending.length;
         pending.push({ lang, code: token.text });
@@ -99,7 +140,7 @@ function buildRenderer() {
     },
   });
 
-  return { marked, pending };
+  return { marked, pending, headings };
 }
 
 async function highlightPending(html: string, pending: { lang: string; code: string }[]): Promise<string> {
@@ -121,16 +162,31 @@ async function highlightPending(html: string, pending: { lang: string; code: str
     })
   );
   let i = 0;
-  return html.replace(/<!--SHIKI(\d+)-->/g, () => rendered[i++]);
+  return html.replace(/<!--SHIKI(\d+)-->/g, () => {
+    const { lang } = pending[i];
+    const label = escapeHtml(LANG_LABEL[lang] ?? lang ?? "");
+    // header bar gets a copy button client-side (NotebookContent)
+    return `<figure class="md-code"><figcaption><span>${label || "text"}</span></figcaption>${rendered[i++]}</figure>`;
+  });
 }
 
-export async function renderMarkdown(raw: string): Promise<string> {
+const LANG_LABEL: Record<string, string> = {
+  ts: "TypeScript", typescript: "TypeScript", js: "JavaScript", javascript: "JavaScript",
+  java: "Java", kotlin: "Kotlin", py: "Python", python: "Python", sql: "SQL",
+  bash: "Shell", sh: "Shell", shell: "Shell", yaml: "YAML", yml: "YAML", json: "JSON",
+  xml: "XML", html: "HTML", css: "CSS", go: "Go", rust: "Rust", properties: "Properties",
+  dockerfile: "Dockerfile", http: "HTTP", text: "Text",
+};
+
+export async function renderMarkdown(raw: string): Promise<{ html: string; headings: Heading[] }> {
   const math = extractMath(raw);
-  const { marked, pending } = buildRenderer();
+  const { marked, pending, headings } = buildRenderer();
   let html = marked.parse(math.text) as string;
+  // scroll wrapper, so the table itself can stay display:table (full-width rows)
+  html = html.replace(/<table>/g, '<div class="md-table"><table>').replace(/<\/table>/g, "</table></div>");
   html = await highlightPending(html, pending);
   html = math.restore(html);
-  return html;
+  return { html, headings };
 }
 
 /* ------------------------------- notes tree ------------------------------- */
@@ -194,16 +250,59 @@ export function getAllNoteSlugs(): string[][] {
   return out;
 }
 
-export type LoadedNote = { title: string; html: string; raw: string; slug: string[] };
+export type NoteLink = { title: string; slug: string[] };
+
+export type LoadedNote = {
+  title: string;
+  html: string; // body only — the leading `# Title` is rendered by the page header instead
+  headings: Heading[];
+  raw: string;
+  slug: string[];
+  readingMinutes: number;
+  updatedAt: number; // file mtime, ms
+  breadcrumb: string[]; // folder titles from the root down
+  prev: NoteLink | null;
+  next: NoteLink | null;
+};
+
+// notes in sidebar order, plus folder titles keyed by slug path
+function flatten(nodes: NoteNode[], notes: NoteLink[] = [], folders = new Map<string, string>()) {
+  for (const n of nodes) {
+    if (n.type === "note") notes.push({ title: n.title, slug: n.slug });
+    else {
+      folders.set(n.slug.join("/"), n.title);
+      flatten(n.children, notes, folders);
+    }
+  }
+  return { notes, folders };
+}
 
 export async function getNote(slug: string[]): Promise<LoadedNote | null> {
   const safe = slug.map((s) => s.replace(/[^a-zA-Z0-9-_]/g, ""));
   const file = path.join(ROOT, ...safe) + ".md";
   if (!fs.existsSync(file)) return null;
   const raw = fs.readFileSync(file, "utf8");
-  const html = await renderMarkdown(raw);
+  const rendered = await renderMarkdown(raw);
   const title = titleFromFile(file, humanize(safe[safe.length - 1] || "Note"));
-  return { title, html, raw, slug };
+  const html = rendered.html.replace(/^\s*<h1[^>]*>[\s\S]*?<\/h1>\s*/, "");
+
+  const words = stripMarkdown(raw, Infinity).split(" ").filter(Boolean).length;
+  const { notes, folders } = flatten(getNotesTree());
+  const idx = notes.findIndex((n) => n.slug.join("/") === safe.join("/"));
+  const breadcrumb = safe.slice(0, -1).map((_, i) => folders.get(safe.slice(0, i + 1).join("/")) ?? humanize(safe[i]));
+
+  return {
+    title,
+    html,
+    headings: rendered.headings,
+    raw,
+    slug,
+    readingMinutes: Math.max(1, Math.round(words / 200)),
+    updatedAt: fs.statSync(file).mtimeMs,
+    breadcrumb,
+    prev: idx > 0 ? notes[idx - 1] : null,
+    next: idx >= 0 && idx < notes.length - 1 ? notes[idx + 1] : null,
+  };
 }
 
 export function countNotes(): number {
@@ -214,7 +313,7 @@ export type NoteSearchEntry = { title: string; slug: string[]; text: string };
 
 // Plain-text body for the command palette's content search — strips markdown
 // syntax so the client can substring-match without pulling in a parser.
-function stripMarkdown(raw: string): string {
+function stripMarkdown(raw: string, max = 4000): string {
   return raw
     .replace(/```[\s\S]*?```/g, " ")
     .replace(/^#+\s+/gm, "")
@@ -222,7 +321,7 @@ function stripMarkdown(raw: string): string {
     .replace(/[*_`>#-]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
-    .slice(0, 4000);
+    .slice(0, max);
 }
 
 export async function getSearchIndex(): Promise<NoteSearchEntry[]> {

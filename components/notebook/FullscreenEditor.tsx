@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { marked } from "marked";
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { Eye, Pencil, Save, X, Trash2 } from "lucide-react";
-import { noteApi } from "@/components/notebook/noteClient";
+import { noteApi, previewNote } from "@/components/notebook/noteClient";
 
-marked.use({ gfm: true, breaks: false });
+// dynamic + ssr:false: NotebookContent pulls in Excalidraw/Mermaid, and a
+// static import here would drag that into the root layout's shared bundle
+// (NoteEditorHost, which owns this editor, is mounted app-wide) — broke the
+// production build (API routes failed to resolve an unrelated vendor chunk).
+const NotebookContent = dynamic(() => import("@/components/notebook/NotebookContent").then((m) => m.NotebookContent), {
+  ssr: false,
+});
 
 // Distraction-free note editor. Fixed full-screen (covers every sidebar).
 // Toggle preview with the eye icon or Ctrl/Cmd+Shift+V. Esc closes.
@@ -26,7 +32,22 @@ export function FullscreenEditor({
   const [status, setStatus] = useState("");
   const [confirmDel, setConfirmDel] = useState(false);
 
-  const html = useMemo(() => marked.parse(value) as string, [value]);
+  const [html, setHtml] = useState("");
+
+  // debounced live preview — goes through the real pipeline (mermaid, excalidraw,
+  // katex, shiki) via the server, instead of a bare client-side marked.parse().
+  useEffect(() => {
+    let cancelled = false;
+    const t = setTimeout(() => {
+      previewNote(value).then((h) => {
+        if (!cancelled) setHtml(h);
+      });
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [value]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -109,7 +130,9 @@ export function FullscreenEditor({
           }`}
         />
         <div className={`h-full overflow-auto border-white/10 lg:border-l ${preview ? "block" : "hidden lg:block"}`}>
-          <div className="md-body mx-auto max-w-3xl px-5 py-6 sm:px-8" dangerouslySetInnerHTML={{ __html: html }} />
+          <div className="mx-auto max-w-3xl px-5 py-6 sm:px-8">
+            <NotebookContent html={html} />
+          </div>
         </div>
       </div>
     </div>

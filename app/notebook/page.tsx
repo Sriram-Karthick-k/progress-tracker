@@ -2,6 +2,7 @@ import { getNotesTree, getNote, countNotes } from "@/lib/notes";
 import { NotebookShell } from "@/components/notebook/NotebookShell";
 import { NotebookContent } from "@/components/notebook/NotebookContent";
 import { NoteEditButton } from "@/components/notebook/NoteEditButton";
+import { TableOfContents } from "@/components/notebook/TableOfContents";
 
 // Same reason as [...slug]/page.tsx: content/notes/**.md changes on disk
 // after the build, so this must render fresh per request.
@@ -26,9 +27,12 @@ export default async function NotebookIndex() {
       </div>
 
       {welcome ? (
-        <article className="max-w-3xl">
-          <NotebookContent html={welcome.html} />
-        </article>
+        <div className="flex gap-8">
+          <article className="min-w-0 max-w-3xl flex-1">
+            <NotebookContent html={welcome.html} />
+          </article>
+          <TableOfContents headings={welcome.headings} />
+        </div>
       ) : (
         <p className="text-sm text-slate-500">Add markdown files under <code>content/notes/</code> to get started.</p>
       )}

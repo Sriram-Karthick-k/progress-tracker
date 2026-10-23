@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
 import { ProgressProvider } from "@/components/ProgressProvider";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeProvider, THEME_NO_FLASH_SCRIPT } from "@/components/ThemeProvider";
 import { AppShell } from "@/components/AppShell";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NoteEditorHost } from "@/components/notebook/NoteEditorHost";
@@ -14,9 +14,6 @@ export const metadata: Metadata = {
   description: "Track learning across all interview rounds.",
 };
 
-// Runs before paint to set the theme attribute and avoid a light/dark flash.
-const NO_FLASH = `(function(){try{var p=localStorage.getItem('theme.v1')||'system';var d=p==='dark'||(p!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';}catch(e){document.documentElement.dataset.theme='dark';}})();`;
-
 export default function RootLayout({
   children,
 }: {
@@ -25,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: NO_FLASH }} />
+        <script dangerouslySetInnerHTML={{ __html: THEME_NO_FLASH_SCRIPT }} />
       </head>
       <body className="min-h-screen font-sans text-slate-200 antialiased">
         <ThemeProvider>

@@ -179,7 +179,7 @@ function buildLayout(roadmap: Roadmap): { nodes: Node[]; edges: Edge[] } {
 
 export function RoadmapGraph({ roadmap }: { roadmap: Roadmap }) {
   const { map } = useProgress();
-  const { resolved } = useTheme();
+  const { mode } = useTheme();
   const router = useRouter();
 
   const layout = useMemo(() => buildLayout(roadmap), [roadmap.key]);
@@ -223,7 +223,7 @@ export function RoadmapGraph({ roadmap }: { roadmap: Roadmap }) {
         edges={layout.edges}
         nodeTypes={nodeTypes}
         onNodeClick={onNodeClick}
-        colorMode={resolved}
+        colorMode={mode}
         fitView
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.2}

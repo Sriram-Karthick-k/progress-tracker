@@ -1,140 +1,114 @@
 # How notes work
 
-This folder is the Notebook's content. Every `.md` file here becomes a page at
-`/notebook/<path>`, rendered through a pipeline that supports syntax-highlighted
-code, math, Mermaid diagrams, and GitHub-style alert callouts — not just plain
-markdown.
+Every `.md` file in this folder is a page at `/notebook/<path>`, rendered live from
+disk (no build step). Rendering supports diagrams, highlighted code, math, callouts
+and self-quiz cards, so a note can look like an illustrated study guide, not a text dump.
 
-## Creating a note
+**See a finished example:** [Caching — Patterns, Pitfalls & Spring Boot](/notebook/system-design/caching)
+(`system-design/caching.md`). Start new notes from `.claude/skills/notes/template.md`.
 
-1. **Pick a folder = category.** Top-level files show under "Notebook"; a
-   subfolder (e.g. `system-design/`) becomes a section. Nest as deep as you like.
-2. **Filename = URL slug.** `system-design/caching.md` → `/notebook/system-design/caching`.
-   Use only letters, digits, `-`, `_` — no spaces, no other punctuation (anything
-   else is stripped when resolving the file).
-3. **First line must be `# Title`.** That's what's shown everywhere (tree,
-   breadcrumbs, search) — not the filename. If you omit it, the filename is
-   humanized as a fallback title, so always include it.
-4. **Write markdown.** GFM is on: tables, lists, links, images, blockquotes.
+## Files
 
-```
-content/notes/
-  welcome.md                        -> /notebook
-  system-design/
-    caching.md                      -> /notebook/system-design/caching
-  data-structures/
-    two-pointers.md                 -> /notebook/data-structures/two-pointers
-```
+- **Folder = sidebar section**, filename = URL: `system-design/caching.md` → `/notebook/system-design/caching`.
+  Number a series to order it: `02-persistence/03-flyway.md`.
+- Names use letters, digits, `-`, `_` only.
+- **Line 1 is `# Title`.** It becomes the page header, sidebar label and search title.
+  The page header adds reading time, section count and last-updated date automatically.
+- Folders/files starting with `.` are hidden from the Notebook (that's how `.claude/` stays out of the list).
 
-No build step needed — notes render live from disk on every request, whether
-you edit them through the in-app ✎ editor or write the file directly.
+## The note standard (why notes look the way they do)
 
-## Example: a complete note
+A note should teach the topic in ~10 minutes and still make sense months later.
+Two principles drive everything:
 
-````markdown
-# Caching Strategies
+1. **Picture first.** A diagram you can redraw from memory beats ten bullets.
+2. **Active recall.** End with questions you answer *before* revealing the answer.
 
-> [!TIP]
-> Cache-aside is the default choice unless you specifically need write-through
-> consistency guarantees.
+So a concept note follows this order:
 
-Cache-aside: the app reads from cache first, falls back to the DB on a miss,
-then populates the cache. Eviction is usually LRU, with $O(1)$ average lookup.
-
-```java
-@Cacheable(value = "products", key = "#id")
-public Product findById(Long id) {
-    return repo.findById(id).orElseThrow();
-}
-```
-
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant S as Service
-    participant Cache
-    participant DB
-
-    C->>S: get(id)
-    S->>Cache: lookup(id)
-    alt hit
-        Cache-->>S: value
-    else miss
-        S->>DB: query(id)
-        DB-->>S: value
-        S->>Cache: put(id, value)
-    end
-    S-->>C: value
-```
-
-> [!WARNING]
-> `@Cacheable` does nothing when called from within the same class — Spring's
-> proxy never intercepts self-invocation.
-````
+| Section | Gives you |
+|---|---|
+| Title + one-line hook | The framing idea |
+| `[!TIP]` **TL;DR** | The 30-second interview answer |
+| **Mindmap** "at a glance" | Scope of the topic |
+| **Flowchart** "mental model" | Where the parts sit, colour-coded |
+| **Sequence diagram** "how it works" | The flow, numbered step by step |
+| **Comparison table** | Options × trade-offs |
+| **Decision tree** | Which option to pick, as questions |
+| Code + config | The real Spring/Java usage |
+| `[!WARNING]` pitfalls + symptom→fix table | What breaks in production |
+| **Interview questions** (click to reveal) | Self-test |
+| Key takeaways table | What to remember and why |
 
 ## Feature reference
 
-### Alert callouts
-GitHub syntax — a blockquote whose first line is one of five markers:
+### Diagrams (Mermaid)
+Fence with ` ```mermaid `. Diagrams render with a clean rounded "neo" style themed to
+match the site (light/dark aware). **Every diagram has an expand button**: it opens a
+full-screen view with scroll-to-zoom, drag-to-pan and `+` / `-` / `0` keys.
+
+Useful types: `mindmap`, `flowchart LR/TD`, `sequenceDiagram`, `stateDiagram-v2`,
+`erDiagram`, `classDiagram`, `timeline`, `quadrantChart`, and `architecture-beta`
+with `logos:` / `mdi:` icons (e.g. `logos:aws-rds`).
+
+Colour nodes by **meaning** with these classes. They're readable in every theme:
+
+```mermaid
+flowchart LR
+    A[Service]:::app --> C[(Cache)]:::store
+    A --> D[(Database)]:::db
+    A --> G[Recommended]:::good
+    A --> W[Careful]:::warn
+    A --> X[Fails]:::bad
+    classDef app   fill:#e0e7ff,stroke:#6366f1,color:#1e1b4b
+    classDef store fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef db    fill:#ffedd5,stroke:#ea580c,color:#7c2d12
+    classDef good  fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef warn  fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef bad   fill:#fee2e2,stroke:#dc2626,color:#7f1d1d
+```
+
+### Callouts
+A blockquote whose first line is a marker. Start the body with a bold one-line rule.
 
 ```markdown
-> [!NOTE]
-> Background info.
-
 > [!TIP]
-> A shortcut or best practice.
-
-> [!IMPORTANT]
-> Easy to miss, changes the outcome.
+> **TL;DR** — the short answer.
 
 > [!WARNING]
-> Will bite you under some condition.
-
-> [!CAUTION]
-> Destructive / hard to reverse.
+> **Self-invocation skips the proxy.** Call the method from another bean.
 ```
 
-### Code — syntax highlighted (Shiki)
-Fence with a language tag; anything Shiki recognizes gets real token colors
-(`java`, `ts`, `python`, `sql`, `bash`, `yaml`, …). No tag = plain text.
+Markers: `[!NOTE]` aside · `[!TIP]` TL;DR / shortcut · `[!IMPORTANT]` rule that changes
+the outcome · `[!WARNING]` trap · `[!CAUTION]` data loss / destructive.
 
-````markdown
-```java
-public record OrderDto(Long id, BigDecimal total) {}
-```
-````
-
-### Math (KaTeX)
-Inline `$...$`, block `$$...$$`. No space right after the opening `$` or right
-before the closing one — `$5 and $10` is correctly left alone as plain text.
+### Interview questions (self-quiz cards)
 
 ```markdown
-Binary search is $O(\log n)$.
+<details>
+<summary>Why delete the cache key on write instead of updating it?</summary>
 
-$$
-T(n) = 2T(n/2) + O(n)
-$$
+Answer in 2–4 sentences. (Keep the blank line after </summary>.)
+</details>
 ```
 
-### Diagrams (Mermaid)
-Fence with ` ```mermaid `. Flowchart, sequence, class, state, ER diagrams all
-work. For boxes-and-icons cloud/architecture diagrams, use `architecture-beta`
-with `logos:` or `mdi:` icon names (e.g. `logos:aws-lambda`, `mdi:harddisk`):
+### Code
+Tag the language (` ```java `, `yaml`, `sql`, `bash`, `ts`…). Blocks get syntax colours,
+a language label and a **Copy** button.
 
-````markdown
-```mermaid
-architecture-beta
-    service db(logos:aws-rds)[Database]
-    service server(logos:aws-ec2)[Server]
-    server:R -- L:db
-```
-````
+### Math (KaTeX)
+Inline `$O(\log n)$`, block `$$ … $$`. `$5 and $10` stays plain text.
 
-### Plain markdown — unchanged
-Tables, `**bold**`, `[links](url)`, images, nested lists — standard GFM, no
-special syntax needed.
+### Hand-drawn illustrations (Excalidraw)
+Draw at [excalidraw.com](https://excalidraw.com) → menu → **Save to disk** → paste the
+`.excalidraw` file's JSON into a ` ```excalidraw ` fence. Renders read-only and
+expandable. The JSON must come from a real export, never typed by hand.
 
-## Agent note
+### Everything else
+Tables (rounded, zebra rows), links, images, lists: standard GitHub-flavoured markdown.
+Headings `##`/`###` feed the "On this page" sidebar and get `#` anchor links.
 
-If you're an AI editing this folder: see `.claude/skills/notes/SKILL.md` for
-the condensed, procedural version of this guide (triggered by `/notes`).
+## For AI agents
+
+Run `/notes` (`.claude/skills/notes/SKILL.md`). It has the full standard, the
+diagram-picker table, styling recipes and a pre-publish checklist.
