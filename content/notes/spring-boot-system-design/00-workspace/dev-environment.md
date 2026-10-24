@@ -47,8 +47,8 @@ flowchart LR
 
 | Service | Role | Where to reach it |
 |---------|------|-------------------|
-| `dev` | Build and run container (`maven:3.9-eclipse-temurin-17-alpine`), runs the Spring Boot app | `http://localhost:8080` |
-| `postgres` | PostgreSQL 16, database `hello_db`, user `app` | `localhost:5433` from the host, `postgres:5432` from containers |
+| `dev` | Build and run container (`maven:3.9-eclipse-temurin-17-alpine`), runs the Spring Boot app of the **active project** (`PROJECT` in `.env`) | `http://localhost:8080` |
+| `postgres` | PostgreSQL 16, database `DB_NAME` from `.env` (`hello_db`, `saga_db`), user `app`; its files live inside the active project (`.data/postgres`) | `localhost:5433` from the host, `postgres:5432` from containers |
 | `kafka` | Apache Kafka 4.2.2 in KRaft mode, one container as broker and controller. Two listeners; data in the named volume `kafka-data`; CLI scripts in `/opt/kafka/bin` | `localhost:9092` from the host, `kafka:29092` from containers |
 | `loki` | Log store | `localhost:3100` |
 | `alloy` | Log collector (internal) | not published |
@@ -77,8 +77,66 @@ sequenceDiagram
 ```bash
 docker compose up -d          # start everything
 docker compose logs -f dev    # follow the app
-docker compose down           # stop (keeps the pgdata volume)
+docker compose down           # stop (the database files stay in playground/<project>/.data/postgres)
 ```
+
+## One workspace, many patterns: the project switch
+
+Each pattern (saga, cache-aside, ...) is its own Spring Boot project under `playground/`, but they
+all run on the **same** `compose.yaml`. Only the Spring source changes between patterns, so the
+compose file reads the active project from a root `.env` instead of having one service per pattern.
+
+```mermaid
+flowchart LR
+    ENV[".env<br/>PROJECT, DB_NAME"]:::cfg --> C["compose.yaml"]:::cfg
+    C -->|working_dir| DEV["dev container<br/>builds playground/PROJECT"]:::app
+    C -->|bind mount| PG[("postgres<br/>playground/PROJECT/.data/postgres")]:::db
+    C -->|datasource URL| DEV
+    classDef cfg fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef app fill:#e0e7ff,stroke:#6366f1,color:#1e1b4b
+    classDef db fill:#ffedd5,stroke:#ea580c,color:#7c2d12
+```
+
+Notice that `.env` is the only thing you edit: it picks which source `dev` builds **and** which
+database files Postgres opens, so every project keeps its own data next to its own code.
+
+```bash
+# .env
+PROJECT=saga-pattern
+DB_NAME=saga_db
+
+docker compose up -d --force-recreate postgres dev    # apply a switch
+```
+
+**New project:** one command creates everything, including the Bruno collection folder:
+
+```bash
+node infra/scaffold/new-project.cjs cache-aside --activate
+```
+
+| Created in `playground/cache-aside/` | What it is |
+|---|---|
+| `pom.xml`, `mvnw`, `.mvn/` | Maven project with the standard dependencies (web, JPA, Flyway, tracing, devtools) and the wrapper |
+| `src/main/java/com/learn/cache/CacheAsideApplication.java` | Application class; package = first word of the name (`--package` to change) |
+| `application.properties`, `application-dev.properties` | Flyway-owned schema (`validate`), JSON logs, SQL logging, tracing |
+| `src/main/resources/db/migration/` | Empty, ready for `V1__...sql` |
+| `cache-aside-collections/opencollection.yml` | The Bruno collection (Open Collection → pick this folder) |
+| `.gitignore` | Ignores `target/` and `.data/` |
+
+The script refuses an existing name and bad names, and it copies from `infra/scaffold/template/`,
+so a change to the standard setup is made once, in the template *(verified: a generated project
+compiles in the `dev` image and differs from the hand-built skeleton only in names)*.
+
+> [!NOTE]
+> **How hello-boot's data was moved into its folder.** With Postgres stopped, a throwaway container
+> copied the old `pgdata` volume (mounted read-only) into `playground/hello-boot/.data/postgres`
+> (`cp -a` keeps owner `70` and mode `700`). Postgres initialises and restarts fine on that
+> bind mount here *(verified)*. The old volume is still in Docker as a backup.
+
+> [!WARNING]
+> **Only one project runs at a time.** There is one `dev` and one `postgres`, so a switch stops the
+> previous app. Kafka, Loki and Grafana are shared; a project's topics and logs stay there after a
+> switch.
 
 ## Gotchas that cost time
 

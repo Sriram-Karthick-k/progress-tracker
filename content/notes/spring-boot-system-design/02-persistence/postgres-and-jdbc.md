@@ -81,9 +81,11 @@ flowchart LR
 
 > [!NOTE]
 > The host runs its own native PostgreSQL on 5432, so the container is published on
-> **5433**. That native instance is not ours and is left untouched. Data lives in the named
-> volume `pgdata`: `docker compose down` keeps it, `down -v` wipes it. We also confirmed the
-> data survives an app restart and a Docker daemon restart.
+> **5433**. That native instance is not ours and is left untouched. Data first lived in the named
+> volume `pgdata` (`down` keeps it, `down -v` wipes it); it now lives inside the active project, in
+> `playground/<project>/.data/postgres`, see the project switch in the
+> [dev environment note](/notebook/spring-boot-system-design/00-workspace/dev-environment). We also
+> confirmed the data survives an app restart and a Docker daemon restart.
 
 ## JDBC: borrow, run, read, return
 

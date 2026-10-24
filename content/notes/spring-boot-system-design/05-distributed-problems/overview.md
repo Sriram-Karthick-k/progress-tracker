@@ -33,7 +33,7 @@ Solid arrows protect the way in and are built. The dotted ones are the way out: 
 | Transactional outbox and relay | Done, duplicate reproduced | [3. Transactional outbox](/notebook/spring-boot-system-design/05-distributed-problems/transactional-outbox) |
 | Idempotent consumer | Next | [Module 2 plan](/notebook/spring-boot-system-design/quick-sessions/core-patterns-spring-maven/plan-module-2) |
 | Retry with backoff and circuit breaker | Next | Module 2 plan |
-| Saga (orchestrated) | Next | Module 2 plan |
+| Saga (orchestrated) | Concept note written, build in progress | [Saga pattern](/notebook/system-design/pattern/saga) |
 | CAP, distributed locks | Not started | |
 
 ## Interview questions
