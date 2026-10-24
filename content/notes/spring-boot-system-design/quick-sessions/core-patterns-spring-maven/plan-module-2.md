@@ -10,9 +10,9 @@
 
 | # | Item | Tier | Planned min | Actual min | Done |
 |---|---|---|---|---|---|
-| 0 | Recall: cards 1-12 plus the missing item 4 and 5 explain-backs | review | 10 | | |
-| 1 | Idempotent consumer: dedupe a redelivered Kafka record by `event-id` with a unique constraint, then redeliver on purpose (crash before the offset commit) | MUST | 25 | | |
-| 2 | Retry, backoff and circuit breaker around a flaky payment call. First check whether Spring Framework 7 core resilience (`@Retryable`) is enough or Resilience4j supports Boot 4 (unverified) | MUST | 40 | | |
+| 0 | Recall: cards 1-12 plus the missing item 4 and 5 explain-backs | review | 10 | ~20 (includes teaching the two-consumer split) | ✓ |
+| 1 | Idempotent consumer: dedupe a redelivered Kafka record by `event-id` with a unique constraint, then redeliver on purpose (crash before the offset commit) | MUST | 25 | ~25 (17:30 to ~17:55) | ✓ |
+| 2 | Retry, backoff and circuit breaker around a flaky payment call. First check whether Spring Framework 7 core resilience (`@Retryable`) is enough or Resilience4j supports Boot 4 (unverified) | MUST | 40 | ~40 (17:58 to ~18:35) | ✓ built and verified; explain-back skipped by choice |
 | R1 | Mixed review | review | 10 | | |
 | 3 | Saga, orchestrated: order, payment, inventory with compensation, driven by the outbox and Kafka | MUST | 40 | | |
 | 4 | Cache-aside with Redis: add the Redis service, `@Cacheable` as a proxy, eviction after commit, stampede | SHOULD | 55 | | |
@@ -23,12 +23,16 @@ Total planned: 227 min against 225 usable, so item 5 is the first cut. MUST item
 
 ## Checklist
 
-- [ ] 1. Idempotent consumer: can explain why a redelivered record is processed once, and show the unique constraint doing the work
-- [ ] 2. Retry and circuit breaker: can explain backoff, jitter and the three breaker states, and show a flaky call being retried and then short-circuited
+- [x] 1. Idempotent consumer: can explain why a redelivered record is processed once, and show the unique constraint doing the work
+- [x] 2. Retry and circuit breaker: can explain backoff, jitter and the three breaker states, and show a flaky call being retried and then short-circuited *(shown and measured; the learner said the concept is clear and chose to skip the explain-back)*
 - [ ] 3. Saga: can explain choreography versus orchestration and show a compensation running after a failure
 - [ ] 4. Cache-aside: can explain stale reads and stampedes, and show an eviction that waits for the commit
 - [ ] 5. Auto-configuration: can name the conditions that created the Kafka beans from the `--debug` report
 - [ ] Final review passed (all cards answered without hints)
+
+## Notes to write at wrap-up
+
+Nothing from module 2 is in the topic notes yet. At the end, add: an idempotent consumer section (the `V5` table, `claim`, the three branches, poison records), a retry and circuit breaker note, a saga note, a cache-aside note, and update the module overviews and `progress.md`.
 
 ## Not now
 

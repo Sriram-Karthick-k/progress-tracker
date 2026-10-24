@@ -144,6 +144,30 @@
 
 **Hook:** A partition is a queue lane, the key picks the lane, the group is the staff covering the lanes.
 
+### Card 13: The idempotent consumer
+
+**Q:** The relay can deliver event 8 twice. How does the listener process it only once, and why must the claim share a transaction with the work?
+
+**A:** `processed.claim(GROUP, eventId)` runs `INSERT ... ON CONFLICT DO NOTHING` on `processed_events`. A row count of 1 means do the work, 0 means skip. The replay logged `SKIPPED duplicate event-id=8` and the table held exactly one claim row *(verified)*. The primary key (consumer, event_id) is the arbiter.
+
+**Why:** `@Transactional` makes the claim and the work one unit. If the work threw after the claim, the claim would roll back with it and a retry could process the event (reasoning from the outbox work, not run here).
+
+**Trap:** A claim in a separate transaction leaves a window: claimed but the work lost, or worked but never claimed. The key includes the consumer because each group dedupes on its own. The table grows, so old rows need purging (from knowledge).
+
+**Hook:** A stamp on a ticket: the second person with the same ticket is turned away.
+
+### Card 14: Poison records
+
+**Q:** A record arrives without the `event-id` header and the listener calls `Long.parseLong` on a missing id. What does Spring Kafka do, and how should the listener handle it?
+
+**A:** The listener throws, the container seeks back and retries the same record (9 retry log lines in our run), and then moves on: the group's offset went from 3 to 4 with lag 0, so a record that keeps failing is dropped after the retries *(verified; the exact give-up message was not captured)*. A deliberate null check logs one `ERROR` with the partition and offset and returns, with no retry loop *(verified)*.
+
+**Why:** An exception in a listener does not crash the app, but the same record is redelivered until the error handler gives up.
+
+**Trap:** Throwing for a record that can never succeed only adds noise and delay, and dropping silently loses data. A dead-letter topic would keep the record (not built yet).
+
+**Hook:** A jammed letter in the sorting machine: retry a few times, then set it aside and say so.
+
 ## Interview questions
 
 - Why does `@Transactional` not work on a `private` method or on a self-invoked method?
@@ -158,5 +182,7 @@
 - You save a row and publish an event to Kafka. How do you guarantee neither is lost, and what delivery guarantee do you get?
 - Why does the order of "publish" and "mark published" in an outbox relay matter?
 - Two orders for the same customer must be processed in order. How do you choose the Kafka key, and what breaks if you change the partition count?
+- Kafka delivers the same record twice. How do you make the consumer safe, and where does the dedupe state live?
+- A record keeps failing in your listener. What does Spring Kafka do by default, and how do you avoid an endless retry loop?
 
 **Related:** [7. AOP aspects and transactional events](/notebook/spring-boot-system-design/01-spring-boot-basics/aop-aspects-and-transactional-events) · [Plan](/notebook/spring-boot-system-design/quick-sessions/core-patterns-spring-maven/plan)

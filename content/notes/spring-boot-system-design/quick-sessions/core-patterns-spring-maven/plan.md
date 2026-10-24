@@ -27,8 +27,8 @@ Total planned: 247 min of 270 usable (the 15 min freed on item 1 stay unallocate
 - [x] 1. AOP proxies: can show with `getClass()` output and a stack trace where the proxy sits between caller and bean, explain what `AFTER_COMMIT` guarantees for an event listener, and answer the self-invocation question from your notes without hints
 - [x] 2. Maven: can explain, with `help:effective-pom`, `dependency:tree` and `jar tf` output, where a dependency version comes from, which scope ends up in the fat jar, and what `repackage` changes
 - [x] 3. Idempotency keys: can explain what happens when two identical requests arrive at the same instant, and show the unique constraint doing the work
-- [ ] 4. Transactional outbox: can explain the dual-write failure it removes, and show a duplicate publish caused by a crash between publish and mark *(built and the duplicate shown; the explain-back was not asked)*
-- [ ] 5. Kafka and Spring Kafka: can explain partition, offset and consumer group in own words, and show a redelivered message handled idempotently *(partition, offset and group shown; idempotent consumer and explain-back moved to module 2)*
+- [x] 4. Transactional outbox: can explain the dual-write failure it removes, and show a duplicate publish caused by a crash between publish and mark *(explain-back passed on the second attempt in the module 2 recall)*
+- [ ] 5. Kafka and Spring Kafka: can explain partition, offset and consumer group in own words, and show a redelivered message handled idempotently *(partition, offset and group shown, and the two-consumer split demonstrated in the module 2 recall; idempotent consumer is module 2 item 1)*
 - [ ] 6. Auto-configuration: can name the conditions that created the Kafka beans from the `--debug` report *(cut)*
 - [ ] Final review passed (all cards answered without hints) *(skipped by choice)*
 

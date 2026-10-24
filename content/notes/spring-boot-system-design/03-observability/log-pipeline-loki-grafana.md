@@ -86,9 +86,15 @@ grafana:
 // infra/alloy/config.alloy (shape)
 discovery.docker "containers"   { host = "unix:///var/run/docker.sock" }
 discovery.relabel "containers"  { ... container name -> label container; compose service -> label service ... }
-loki.source.docker "containers" { targets = discovery.docker.containers.targets, forward_to = [loki.write.local.receiver] }
+loki.source.docker "containers" { targets = discovery.docker.containers.targets, forward_to = [loki.process.fields.receiver] }
+loki.process "fields"           { ... split the app's JSON lines into labels and structured metadata ... }
 loki.write "local"              { endpoint { url = "http://loki:3100/loki/api/v1/push" } }
 ```
+
+> [!NOTE]
+> Since the switch to structured (JSON) logs, Alloy also parses each app line into labels
+> (`level`, `type`) and structured metadata (`traceId`, `uri`, `status`…). That part, plus the
+> Logs viewer dashboard, is in [note 4](/notebook/spring-boot-system-design/03-observability/structured-logs-and-logs-viewer).
 
 The Loki datasource is provisioned by a file under `infra/grafana/provisioning/datasources/`,
 so Grafana starts with it ready.
@@ -157,9 +163,10 @@ selector already narrows to one service's streams.
 <details>
 <summary>Write a LogQL query for every 5xx request line from the dev service, then one that charts 5xx per minute.</summary>
 
-Lines: `{service="dev"} |~ "-> 5[0-9]{2}"` (our `http` line format is `… -> 500 (12 ms)`).
-Rate: `sum(count_over_time({service="dev"} |~ "-> 5[0-9]{2}" [1m]))`, a LogQL metric query
-Grafana can graph. In production you'd alert on a real metric (`http.server.requests`) instead,
+With plain-text lines: `{service="dev"} |~ "-> 5[0-9]{2}"` (our `http` line format is
+`… -> 500 (12 ms)`). Since the JSON switch, `status` is structured metadata, so no regex:
+`{service="dev", type="request"} | status >= 500`. Rate:
+`sum(count_over_time({type="request"} | status >= 500 [1m]))`, a LogQL metric query Grafana can graph. In production you'd alert on a real metric (`http.server.requests`) instead,
 since counting log lines is fragile and costly at volume.
 </details>
 
@@ -190,7 +197,8 @@ Walk the pipeline in order:
 With JSON lines, `| json` parses fields at query time, so you can filter on `status >= 500`
 or `path="/messages"` precisely, without regexes and **without making those fields labels**,
 which keeps cardinality low. It also makes queries robust to wording changes. Boot 3.4+
-supports structured logging formats natively.
+supports structured logging formats natively. This workspace now does it (and parses in Alloy
+instead of `| json`): see [note 4](/notebook/spring-boot-system-design/03-observability/structured-logs-and-logs-viewer).
 </details>
 
 ## Key takeaways

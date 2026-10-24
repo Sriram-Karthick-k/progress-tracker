@@ -114,6 +114,11 @@ INFO 154 --- [hello-boot] [nio-8080-exec-2] [6ad34a82d9da13e3df4d1d56fccd1530-df
 For a failing `POST`, the exception resolver's `WARN` and our `http` line carried the **same**
 `traceId`, so the two are linked.
 
+> [!NOTE]
+> The dev profile now logs **JSON** (`logging.structured.format.console=logstash`) instead of
+> this text pattern; `traceId`, `spanId` and the request fields become JSON keys. See
+> [note 4](/notebook/spring-boot-system-design/03-observability/structured-logs-and-logs-viewer).
+
 > [!WARNING]
 > **`management.tracing.sampling.probability` is flagged as unknown in Boot 4 by the
 > editor.** The `traceId` appears in the logs regardless, but I did not confirm that this

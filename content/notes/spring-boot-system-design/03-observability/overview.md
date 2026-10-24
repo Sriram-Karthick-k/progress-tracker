@@ -41,6 +41,7 @@ mindmap
 |---|------|---------------------|
 | 2 | Request logging and traceId | How do I find every log line of one request? |
 | 3 | Log pipeline: Alloy, Loki and Grafana | Where do the logs go, and how do I query them? |
+| 4 | Structured logs and the Logs viewer | How does a JSON line become labels and fields, and how do I search them in Grafana? |
 
 ## The three signals
 
@@ -71,8 +72,8 @@ That arrow is the investigation path: **alert on metrics, narrow with traces, ex
 
 ```mermaid
 flowchart LR
-  A["dev container<br/>Spring Boot logs [traceId-spanId]"]:::app -->|stdout| B["Docker"]:::infra
-  B -->|socket, read-only| C["Alloy<br/>collects container logs"]:::col
+  A["dev container<br/>Spring Boot JSON logs"]:::app -->|stdout| B["Docker"]:::infra
+  B -->|socket, read-only| C["Alloy<br/>collects, splits JSON"]:::col
   C -->|push| D[("Loki<br/>stores logs, indexes labels")]:::store
   D --> E["Grafana<br/>Explore with LogQL"]:::ui
   classDef app fill:#e0e7ff,stroke:#6366f1,color:#1e1b4b
