@@ -100,6 +100,9 @@ flowchart TD
 | Annotation moved to `outer()` | Rolled back |
 | Two overlapping updates, no version | Both 200, the later commit **silently overwrites** the earlier |
 | Same race with `@Version` | First commit 200, second **409**, first value survives |
+| `create` saves a message, then an outbox row, and fails between them, **without** `@Transactional` on `create` | HTTP 500, but the message stays **committed** with 0 outbox rows |
+| Same, with `@Transactional` on `create` | HTTP 500 and **no rows at all**: both saves joined one transaction (`REQUIRED`) |
+| An `AFTER_COMMIT` listener throws after the commit | HTTP **200**, both rows committed, the exception only logged |
 
 > [!IMPORTANT]
 > **A rolled-back INSERT still consumed its sequence value**, so ids have gaps (5 and 9 were
@@ -119,7 +122,7 @@ flowchart TD
 > short and don't call slow remote services inside them. In the messaging stage this is why
 > publishing to Kafka needs the outbox pattern.
 
-## Propagation (not demonstrated)
+## Propagation (`REQUIRED` shown, the rest not demonstrated)
 
 | Propagation | Meaning | Typical use |
 |-------------|---------|-------------|
@@ -127,6 +130,8 @@ flowchart TD
 | `REQUIRES_NEW` | Suspend the current one, run in a new independent transaction | An audit row that must survive an outer rollback |
 | `NESTED` | Savepoint inside the current transaction | Partial rollback |
 | `SUPPORTS`, `MANDATORY`, `NEVER`, `NOT_SUPPORTED` | Run with, require, or forbid a transaction | Rare |
+
+`REQUIRED` was shown in the outbox work: `repository.save` and `outbox.save` each carry their own `@Transactional`, and wrapping them in a `@Transactional` `create` made both **join** one transaction, so a failure rolled both back (see [3. Transactional outbox](/notebook/spring-boot-system-design/05-distributed-problems/transactional-outbox)). `REQUIRES_NEW`, `NESTED` and the others are still undemonstrated.
 
 ## Isolation (not demonstrated)
 

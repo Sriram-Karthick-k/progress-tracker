@@ -118,6 +118,19 @@ Parameter 0 of constructor in HelloController required a bean of type
 - The **whole app** goes down, even `/hello`, which does not use the service.
 - Adding `@Service` fixed it, and DevTools restarted by itself.
 
+A second case, **two candidates for one type**. `OutboxRelay` asks for an `OutboxPublisher`. Nothing maps that interface to `LogOutboxPublisher`: component scan registers the `@Component`, and Spring matches the constructor parameter by type. We temporarily added a second bean of that type:
+
+```text
+Parameter 1 of constructor in com.learn.hello_boot.event.OutboxRelay required a single bean, but 2 were found:
+	- logOutboxPublisher: defined in file [.../LogOutboxPublisher.class]
+	- tempSecondPublisher: defined by method 'tempSecondPublisher' in com.learn.hello_boot.HelloBootApplication
+Consider marking one of the beans as @Primary, updating the consumer to accept multiple beans, or using @Qualifier
+```
+
+- The temporary bean was removed. The real code now has a Kafka implementation marked `@Primary`, and the log one stays as a fallback.
+- From knowledge, not tested: Spring also falls back to matching the parameter name against the bean name.
+- Full story: [3. Transactional outbox](/notebook/spring-boot-system-design/05-distributed-problems/transactional-outbox).
+
 ## Layers
 
 ```mermaid

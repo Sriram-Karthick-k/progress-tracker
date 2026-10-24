@@ -8,11 +8,11 @@
 | Module | Notes | Status |
 |--------|-------|--------|
 | [00 Workspace](/notebook/spring-boot-system-design/00-workspace/dev-environment) | Dev environment | Reference |
-| [01 Spring Boot basics](/notebook/spring-boot-system-design/01-spring-boot-basics/overview) | Overview, DI and layers, request input and JSON, validation and errors, configuration, testing | Done, except the auto-configuration deep dive |
+| [01 Spring Boot basics](/notebook/spring-boot-system-design/01-spring-boot-basics/overview) | Overview, DI and layers, request input and JSON, validation and errors, configuration, testing, [AOP aspects and events](/notebook/spring-boot-system-design/01-spring-boot-basics/aop-aspects-and-transactional-events), [Maven in depth](/notebook/spring-boot-system-design/01-spring-boot-basics/maven-effective-pom-lifecycle-and-fat-jar) | Done, except the auto-configuration deep dive |
 | [02 Persistence](/notebook/spring-boot-system-design/02-persistence/overview) | Postgres and JDBC, Flyway, JPA and Hibernate, transactions, Testcontainers (planned) | In progress |
 | [03 Observability](/notebook/spring-boot-system-design/03-observability/overview) | Request logging and traceId, Loki and Grafana pipeline | Logs done; metrics and trace export planned |
-| 04 Messaging | RabbitMQ vs Kafka, partitions, consumer groups, delivery guarantees, DLQ | Not started |
-| 05 Distributed problems | Idempotency, outbox, saga, CAP, retries | Not started |
+| [04 Messaging](/notebook/spring-boot-system-design/04-messaging/overview) | Overview, [Kafka with Spring Boot](/notebook/spring-boot-system-design/04-messaging/kafka-with-spring-boot); RabbitMQ vs Kafka, DLQ planned | Started: Kafka in compose, producer and listener basics (sprint); RabbitMQ, DLQ, rebalancing not done |
+| [05 Distributed problems](/notebook/spring-boot-system-design/05-distributed-problems/overview) | Overview, [Idempotency keys](/notebook/spring-boot-system-design/05-distributed-problems/idempotency-keys), [Transactional outbox](/notebook/spring-boot-system-design/05-distributed-problems/transactional-outbox); saga, CAP, retries planned | In progress: idempotency keys and outbox done in the [sprint](/notebook/spring-boot-system-design/quick-sessions/core-patterns-spring-maven/cheatsheet); saga, retries, CAP next |
 | 06 Scaling | Redis caching, rate limiting, sharding, replication | Not started |
 | 07 HLD and LLD | Design interviews, patterns, SOLID | Not started |
 
@@ -20,11 +20,11 @@ Capstone: an Order and Payment Platform (order, inventory, payment and notificat
 
 ## Next
 
-1. Spring internals for interviews: write the aspect exercise (`@LogExecutionTime` with Spring AOP, proxies, `--debug` conditions report), then the auto-configuration deep dive.
+1. Spring internals for interviews: the aspect exercise and transactional events are written and verified (note 7; the explain-back check is still pending in the sprint). Still open: the `--debug` conditions report and the auto-configuration deep dive.
 2. Finish persistence: propagation, isolation levels, pessimistic locking, lazy loading and N+1, a `V3` roll-forward revert.
 3. Testcontainers and `@DataJpaTest` (planned, needs the Docker socket decision).
 4. Metrics: Actuator, Prometheus and Grafana dashboards.
-5. Module 04: Kafka and RabbitMQ with Spring.
+5. Sprint [module 2](/notebook/spring-boot-system-design/quick-sessions/core-patterns-spring-maven/plan-module-2) (idempotent consumer, retry and circuit breaker, saga, Redis cache), then module 04: Kafka deep dive and RabbitMQ.
 
 ## Weak spots to re-test
 
@@ -36,6 +36,8 @@ Capstone: an Order and Payment Platform (order, inventory, payment and notificat
 - Flyway on a non-empty database with no history table **fails**, even with no migration files.
 - Test JVMs inherit the container's environment (`SPRING_PROFILES_ACTIVE`).
 - A passing check can be invalid: prove it can fail first.
+- An aspect (or a `catch` in a `@Transactional` method) that swallows an exception makes the transaction commit: HTTP 200 with half-saved data.
+- A retried request with the same idempotency key is replayed (201, same id), not rejected. The outbox and Kafka explain-backs were never asked.
 
 ## Temporary code to delete later (ask first)
 
