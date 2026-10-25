@@ -168,6 +168,54 @@
 
 **Hook:** A jammed letter in the sorting machine: retry a few times, then set it aside and say so.
 
+### Card 15: Saga, compensation instead of rollback
+
+**Q:** An order touches stock, payment and the order record. The card is declined after the stock was reserved. Why can't `@Transactional` undo the reservation, and what does?
+
+**A:** `@Transactional` covers one database connection, and the reservation had already committed. A saga runs a compensating transaction for every step that committed, newest first: release the stock, mark the order `CANCELLED`. In our run the declined order went created, stock reserved, charging, compensating, `CANCELLED`, and the stock came back *(verified)*.
+
+**Why:** Every step commits on its own, so the undo is a new business transaction, not a rollback.
+
+**Trap:** Orchestration (one class owns the flow, what we built) versus choreography (services react to each other's events, not built here). Orchestration is easier to extend and to follow, but the orchestrator knows every participant and each participant still supplies its own compensation.
+
+**Hook:** A refund, not an eraser.
+
+### Card 16: One cancel for every stage
+
+**Q:** `cancel` can be reached from `PENDING`, `STOCK_RESERVED` or `PAID`. How does one method undo the right amount, and why must it be safe to run twice?
+
+**A:** It reads the order's status in the same transaction that releases the stock: `PENDING` releases nothing, `STOCK_RESERVED` puts the stock back. Both paths ran *(verified)*. `PAID` also releases the stock and logs that a refund is still owed, and an already `CANCELLED` order returns at once *(both from the code, not run)*.
+
+**Why:** The status is the saga's memory, and releasing plus marking `CANCELLED` in one transaction means a crash cannot do half of it.
+
+**Trap:** Two separate transactions can release the stock twice, or never. A retry after a crash only stays harmless because the status check comes first.
+
+**Hook:** A receipt that says what to give back.
+
+### Card 17: Crash mid-saga and the recovery job
+
+**Q:** The app is killed after the stock was reserved but before the payment finished. What is left, who fixes it, and why not a Kafka retry?
+
+**A:** The order stays `STOCK_RESERVED` and the stock stays held (8 instead of 10). A scheduled recovery job (threshold 20 s in dev) found it about 40 s after the restart, ran `cancel`, and the stock was 10 again *(verified)*. When our own database is down, Kafka cannot help: the retry message would be an outbox row in that same database. The status committed before the failure is the retry queue.
+
+**Why:** The saved status survives the crash, and a restarted process reads it.
+
+**Trap:** The threshold must exceed the slowest normal saga. If the card was actually charged before the crash, the job would cancel a paid order unless it asks the payment service first (idempotency key) or refunds, which is not built. Kafka does fit when the compensation belongs to another service.
+
+**Hook:** An unfinished form in a drawer, and someone checks the drawer every 10 seconds.
+
+### Card 18: The last book
+
+**Q:** Two clients order the last book at the same instant. What stops both from getting it, and what does the loser see?
+
+**A:** Reserving is one statement: `UPDATE inventory SET available = available - n WHERE sku = ? AND available >= n`. With the overlap forced by a 3 s sleep, client B waited about 3.04 s on the row lock, then matched zero rows: 409 out of stock. Client A got 201 and the stock ended at 0, never negative *(verified)*.
+
+**Why:** The check and the decrement are one atomic step, and the row lock puts the two writers in order.
+
+**Trap:** Reading the stock, checking it in Java and writing it back inside `@Transactional` lets both pass (the `CHECK` constraint would then turn the second into a 500; from the schema, not run). The loser can also be told "out of stock" for a book that is freed again if the winner's payment is declined.
+
+**Hook:** Two hands on the last cookie: whoever the lock lets in.
+
 ## Interview questions
 
 - Why does `@Transactional` not work on a `private` method or on a self-invoked method?
@@ -184,5 +232,9 @@
 - Two orders for the same customer must be processed in order. How do you choose the Kafka key, and what breaks if you change the partition count?
 - Kafka delivers the same record twice. How do you make the consumer safe, and where does the dedupe state live?
 - A record keeps failing in your listener. What does Spring Kafka do by default, and how do you avoid an endless retry loop?
+- The card is declined after the stock was reserved. What exactly runs, and why can't `@Transactional` do it?
+- Your compensation step throws because the database is down. Do you add Kafka? What do you do instead?
+- The app crashes after charging the card but before saving "paid". What does a recovery job do wrong, and how do you prevent it?
+- Two clients order the last item at once. What stops both from getting it, and what does the loser see?
 
 **Related:** [7. AOP aspects and transactional events](/notebook/spring-boot-system-design/01-spring-boot-basics/aop-aspects-and-transactional-events) · [Plan](/notebook/spring-boot-system-design/quick-sessions/core-patterns-spring-maven/plan)

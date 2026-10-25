@@ -271,6 +271,31 @@ flowchart TB
 | **The same message arrives twice** (at-least-once delivery) | Stock reserved twice, card charged twice | **Idempotent consumer** and **idempotency keys** (use the order id as the key for the payment call) |
 | **The orchestrator dies mid-saga** | Half-done order nobody finishes | **Persisted status** plus a recovery job that resumes or compensates orders stuck too long |
 
+### When the compensation itself fails
+
+`cancel` is a database transaction too. If the database is down while it runs, the order stays in its
+last status (say `STOCK_RESERVED`) and the stock stays held. A message queue does **not** fix this
+case: a retry message would be written through an outbox row **in the same database that is down**.
+
+> [!IMPORTANT]
+> **The saved status is the retry queue.** `STOCK_RESERVED` was committed *before* the failure, so it
+> survives. A scheduled **recovery job** finds orders that have been unfinished for longer than a
+> threshold and runs `cancel` again. That is safe because `cancel` reads the status first, and it
+> works for an outage, a crash and a deploy mid-saga. If the database is still down, the job fails
+> and tries again on its next tick.
+
+A queue becomes the right tool when the compensation belongs to **another service**: the orchestrator
+sends "release stock" through the outbox, Kafka holds the message while that service is down, and its
+idempotent consumer applies it once.
+
+Rules for the recovery job:
+
+| Rule | Why |
+|------|-----|
+| The threshold must be **longer than the slowest normal saga** | Otherwise the job cancels an order that is still being paid |
+| Ask the payment service before cancelling, using the order id as an **idempotency key**, or refund | A crash after a real charge but before `markPaid` would otherwise cancel an order the customer paid for |
+| After N failed attempts, **alert** instead of looping | A compensation that can never succeed needs a human |
+
 ### No isolation: what other readers can see
 
 Between T1 and C1 other transactions can read the reserved stock. This is the price of sagas.
@@ -291,6 +316,49 @@ Standard countermeasures:
 | **2PC / XA** | Coordinator prepares then commits all | Strong | ⚠️ Blocking, in-doubt, needs XA everywhere | Few resources that all support XA |
 | **Saga** | Local transactions plus compensations | Eventual, no isolation | Compensation bugs, visible intermediate state | ✅ Business process across services |
 | **Outbox** | State and message in one local transaction | n/a | Duplicates (at-least-once) | A **building block** of a saga, not an alternative |
+
+## Sagas and sharding: who owns the data?
+
+When the data outgrows one database it is split (**sharded**) across several, usually by a key such as
+the product or branch id. A guarded update stays safe as long as each piece of stock has **one owner**.
+A saga is needed when one business operation changes data owned by **more than one** owner.
+
+```mermaid
+flowchart TB
+    ORCH["Saga orchestrator<br/>order with 2 items"]:::orch
+    ORCH ==>|"local transaction 1"| S1[("Shard 1<br/>BOOK stock")]:::db
+    ORCH ==>|"local transaction 2"| S2[("Shard 2<br/>PEN stock")]:::db
+    S1 ~~~ X{{"❌ no transaction across both shards"}}:::bad
+    S2 ~~~ X
+    classDef orch fill:#ddd6fe,stroke:#7c3aed,color:#3b0764
+    classDef db fill:#ffedd5,stroke:#ea580c,color:#7c2d12
+    classDef bad fill:#fee2e2,stroke:#dc2626,color:#7f1d1d
+```
+
+Each reservation is still a local transaction on its own shard. What is missing is one transaction
+over both, so "reserve the book, reserve the pen, and undo the first if the second fails" is a saga.
+
+| Situation | Is the guarded `UPDATE` enough? |
+|-----------|---------------------------------|
+| Each stock row lives in one shard (sharded by product, or by branch plus product) | ✅ Yes: one row, one lock, the last-item race stays safe |
+| Read replicas for scale | ✅ For reservations, because writes go to the primary. Never reserve against a replica, which may be behind |
+| A cart whose items live on different shards, or an order on one shard and its stock on another | ⚠️ No: it crosses databases, so use a saga (or 2PC) |
+| Several primaries in different regions writing the same product | ⚠️ No, unless each product has one "home" region that takes all its writes |
+
+> [!IMPORTANT]
+> **Our saga exists because of the payment service, not because of one database.** A payment gateway
+> can never join a database transaction. Keeping order and stock in one database only made the stock
+> part a single local transaction; once the data is sharded, that part becomes a saga step too.
+
+### Hot rows
+
+One popular product (a flash sale, a concert ticket) turns its stock row into a queue: every writer
+waits on the row lock, so that row's throughput is about one divided by the time the lock is held, and
+the waiting requests keep their database connections until the pool runs out. Ways to relieve it
+*(from knowledge, not tested here)*: keep the locked section as short as ours (one statement); split
+the stock into several rows in the same shard; or put an atomic counter in Redis in front while the
+database stays the source of truth and the final guard. That last option is the cache topic that
+comes next.
 
 ## Choosing
 
@@ -316,6 +384,7 @@ carefully:
 | Local transaction per step | A `@Transactional` method, **each in a bean other than the orchestrator** |
 | Saga state | A JPA entity with a status column (`OrderEntity`, `OrderStatus`) |
 | Orchestrator | A plain `@Service` that calls the steps in order and catches failure |
+| Recovery of stuck sagas | A `@Scheduled` job (needs `@EnableScheduling`) that reads orders by status with a derived query, `findByStatusInAndCreatedAtBefore`, and calls `cancel` again |
 | Reliable messages | Transactional outbox plus `@KafkaListener` (idempotent consumer) |
 | Call to the payment service | `RestClient` with `@Retryable` and a circuit breaker |
 | Workflow engines (named from memory, not used here) | Spring State Machine, Axon sagas, Temporal, Camunda |
@@ -340,12 +409,30 @@ The orchestrator has one job: call the steps in order and, on any exception, cal
 payment call sits **between** two transactions, never inside one, so no database lock is held while
 waiting for an external system.
 
-> [!NOTE]
-> **Status in our playground (`playground/saga-pattern`).** Built and compiling (the app starts with
-> them): the `V1` tables `orders` and `inventory`, `OrderEntity` and `OrderStatus`,
-> `InventoryRepository` (guarded `reserve`, `release`), `OrderRepository` and `OrderSteps`. **Not built
-> yet:** the orchestrator, the payment gateway, the HTTP endpoint, a refund step, the outbox and Kafka
-> part. Nothing has been run end to end, so no behaviour above is marked as verified.
+### What we built and verified (`playground/saga-pattern`)
+
+Built: the `V1` tables `orders` and `inventory`, `OrderEntity` and `OrderStatus`, `InventoryRepository`
+(guarded `reserve` and `release`), `OrderSteps`, the orchestrator `OrderSagaOrchestrator`, a toy
+`PaymentGateway` with modes `OK`, `DECLINE` and `DOWN` (flipped with `PUT /demo/payment-mode`),
+`POST /orders` (201 when `CONFIRMED`, 409 when `CANCELLED`) and the `OrderRecoveryJob`.
+
+| Experiment | Result *(all reproduced)* |
+|------------|---------------------------|
+| Order 2 books, gateway `OK` | 201 `CONFIRMED`, stock 10 to 8 |
+| Gateway `DECLINE`, order 2 books | 409 `CANCELLED` "card declined". Log: created, stock reserved, charging, "compensating", `CANCELLED`. The stock came back: 4 declined orders had held 8 books, and 4 later orders could still be confirmed |
+| Order 50 books | 409 `CANCELLED` "Not enough stock of BOOK for 50". No "stock reserved" and no payment line: nothing to compensate |
+| Hard-kill the app between reserve and payment (temporary 10 s sleep in the gateway) | Order left in `STOCK_RESERVED`, stock 8 instead of 10. About 40 s later, after the restart, the recovery job (threshold 20 s in dev) cancelled it and the stock was 10 again |
+| Two clients, last book (temporary 3 s sleep inside the reserve transaction) | Client A: 201 `CONFIRMED`. Client B waited about 3.04 s on the row lock, then matched 0 rows: 409 out of stock. Final stock 0, never negative |
+
+The invariant that held throughout: **stock + quantity of confirmed orders = starting stock**, and no
+order was left in `PENDING`, `STOCK_RESERVED` or `PAID` once the job had run.
+
+> [!WARNING]
+> **Not built or not tested.** Gateway mode `DOWN` was never exercised. There is no refund step: a
+> `PAID` order that gets cancelled only logs a warning. The recovery job does not ask the payment
+> service before cancelling, and nothing stops the job and a slow saga from acting on the same order
+> (a lock or lease would). There is no alert after repeated failures, and the outbox and Kafka part
+> of the pattern is not built here.
 
 ## Pitfalls
 
@@ -424,6 +511,39 @@ WHERE sku = ? AND available >= n`, which checks and decrements **atomically**. T
 the second statement see the first one's result, so it updates zero rows and that order fails at
 step one with nothing to compensate. This is a **commutative, atomic local step**; the order's
 `PENDING` status is a **semantic lock** that tells the rest of the system it is not final yet.
+Reproduced here by holding the reserve transaction open for 3 s: the second client waited about
+3.04 s on the row lock, then matched zero rows and failed cleanly. `@Transactional` alone would not
+help if the code read the stock, checked it in Java and then wrote it back.
+</details>
+
+<details>
+<summary>The cancel step throws because the database is down. A teammate says to add Kafka and retry through a topic. What do you answer?</summary>
+
+Kafka does not help with this failure. A retry message has to be recorded somewhere durable, usually
+an outbox row, and that row lives in the same database that is down. What is already durable is the
+order's **status**, committed before the failure. A scheduled recovery job reads orders that are still
+`PENDING`, `STOCK_RESERVED` or `PAID` after a threshold and runs the idempotent `cancel` again; if the
+database is still down it fails and retries on the next tick. A queue is right when the compensation
+belongs to **another service** that may be down.
+</details>
+
+<details>
+<summary>The recovery job cancels an order whose customer was actually charged. How can that happen and how do you prevent it?</summary>
+
+The app crashed after the payment service charged the card but before `markPaid` saved it, so the
+order is still `STOCK_RESERVED` and the job cancels it. Prevent it by sending the order id as an
+**idempotency key** with the charge and asking the payment service for that key's result before
+cancelling, or by refunding when the order had been charged. The job's age threshold must also be
+longer than the slowest normal saga, or it will cancel an order that is still in flight.
+</details>
+
+<details>
+<summary>Your inventory is sharded by product and an order contains a book and a pen on different shards. Does the guarded stock update still protect you, and what else do you need?</summary>
+
+For each item, yes: a row has one owner and one lock, so the check and decrement of that item stay
+atomic. But no transaction spans the two shards, so "reserve both or neither" is a saga: reserve the
+book, reserve the pen, and if the second fails run the compensation that releases the first. The
+payment service is a third participant that never joins a database transaction anyway.
 </details>
 
 ## Key takeaways
@@ -437,5 +557,8 @@ step one with nothing to compensate. This is a **commutative, atomic local step*
 | Put the hardest-to-undo step last | After it, only retriable steps may remain |
 | Orchestrate when the flow is long or branching | Choreography spreads the flow across listeners |
 | Never call a remote service inside a DB transaction | Locks held over a network call, and the outcome can be unknown |
+| Retry a failed compensation from the saved status | The status survives the outage; a message written to the same database cannot |
+| Make the stock check and the decrement one statement | The row lock then decides a race, and the loser fails cleanly |
+| Sharding keeps a single-row guard safe, but not an operation across shards | One row has one owner and one lock; an order spanning shards needs a saga |
 
 **Related:** [Transactional outbox](/notebook/spring-boot-system-design/05-distributed-problems/transactional-outbox) · [Idempotency keys](/notebook/spring-boot-system-design/05-distributed-problems/idempotency-keys) · [Kafka with Spring Boot](/notebook/spring-boot-system-design/04-messaging/kafka-with-spring-boot) · [Transactions in Spring](/notebook/spring-boot-system-design/02-persistence/transactions-in-spring) · [Caching](/notebook/system-design/caching)
