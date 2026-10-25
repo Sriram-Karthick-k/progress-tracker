@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, Clock, ListTree, CalendarDays } from "lucide-rea
 import type { LoadedNote } from "@/lib/notes";
 import { NotebookContent } from "@/components/notebook/NotebookContent";
 import { NoteEditButton } from "@/components/notebook/NoteEditButton";
-import { TableOfContents } from "@/components/notebook/TableOfContents";
+import { TableOfContents, MobileContents } from "@/components/notebook/TableOfContents";
 
 const href = (slug: string[]) => `/notebook/${slug.join("/")}`;
 
@@ -29,7 +29,7 @@ export function NoteArticle({ note, editable }: { note: LoadedNote; editable: bo
             </nav>
             {editable && <NoteEditButton slug={note.slug} title={note.title} />}
           </div>
-          <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-[2.1rem]">{note.title}</h1>
+          <h1 className="text-[1.65rem] font-bold leading-tight tracking-tight text-white [overflow-wrap:anywhere] sm:text-[2.1rem]">{note.title}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
             <span className="inline-flex items-center gap-1.5">
               <Clock size={13} /> {note.readingMinutes} min read
@@ -45,14 +45,15 @@ export function NoteArticle({ note, editable }: { note: LoadedNote; editable: bo
           </div>
         </header>
 
+        <MobileContents headings={note.headings} />
         <NotebookContent html={note.html} />
 
         {(note.prev || note.next) && (
-          <nav aria-label="More notes" className="mt-14 grid gap-3 border-t border-white/10 pt-6 sm:grid-cols-2">
+          <nav aria-label="More notes" className="mt-14 grid grid-cols-1 gap-3 border-t border-white/10 pt-6 sm:grid-cols-2">
             {note.prev ? (
               <Link
                 href={href(note.prev.slug)}
-                className="group rounded-xl border border-white/10 p-4 transition hover:border-indigo-400/50 hover:bg-white/[0.03]"
+                className="group min-w-0 rounded-xl border border-white/10 p-4 transition hover:border-indigo-400/50 hover:bg-white/[0.03]"
               >
                 <div className="flex items-center gap-1.5 text-xs text-slate-400">
                   <ArrowLeft size={13} className="transition group-hover:-translate-x-0.5" /> Previous
@@ -65,7 +66,7 @@ export function NoteArticle({ note, editable }: { note: LoadedNote; editable: bo
             {note.next && (
               <Link
                 href={href(note.next.slug)}
-                className="group rounded-xl border border-white/10 p-4 text-right transition hover:border-indigo-400/50 hover:bg-white/[0.03]"
+                className="group min-w-0 rounded-xl border border-white/10 p-4 text-right transition hover:border-indigo-400/50 hover:bg-white/[0.03]"
               >
                 <div className="flex items-center justify-end gap-1.5 text-xs text-slate-400">
                   Next <ArrowRight size={13} className="transition group-hover:translate-x-0.5" />

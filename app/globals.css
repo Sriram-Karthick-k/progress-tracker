@@ -637,3 +637,91 @@ body {
 
 /* KaTeX: don't let the block-math wrapper add its own paragraph margin twice */
 .md-body .katex-display { margin: 1rem 0; overflow-x: auto; overflow-y: hidden; }
+
+/* long unbreakable tokens (class names, file paths, URLs) must wrap instead of widening the page.
+   `anywhere` also shrinks min-content, which a flex <summary> needs; table cells keep normal
+   wrapping so columns don't collapse (the table scrolls instead). */
+.md-body { overflow-wrap: break-word; }
+.md-body :not(pre) > code,
+.md-body summary { overflow-wrap: anywhere; }
+.md-body td code,
+.md-body th code { overflow-wrap: normal; }
+
+/* --------------------------------- phones ---------------------------------
+   Mermaid scales a whole diagram down to fit its column, so a 700px-wide
+   sequence diagram ends up with ~6px text on a 390px phone. Instead render it
+   at ~80% of its natural size (--natural-w is set from the SVG viewBox in
+   NotebookContent) and let the frame scroll sideways; tapping opens the
+   full-screen pinch-zoom view. */
+@media (max-width: 639px) {
+  .md-body { line-height: 1.72; }
+  .md-body h2 { font-size: 1.3rem; margin-top: 2.25rem; }
+  .md-body h3 { font-size: 1.08rem; margin-top: 1.6rem; }
+  .md-body ul, .md-body ol { padding-left: 1.2rem; }
+
+  .md-body figure.md-diagram { padding: 0.75rem 0.5rem 0.6rem; margin-inline: -0.25rem; border-radius: 0.75rem; }
+  .md-body figure.md-diagram pre.mermaid { overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+  .md-body pre.mermaid svg {
+    display: block;
+    margin: 0 auto;
+    max-width: none !important;
+    width: var(--svg-w, 100%) !important; /* set per diagram in NotebookContent */
+    height: auto !important;
+  }
+
+  .md-body .md-excalidraw-wrap { height: 300px; }
+  .md-body figure.md-code pre { padding: 0.85rem 0.9rem; }
+  .md-body figure.md-code pre code { font-size: 12.5px; }
+  .md-alert { padding: 0.75rem 0.85rem; }
+  .md-body th, .md-body td { padding: 0.5rem 0.65rem; }
+
+  /* quiz cards: the answer gets the full width, a chevron replaces "Show answer" */
+  .md-body summary { padding: 0.8rem 0.85rem; align-items: flex-start; }
+  .md-body summary::after { content: "▾"; font-size: 1rem; line-height: 1.5rem; }
+  .md-body details[open] summary::after { content: "▴"; }
+  .md-body details > :not(summary) { margin: 0 0.85rem 0.9rem 0.85rem; }
+}
+
+/* touch-only overlay on the Excalidraw embed (shown inside the pointer: coarse block below) */
+.md-body .md-excalidraw-tap {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  width: 100%;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 0 0.6rem;
+  background: transparent;
+  font-size: 11px;
+  color: rgb(var(--c-slate-400));
+  -webkit-tap-highlight-color: transparent;
+}
+/* Excalidraw's mobile bottom toolbar: empty here (every canvas action is disabled) */
+.md-body .md-excalidraw footer.App-toolbar,
+.md-lightbox-excalidraw footer.App-toolbar { display: none; }
+
+/* touch hint under each diagram; says "swipe" only when it really is wider than its frame */
+.md-body figure.md-diagram::after {
+  content: "Tap to zoom";
+  display: none;
+  font-size: 11px;
+  color: rgb(var(--c-slate-500));
+}
+.md-body figure.md-diagram.is-wide::after { content: "Swipe to scroll · tap to zoom"; }
+@media (pointer: coarse) {
+  /* controls live in a footer strip under the diagram so they never cover its content */
+  .md-body figure.md-diagram { padding-bottom: 3rem; }
+  .md-body figure.md-diagram::after { display: block; position: absolute; left: 1rem; bottom: 0.95rem; }
+  .md-body figure.md-diagram .md-expand { top: auto; bottom: 0.4rem; right: 0.5rem; height: 2.25rem; width: 2.25rem; opacity: 1; }
+  .md-body .md-excalidraw-wrap .md-expand { display: none; } /* the whole drawing is the tap target */
+  .md-body .md-copy { padding: 0.4rem 0.8rem; min-height: 2rem; }
+  .md-body summary { min-height: 3rem; }
+  .md-body .md-anchor { display: none; }
+
+  /* a one-finger drag on the embedded canvas would pan the drawing instead of
+     scrolling the page (a scroll trap). Make the embed a picture; tapping it opens
+     the full-screen, fully interactive view. */
+  .md-body .md-excalidraw { pointer-events: none; }
+  .md-body .md-excalidraw-tap { display: flex; }
+}

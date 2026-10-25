@@ -102,8 +102,33 @@ const MERMAID_THEME = {
   },
 };
 
+// Phones get a tighter layout: less spacing and wrapped labels give a much narrower
+// natural width, so the diagram nearly fits the screen at a readable text size
+// instead of being half off-screen. Same breakpoint as the CSS in globals.css.
+const MERMAID_COMPACT = {
+  flowchart: { nodeSpacing: 22, rankSpacing: 34, padding: 8, wrappingWidth: 140 },
+  sequence: { actorMargin: 20, width: 112, height: 44, boxMargin: 6, messageMargin: 28, noteMargin: 6, wrap: true },
+  mindmap: { padding: 10, maxNodeWidth: 120 },
+};
+// A left-to-right pipeline is wider than a portrait phone however compact it is; top-to-bottom
+// uses the screen's natural direction. Only the header line is touched (phones only).
+const verticalOnPhone = (src: string) => src.replace(/^(\s*(?:flowchart|graph)\s+)(?:LR|RL)\b/m, "$1TD");
+const PHONE_MQ = "(max-width: 639px)";
+function usePhone() {
+  // only the diagram config depends on this, never the markup, so there's no hydration mismatch
+  const [phone, setPhone] = useState(() => typeof window !== "undefined" && window.matchMedia(PHONE_MQ).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(PHONE_MQ);
+    const sync = () => setPhone(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  return phone;
+}
+
 let mermaidLoad: Promise<typeof import("mermaid")> | null = null;
-let mermaidInitializedFor: "dark" | "light" | null = null;
+let mermaidInitializedFor: string | null = null;
 function loadMermaid() {
   if (!mermaidLoad) {
     mermaidLoad = import("mermaid").then((m) => {
@@ -131,6 +156,7 @@ function loadExcalidraw() {
 export function NotebookContent({ html }: { html: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const { mode } = useTheme();
+  const phone = usePhone();
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
   const [Excalidraw, setExcalidraw] = useState<typeof ExcalidrawType | null>(null);
   // one React root per .md-excalidraw container, reused across effect re-runs
@@ -148,6 +174,7 @@ export function NotebookContent({ html }: { html: string }) {
     if (!el) return;
     let cancelled = false;
     const roots = excalidrawRoots.current;
+    const observers: ResizeObserver[] = [];
     // re-query AFTER the async chunk load, and only touch nodes still in the page
     const live = (sel: string) => (Array.from(el.querySelectorAll(sel)) as HTMLElement[]).filter((n) => n.isConnected);
 
@@ -172,12 +199,14 @@ export function NotebookContent({ html }: { html: string }) {
         .then(async (m) => {
           if (cancelled) return;
           const mermaid = m.default;
-          if (mermaidInitializedFor !== mode) {
-            mermaidInitializedFor = mode;
+          const configKey = `${mode}-${phone ? "phone" : "wide"}`;
+          if (mermaidInitializedFor !== configKey) {
+            mermaidInitializedFor = configKey;
             mermaid.initialize({
               startOnLoad: false,
               theme: "base",
               themeVariables: MERMAID_THEME[mode],
+              ...(phone ? MERMAID_COMPACT : {}),
               // "neo": rounded, shadowed, solid fills. handDrawn's rough.js hatching
               // made text on coloured nodes hard to read.
               look: "neo",
@@ -188,7 +217,7 @@ export function NotebookContent({ html }: { html: string }) {
           for (const b of blocks) {
             // keep the source so a theme switch can re-render from scratch
             b.dataset.src ??= b.textContent ?? "";
-            b.textContent = b.dataset.src;
+            b.textContent = phone ? verticalOnPhone(b.dataset.src) : b.dataset.src;
             b.removeAttribute("data-processed");
           }
           try {
@@ -199,12 +228,34 @@ export function NotebookContent({ html }: { html: string }) {
           }
           if (cancelled) return;
           for (const b of blocks) {
-            if (!b.querySelector("svg")) continue;
+            const svg = b.querySelector("svg");
+            if (!svg) continue;
+            // natural (unscaled) width: on phones render at ~78% of it (≈12px text) and let the
+            // frame scroll, unless that's within ~12% of the frame, where fitting is nicer
+            const natural = svg.viewBox.baseVal?.width;
+            const size = () => {
+              if (!natural) return;
+              const frame = b.clientWidth;
+              const readable = natural * 0.78;
+              svg.style.setProperty("--svg-w", `${readable <= frame * 1.12 ? frame : readable}px`);
+            };
+            size();
             const open = () => setLightbox({ type: "mermaid", svg: b.querySelector("svg")!.outerHTML });
             b.classList.add("is-zoomable");
-            b.title = "Click to expand";
+            b.title = "Tap to expand";
             b.onclick = open;
             const fig = b.closest("figure.md-diagram");
+            if (fig) {
+              // flag diagrams wider than their frame, so the "swipe / tap" hint shows only then
+              const check = () => {
+                size();
+                fig.classList.toggle("is-wide", b.scrollWidth > b.clientWidth + 4);
+              };
+              check();
+              const ro = new ResizeObserver(check);
+              ro.observe(b);
+              observers.push(ro);
+            }
             if (fig && !fig.querySelector(".md-expand")) {
               const btn = document.createElement("button");
               btn.type = "button";
@@ -271,6 +322,16 @@ export function NotebookContent({ html }: { html: string }) {
               btn.textContent = "⤢";
               btn.onclick = () => setLightbox({ type: "excalidraw", scene });
               wrap.appendChild(btn);
+
+              // touch only (CSS shows it on coarse pointers): the canvas itself goes inert so
+              // it can't trap page scrolling; tapping anywhere on the drawing opens it full-screen
+              const tap = document.createElement("button");
+              tap.type = "button";
+              tap.className = "md-excalidraw-tap";
+              tap.setAttribute("aria-label", "Open drawing full screen");
+              tap.textContent = "Tap to open";
+              tap.onclick = () => setLightbox({ type: "excalidraw", scene });
+              wrap.appendChild(tap);
             }
           }
         })
@@ -282,6 +343,7 @@ export function NotebookContent({ html }: { html: string }) {
 
     return () => {
       cancelled = true;
+      observers.forEach((o) => o.disconnect());
       // deferred (cleanup can run mid-render, where a sync unmount is unsafe), and
       // only for containers that actually left the page — a theme change keeps them
       setTimeout(() => {
@@ -292,7 +354,7 @@ export function NotebookContent({ html }: { html: string }) {
         }
       });
     };
-  }, [html, mode]);
+  }, [html, mode, phone]);
 
   return (
     <>
@@ -304,16 +366,24 @@ export function NotebookContent({ html }: { html: string }) {
       )}
       {lightbox?.type === "excalidraw" && Excalidraw && (
         <DiagramLightbox onClose={() => setLightbox(null)}>
-          <Excalidraw
-            initialData={{
-              elements: lightbox.scene.elements ?? [],
-              appState: { ...lightbox.scene.appState, viewBackgroundColor: "transparent" },
-              files: lightbox.scene.files ?? null,
-            }}
-            viewModeEnabled
-            theme={mode === "dark" ? "dark" : "light"}
-            UIOptions={{ canvasActions: excalidrawCanvasActions }}
-          />
+          <div className="md-lightbox-excalidraw h-full w-full">
+            <Excalidraw
+              initialData={{
+                elements: lightbox.scene.elements ?? [],
+                appState: { ...lightbox.scene.appState, viewBackgroundColor: "transparent" },
+                files: lightbox.scene.files ?? null,
+              }}
+              viewModeEnabled
+              theme={mode === "dark" ? "dark" : "light"}
+              UIOptions={{ canvasActions: excalidrawCanvasActions }}
+              // open fitted to the screen instead of at 100% from the scene's top-left corner
+              excalidrawAPI={(api) =>
+                setTimeout(() =>
+                  api.scrollToContent(lightbox.scene.elements ?? [], { fitToViewport: true, viewportZoomFactor: 0.9, animate: false })
+                )
+              }
+            />
+          </div>
         </DiagramLightbox>
       )}
     </>

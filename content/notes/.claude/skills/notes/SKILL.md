@@ -71,6 +71,22 @@ but **every note gets at least one diagram and a TL;DR**.
 Rules: **one idea per diagram**, ≤ ~12 nodes (split otherwise), labels ≤ 4–5 words,
 and always add a sentence after the diagram saying what to notice.
 
+**Write for a phone first** — a lot of these notes get read on one (~350px of width):
+
+- **Sequence diagrams: ≤ 4 participants**, short aliases (`participant S as Service`, not the full
+  class name). A 5th participant roughly doubles the width and forces sideways scrolling.
+- **Flowcharts: prefer `flowchart TD`.** `LR` pipelines are flipped to top-to-bottom on phones
+  automatically, but a diagram that is *wide in both* (many parallel branches) still scrolls. Keep
+  ≤ 3 nodes side by side.
+- Long labels wrap on phones, but a label with no spaces (`org.springframework…AutoConfiguration`)
+  can't; shorten it or put the full name in the paragraph below.
+- Mindmaps: ≤ 4 branches with ≤ 3 leaves each; they're the widest diagram type.
+- Don't put a diagram inside a `<details>` block: Mermaid can't draw into a collapsed element.
+
+What readers get automatically: diagrams render at a readable size and scroll sideways when wider
+than the screen, tapping one opens a full-screen view with pinch-zoom, and the phone's Back
+gesture closes it.
+
 ## 4. Mermaid styling recipes
 
 Diagrams render with a polished "neo" look and an indigo theme that follows the
@@ -170,6 +186,7 @@ hasn't given you an export, use Mermaid instead or ask them to draw it.
 - [ ] ≥ 1 diagram (concept notes: mindmap + mental model + one flow/decision diagram)
 - [ ] Every diagram has a sentence after it saying what to notice
 - [ ] Colour classes come from §4 and mean something
+- [ ] Phone-friendly diagrams (§3): ≤ 4 sequence participants, `flowchart TD`, no unbreakable long labels
 - [ ] At least one comparison or symptom→fix table
 - [ ] Code blocks are language-tagged, minimal, real
 - [ ] Pitfalls are `[!WARNING]`/`[!CAUTION]` callouts with a bold first line

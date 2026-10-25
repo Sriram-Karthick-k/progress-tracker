@@ -3,6 +3,32 @@
 import { useEffect, useState } from "react";
 import type { Heading } from "@/lib/notes";
 
+// Collapsed "On this page" menu for screens too narrow for the sidebar rail (< xl).
+export function MobileContents({ headings }: { headings: Heading[] }) {
+  if (headings.length < 2) return null;
+  return (
+    <details className="group mb-8 rounded-xl border border-white/10 bg-white/[0.03] xl:hidden">
+      <summary className="flex min-h-[3rem] cursor-pointer list-none items-center justify-between px-4 text-sm font-medium text-slate-200 [&::-webkit-details-marker]:hidden">
+        <span>On this page · {headings.length} sections</span>
+        <span className="text-slate-400 transition group-open:rotate-180">▾</span>
+      </summary>
+      <ul className="max-h-[60vh] overflow-y-auto border-t border-white/10 py-1 text-[15px]">
+        {headings.map((h) => (
+          <li key={h.slug}>
+            <a
+              href={`#${h.slug}`}
+              onClick={(e) => e.currentTarget.closest("details")?.removeAttribute("open")}
+              className={`block py-2.5 pr-4 text-slate-300 active:bg-white/10 ${h.depth === 3 ? "pl-8 text-slate-400" : "pl-4"}`}
+            >
+              {h.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
 // Sticky "On this page" rail: highlights the section you're reading and shows
 // how far through the note you are.
 export function TableOfContents({ headings }: { headings: Heading[] }) {

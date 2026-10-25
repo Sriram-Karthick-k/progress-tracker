@@ -34,9 +34,23 @@ export function FullscreenEditor({
 
   const [html, setHtml] = useState("");
 
+  // Side by side on desktop; on a phone the preview pane is display:none until toggled.
+  // Mermaid can't measure text inside a hidden box (NaN transforms, broken diagrams), so
+  // only fetch + mount the preview while it is actually showing.
+  const [desktop, setDesktop] = useState(() => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setDesktop(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  const showPreview = preview || desktop;
+
   // debounced live preview — goes through the real pipeline (mermaid, excalidraw,
   // katex, shiki) via the server, instead of a bare client-side marked.parse().
   useEffect(() => {
+    if (!showPreview) return;
     let cancelled = false;
     const t = setTimeout(() => {
       previewNote(value).then((h) => {
@@ -47,7 +61,7 @@ export function FullscreenEditor({
       cancelled = true;
       clearTimeout(t);
     };
-  }, [value]);
+  }, [value, showPreview]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -83,7 +97,7 @@ export function FullscreenEditor({
     }
   }
 
-  const iconBtn = "grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-slate-300 transition hover:border-white/20 hover:text-white";
+  const iconBtn = "grid h-11 w-11 place-items-center rounded-lg sm:h-9 sm:w-9 border border-white/10 text-slate-300 transition hover:border-white/20 hover:text-white";
 
   return (
     <div className="fixed inset-0 z-[70] flex flex-col bg-slate-950">
@@ -131,7 +145,7 @@ export function FullscreenEditor({
         />
         <div className={`h-full overflow-auto border-white/10 lg:border-l ${preview ? "block" : "hidden lg:block"}`}>
           <div className="mx-auto max-w-3xl px-5 py-6 sm:px-8">
-            <NotebookContent html={html} />
+            {showPreview && <NotebookContent html={html} />}
           </div>
         </div>
       </div>
