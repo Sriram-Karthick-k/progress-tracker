@@ -4,6 +4,10 @@ const nextConfig = {
   // No SQLite, no Prisma. Progress lives in localStorage; notes live as markdown
   // files. The /api/notes route (writes note files) is enabled only in "local"
   // builds via NEXT_PUBLIC_NOTES_EDITABLE=1 — remote deploys are read-only.
+  experimental: {
+    // the notes file watcher (lib/noteWatcher.ts) must load from node_modules, not be bundled
+    serverComponentsExternalPackages: ["chokidar"],
+  },
 };
 
 export default nextConfig;

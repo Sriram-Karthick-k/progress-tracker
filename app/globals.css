@@ -513,6 +513,58 @@ body {
 .md-body pre.mermaid.is-failed,
 .md-body pre.mermaid:has(svg) { color: inherit; }
 .md-body pre.mermaid.is-zoomable { cursor: zoom-in; }
+.md-body pre.mermaid > svg { margin-inline: auto; } /* Tailwind makes svg display:block, so text-align can't centre a narrow one */
+/* a diagram whose source doesn't parse: say so, and keep the last good drawing if there is one */
+.md-body pre.mermaid:is(.is-failed, .is-stale)::before {
+  display: block;
+  margin-bottom: 0.6rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid rgb(245 158 11 / 0.45);
+  border-radius: 0.5rem;
+  background: rgb(245 158 11 / 0.14);
+  color: rgb(var(--c-slate-300));
+  font: 600 12px/1.45 ui-sans-serif, system-ui, sans-serif;
+  text-align: left;
+  white-space: normal;
+  content: "Diagram syntax error: " attr(data-error);
+}
+.md-body pre.mermaid.is-stale::before { content: "Showing the last working diagram. The new source has a syntax error: " attr(data-error); }
+.md-body pre.mermaid.is-failed { text-align: left; white-space: pre-wrap; font-size: 13px; }
+
+/* live updates: a block that just changed on disk pulses once so the eye finds it */
+@keyframes md-flash {
+  from { box-shadow: 0 0 0 6px rgb(var(--c-code-fg) / 0.28); background-color: rgb(var(--c-code-fg) / 0.14); }
+  to { box-shadow: 0 0 0 6px transparent; background-color: transparent; }
+}
+.md-body .md-flash { border-radius: 0.5rem; animation: md-flash 2.2s ease-out; }
+/* a redrawn diagram keeps its place on screen, so just ring it instead of tinting the whole figure */
+@keyframes md-flash-ring {
+  from { box-shadow: 0 0 0 3px rgb(var(--c-code-fg) / 0.45); }
+  to { box-shadow: 0 0 0 3px transparent; }
+}
+.md-body :is(figure.md-diagram, .md-excalidraw-wrap).md-flash { border-radius: 0.9rem; animation: md-flash-ring 1.6s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .md-body .md-flash { animation: none; outline: 2px solid rgb(var(--c-code-fg) / 0.55); }
+}
+
+/* whiteboard notes (whiteboard/*.md): numbered steps, and diagrams that use the full width */
+article[data-board] .md-body { counter-reset: step; }
+article[data-board] .md-body h2 { counter-increment: step; display: flex; align-items: center; gap: 0.65rem; }
+article[data-board] .md-body h2::before {
+  content: counter(step);
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  height: 1.9rem;
+  width: 1.9rem;
+  border-radius: 999px;
+  background: rgb(var(--c-code-fg) / 0.16);
+  color: rgb(var(--c-code-fg));
+  font-size: 0.95rem;
+}
+@media (min-width: 640px) {
+  article[data-board] .md-body pre.mermaid svg { width: 100% !important; max-width: none !important; max-height: 78vh; }
+}
 .md-body .md-excalidraw-wrap { height: 460px; overflow: hidden; }
 .md-body .md-excalidraw { height: 100%; width: 100%; }
 /* read-only embed: no menu needed, every canvasAction is already disabled */

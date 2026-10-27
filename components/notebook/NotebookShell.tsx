@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { PanelLeft, PanelLeftClose, X } from "lucide-react";
 import { NotebookTree } from "@/components/notebook/NotebookTree";
+import { LiveNotes } from "@/components/notebook/LiveNotes";
 import type { NoteNode } from "@/lib/notes";
 
 const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
@@ -40,6 +41,7 @@ export function NotebookShell({ tree, active, children }: { tree: NoteNode[]; ac
 
   return (
     <div className="flex">
+      <LiveNotes />
       {/* desktop tree */}
       <aside className={`sticky top-0 hidden h-screen w-64 shrink-0 overflow-y-auto border-r border-white/10 p-3 ${collapsed ? "lg:hidden" : "lg:block"}`}>
         <NotebookTree tree={tree} active={active} trailing={collapseBtn} />

@@ -7,6 +7,14 @@ and self-quiz cards, so a note can look like an illustrated study guide, not a t
 **See a finished example:** [Caching — Patterns, Pitfalls & Spring Boot](/notebook/system-design/caching)
 (`system-design/caching.md`). Start new notes from `.claude/skills/notes/template.md`.
 
+## Live updates
+
+An open page updates itself when a note changes on disk, whether you saved it in an editor or an AI wrote it.
+Only the blocks that changed are redrawn (they flash once), so your scroll position, open quiz cards and
+unchanged diagrams stay as they were. The **Live** pill at the top of a note shows the connection, and **Follow**
+scrolls to each edit. Notes in `whiteboard/` are live design boards:
+[How the whiteboard works](/notebook/whiteboard/how-it-works).
+
 ## Files
 
 - **Folder = sidebar section**, filename = URL: `system-design/caching.md` → `/notebook/system-design/caching`.

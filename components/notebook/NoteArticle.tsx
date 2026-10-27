@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Clock, ListTree, CalendarDays } from "lucide-rea
 import type { LoadedNote } from "@/lib/notes";
 import { NotebookContent } from "@/components/notebook/NotebookContent";
 import { NoteEditButton } from "@/components/notebook/NoteEditButton";
+import { LivePill } from "@/components/notebook/LivePill";
 import { TableOfContents, MobileContents } from "@/components/notebook/TableOfContents";
 
 const href = (slug: string[]) => `/notebook/${slug.join("/")}`;
@@ -10,10 +11,11 @@ const href = (slug: string[]) => `/notebook/${slug.join("/")}`;
 export function NoteArticle({ note, editable }: { note: LoadedNote; editable: boolean }) {
   const updated = new Date(note.updatedAt).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" });
   const sections = note.headings.filter((h) => h.depth === 2).length;
+  const board = note.slug[0] === "whiteboard"; // notes in whiteboard/ are drawn live with an AI, see notes skill
 
   return (
     <div className="flex gap-10">
-      <article className="min-w-0 max-w-[46rem] flex-1">
+      <article data-board={board || undefined} className={`min-w-0 flex-1 ${board ? "max-w-[64rem]" : "max-w-[46rem]"}`}>
         <header className="mb-8 border-b border-white/10 pb-6">
           <div className="mb-4 flex items-start justify-between gap-3">
             <nav aria-label="Breadcrumb" className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-slate-400">
@@ -27,7 +29,10 @@ export function NoteArticle({ note, editable }: { note: LoadedNote; editable: bo
                 </span>
               ))}
             </nav>
-            {editable && <NoteEditButton slug={note.slug} title={note.title} />}
+            <div className="flex shrink-0 items-center gap-2">
+              {editable && <LivePill board={board} />}
+              {editable && <NoteEditButton slug={note.slug} title={note.title} />}
+            </div>
           </div>
           <h1 className="text-[1.65rem] font-bold leading-tight tracking-tight text-white [overflow-wrap:anywhere] sm:text-[2.1rem]">{note.title}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
@@ -46,7 +51,8 @@ export function NoteArticle({ note, editable }: { note: LoadedNote; editable: bo
         </header>
 
         <MobileContents headings={note.headings} />
-        <NotebookContent html={note.html} />
+        {/* key: a different note starts fresh; the same note updates in place (see NotebookContent) */}
+        <NotebookContent key={note.slug.join("/")} html={note.html} live={editable} board={board} />
 
         {(note.prev || note.next) && (
           <nav aria-label="More notes" className="mt-14 grid grid-cols-1 gap-3 border-t border-white/10 pt-6 sm:grid-cols-2">

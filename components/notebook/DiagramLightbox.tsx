@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { X, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 
 const MIN = 0.5;
@@ -16,15 +16,21 @@ type Pt = { x: number; y: number };
 //  - otherwise (Excalidraw): it has native pan/zoom, so it just gets the space.
 // On phones it is full-bleed, and the Back button / swipe-back closes it instead of
 // leaving the note.
+//
+// `contentKey` identifies what is being shown. When the diagram is redrawn (the note was edited
+// while the viewer is open) the new drawing replaces it and the zoom/pan are carried over, so the
+// board stays where you put it instead of snapping back to "fit".
 export function DiagramLightbox({
   onClose,
   zoomable,
   title = "Diagram",
+  contentKey,
   children,
 }: {
   onClose: () => void;
   zoomable?: boolean;
   title?: string;
+  contentKey?: string;
   children: React.ReactNode;
 }) {
   const [view, setView] = useState<View>({ scale: 1, x: 0, y: 0 });
@@ -68,16 +74,52 @@ export function DiagramLightbox({
 
   // Back button / swipe-back closes the viewer. Next patches history.pushState to
   // carry its own router state across, so our extra entry is safe.
+  // A ref, not history.state: a router refresh (live note updates) replaces history.state and
+  // would forget our entry, leaving a dead one behind after closing.
+  const entry = useRef(false);
   const requestClose = useCallback(() => {
-    if (window.history.state?.__lightbox) window.history.back();
+    if (entry.current) window.history.back();
     else onCloseRef.current();
   }, []);
   useEffect(() => {
-    if (!window.history.state?.__lightbox) window.history.pushState({ ...window.history.state, __lightbox: true }, "");
-    const onPop = () => onCloseRef.current();
+    if (!entry.current) {
+      window.history.pushState({ ...window.history.state, __lightbox: true }, "");
+      entry.current = true;
+    }
+    const onPop = () => {
+      entry.current = false;
+      onCloseRef.current();
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
+
+  // New drawing, same view. Keep the diagram's top-left corner and its on-screen size where they
+  // were, so a diagram that grows downwards or sideways just extends the board. A diagram that is
+  // still fitted to the screen stays fitted.
+  const metrics = useRef<{ unit: number; w: number; h: number } | null>(null); // px per viewBox unit
+  const shownKey = useRef(contentKey);
+  useLayoutEffect(() => {
+    const svg = stage.current?.querySelector("svg") ?? null;
+    const ctm = svg?.getScreenCTM();
+    const now = svg && ctm ? { unit: ctm.a, w: svg.viewBox.baseVal.width, h: svg.viewBox.baseVal.height } : null;
+    if (shownKey.current !== contentKey) {
+      shownKey.current = contentKey;
+      const v = viewRef.current;
+      const before = metrics.current;
+      const fitted = v.scale === 1 && v.x === 0 && v.y === 0;
+      if (before && now && !fitted && before.unit > 0 && now.unit > 0) {
+        metrics.current = null; // measured again once this view change has been applied
+        setView({
+          scale: clamp((v.scale * before.unit) / now.unit),
+          x: v.x + (before.unit * (now.w - before.w)) / 2,
+          y: v.y + (before.unit * (now.h - before.h)) / 2,
+        });
+        return;
+      }
+    }
+    metrics.current = now;
+  }, [contentKey, view]);
 
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Eye, Pencil, Save, X, Trash2 } from "lucide-react";
-import { noteApi, previewNote } from "@/components/notebook/noteClient";
+import { noteApi, previewNote, readNote } from "@/components/notebook/noteClient";
+import { useLiveNotes } from "@/components/notebook/liveClient";
 
 // dynamic + ssr:false: NotebookContent pulls in Excalidraw/Mermaid, and a
 // static import here would drag that into the root layout's shared bundle
@@ -33,6 +34,27 @@ export function FullscreenEditor({
   const [confirmDel, setConfirmDel] = useState(false);
 
   const [html, setHtml] = useState("");
+
+  // What we last knew to be on disk (loaded, or saved from here). A change event whose content
+  // differs came from elsewhere — an AI or another editor — and must not be overwritten silently.
+  const onDisk = useRef(initialContent);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const [incoming, setIncoming] = useState<string | null>(null);
+
+  useLiveNotes(async (e) => {
+    if (e.slug.length && e.slug.join("/") !== slug.join("/")) return; // empty slug = "re-check everything"
+    const { exists, content } = await readNote(slug).catch(() => ({ exists: false, content: "" }));
+    if (!exists || content === onDisk.current) return; // our own save, or nothing new
+    if (valueRef.current === onDisk.current) {
+      // no unsaved edits here, so follow the file (e.g. an AI is writing it while the editor is open)
+      onDisk.current = content;
+      setValue(content);
+      setStatus("Updated from disk");
+    } else if (content !== valueRef.current) {
+      setIncoming(content);
+    }
+  });
 
   // Side by side on desktop; on a phone the preview pane is display:none until toggled.
   // Mermaid can't measure text inside a hidden box (NaN transforms, broken diagrams), so
@@ -81,6 +103,8 @@ export function FullscreenEditor({
     setStatus("Saving…");
     try {
       await noteApi(created ? "save" : "create", slug, value);
+      onDisk.current = value;
+      setIncoming(null);
       setCreated(true);
       setStatus("Saved ✓");
     } catch (e) {
@@ -129,6 +153,31 @@ export function FullscreenEditor({
           <X size={16} />
         </button>
       </header>
+
+      {incoming !== null && (
+        <div role="alert" className="flex flex-wrap items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-200">
+          <span className="min-w-0 flex-1">This note changed on disk while you were editing.</span>
+          <button
+            onClick={() => {
+              onDisk.current = incoming;
+              setValue(incoming);
+              setIncoming(null);
+            }}
+            className="rounded-md bg-amber-500/25 px-2.5 py-1 font-semibold text-amber-100 hover:bg-amber-500/40"
+          >
+            Load disk version
+          </button>
+          <button
+            onClick={() => {
+              onDisk.current = incoming;
+              setIncoming(null);
+            }}
+            className="rounded-md px-2.5 py-1 text-amber-200 hover:text-white"
+          >
+            Keep mine
+          </button>
+        </div>
+      )}
 
       {/* desktop: editor + LIVE preview side by side; the eye/Ctrl+Shift+V toggle
           switches to full-width preview. mobile: one pane, toggled. */}
