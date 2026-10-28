@@ -73,7 +73,13 @@ function copySource(from: Element, to: Element, kind: Kind) {
   if (kind === "mermaid") {
     to.querySelector<HTMLElement>("pre.mermaid")!.dataset.src = from.querySelector("pre.mermaid")?.textContent ?? "";
   } else {
-    to.querySelector<HTMLElement>(".md-excalidraw")!.dataset.scene = from.querySelector<HTMLElement>(".md-excalidraw")?.dataset.scene ?? "";
+    // the source is either a scene or Mermaid text, and an edit may switch from one to the other
+    const src = from.querySelector<HTMLElement>(".md-excalidraw")!.dataset;
+    const dst = to.querySelector<HTMLElement>(".md-excalidraw")!.dataset;
+    for (const key of ["scene", "mermaid"] as const) {
+      if (src[key] !== undefined) dst[key] = src[key];
+      else delete dst[key];
+    }
   }
 }
 

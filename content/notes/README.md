@@ -108,9 +108,12 @@ a language label and a **Copy** button.
 Inline `$O(\log n)$`, block `$$ … $$`. `$5 and $10` stays plain text.
 
 ### Hand-drawn illustrations (Excalidraw)
-Draw at [excalidraw.com](https://excalidraw.com) → menu → **Save to disk** → paste the
-`.excalidraw` file's JSON into a ` ```excalidraw ` fence. Renders read-only and
-expandable. The JSON must come from a real export, never typed by hand.
+Put **Mermaid** in an ` ```excalidraw ` fence and it is drawn as a hand-drawn sketch (flowcharts and
+sequence diagrams become real shapes). Or draw at [excalidraw.com](https://excalidraw.com) → menu →
+**Save to disk** and paste the `.excalidraw` file's JSON into the fence. Renders read-only,
+expandable, and updates live when the note changes. Scene JSON must come from a real export, never typed by hand.
+Several diagrams (Mermaid, plain shapes, exported drawings) can share one canvas as a board:
+see [Several diagrams on one canvas](/notebook/notebook-features#several-diagrams-on-one-canvas) in Notebook Features.
 
 ### Everything else
 Tables (rounded, zebra rows), links, images, lists: standard GitHub-flavoured markdown.

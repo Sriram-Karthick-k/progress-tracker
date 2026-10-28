@@ -7,8 +7,8 @@
 //      swapped for plain placeholders so marked doesn't mangle the LaTeX.
 //   2. marked.parse() with GFM, with custom renderers for:
 //        - ```mermaid fences -> <pre class="mermaid"> (drawn client-side)
-//        - ```excalidraw fences -> <div class="md-excalidraw"> (scene JSON,
-//          mounted read-only client-side)
+//        - ```excalidraw fences -> <div class="md-excalidraw"> (scene JSON, or
+//          Mermaid source converted to a scene; mounted read-only client-side)
 //        - other fenced code -> placeholder, highlighted via Shiki after parse
 //        - > [!NOTE]/[!TIP]/[!WARNING]/[!IMPORTANT]/[!CAUTION] -> alert callouts
 //   3. Shiki placeholders resolved (async, dual light/dark theme).
@@ -132,15 +132,16 @@ function buildRenderer() {
           return `<figure class="md-diagram"><pre class="mermaid">${escapeHtml(token.text)}</pre></figure>`;
         }
         if (lang === "excalidraw") {
-          // token.text is a raw .excalidraw scene (JSON exported from
-          // excalidraw.com) — base64 so it survives as an HTML attribute
-          // untouched, decoded + mounted client-side in NotebookContent.
-          const scene = Buffer.from(token.text, "utf8").toString("base64");
+          // The body is either a raw .excalidraw scene (JSON exported from excalidraw.com) or
+          // Mermaid source, which NotebookContent converts to a hand-drawn scene. Base64 so it
+          // survives as an HTML attribute untouched; decoded + mounted client-side.
+          const source = Buffer.from(token.text, "utf8").toString("base64");
+          const attr = token.text.trim().startsWith("{") ? "data-scene" : "data-mermaid";
           // the wrap is a plain sibling container NotebookContent can safely
           // append an "expand" button to — Excalidraw's own React root owns
           // every child of .md-excalidraw once mounted, so nothing else can
           // live inside it without risking being wiped on re-render.
-          return `<div class="md-excalidraw-wrap"><div class="md-excalidraw" data-scene="${scene}"></div></div>`;
+          return `<div class="md-excalidraw-wrap"><div class="md-excalidraw" ${attr}="${source}"></div></div>`;
         }
         const i = pending.length;
         pending.push({ lang, code: token.text });

@@ -7,6 +7,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { DiagramLightbox } from "@/components/notebook/DiagramLightbox";
 import { isFollowing } from "@/components/notebook/liveClient";
 import { patchBody, signBlocks } from "@/components/notebook/patchBody";
+import { buildBoard, parseBoard } from "@/components/notebook/sketchBoard";
 import type { IconifyJSON } from "@iconify/types";
 import "katex/dist/katex.min.css";
 import "@excalidraw/excalidraw/index.css";
@@ -37,7 +38,7 @@ type LightboxState =
 
 // the few Excalidraw API calls we make; the viewer and the embeds each keep one to update their scene in place
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SketchApi = { updateScene: (scene: { elements: any }) => void; scrollToContent: (target?: any, opts?: any) => void };
+type SketchApi = { updateScene: (scene: { elements: any }) => void; scrollToContent: (target?: any, opts?: any) => void; addFiles?: (files: any[]) => void; getAppState?: () => { width: number; height: number } };
 
 // Module-level + memoized: mermaid.initialize() must only ever run once per
 // theme. Calling it again while a previous mermaid.run() is still in flight
@@ -173,6 +174,57 @@ function loadExcalidraw() {
   if (!excalidrawLoad) excalidrawLoad = Promise.all([import("@excalidraw/excalidraw"), import("react-dom/client")]);
   return excalidrawLoad;
 }
+// The Mermaid -> Excalidraw converter drives the same shared `mermaid` module our own diagrams
+// use (it calls initialize() and render()), and mermaid is a singleton. So everything that
+// touches it runs through one queue, and our theme config is re-applied after the converter.
+let mermaidQueue: Promise<unknown> = Promise.resolve();
+function withMermaid<T>(job: () => Promise<T>): Promise<T> {
+  const run = mermaidQueue.then(job, job);
+  mermaidQueue = run.catch(() => undefined);
+  return run;
+}
+
+let sketchLoad: Promise<typeof import("@excalidraw/mermaid-to-excalidraw")> | null = null;
+// Text is measured when a sketch is converted. If the drawing font has not been fetched yet it is
+// measured in a fallback font, the boxes come out too narrow, and the end of every label gets cropped.
+// Excalidraw registers and fetches its fonts the first time it draws text in them, so draw a few
+// characters in each family (off screen) and wait for them before converting anything.
+let fontsLoad: Promise<unknown> | null = null;
+function loadSketchFonts(mod: typeof import("@excalidraw/excalidraw")) {
+  return (fontsLoad ??= (async () => {
+    const families = [mod.FONT_FAMILY.Excalifont, mod.FONT_FAMILY.Virgil, mod.FONT_FAMILY.Nunito, mod.FONT_FAMILY.Cascadia];
+    const primer = mod.convertToExcalidrawElements(
+      families.map((fontFamily, i) => ({ type: "text" as const, x: 0, y: i * 40, text: "Aa Bb", fontSize: 20, fontFamily })),
+      { regenerateIds: true }
+    );
+    await mod.exportToCanvas({ elements: primer, appState: {}, files: null });
+    await document.fonts.ready;
+  })().catch(() => undefined));
+}
+// A sketch source -> an Excalidraw scene. A source with nested fences is a board of several parts
+// (Mermaid diagrams, plain shapes, exported scenes: see sketchBoard.ts); anything else is one Mermaid
+// diagram. Either way, flowcharts and sequence diagrams become real shapes and other Mermaid types
+// come through as a picture.
+function sketchScene(mod: typeof import("@excalidraw/excalidraw"), source: string, memo: string) {
+  return withMermaid(async () => {
+    try {
+      await loadSketchFonts(mod);
+      const { parseMermaidToExcalidraw } = await (sketchLoad ??= import("@excalidraw/mermaid-to-excalidraw"));
+      const fromMermaid = async (src: string) => {
+        const { elements, files } = await parseMermaidToExcalidraw(src, { themeVariables: { fontSize: "18px" }, maxTextSize: 20000 });
+        return { elements: mod.convertToExcalidrawElements(elements, { regenerateIds: false }), files: (files ?? null) as Record<string, unknown> | null };
+      };
+      const board = parseBoard(source);
+      if (board) return await buildBoard(mod, board, { mermaid: fromMermaid, memo });
+      return { ...(await fromMermaid(source)), appState: {}, aspect: 0 };
+    } catch (e) {
+      sketchLoad = null; // don't cache a failed chunk load
+      throw e;
+    } finally {
+      mermaidInitializedFor = null; // the converter re-initialised mermaid; apply our theme again before the next diagram
+    }
+  });
+}
 
 // Renders pre-built markdown HTML, draws any ```mermaid diagrams, and mounts
 // any ```excalidraw scenes (hand-drawn illustrations authored at
@@ -199,11 +251,11 @@ export function NotebookContent({ html, live = false, board = false }: { html: s
   const lightboxOpen = useRef(false);
   lightboxOpen.current = lightbox !== null;
   // per embedded drawing: the scene currently drawn and its API, so a changed scene can be swapped in place
-  const sketches = useRef(new Map<HTMLElement, { b64: string; mode: string; api?: SketchApi }>());
+  const sketches = useRef(new Map<HTMLElement, { key: string; mode: string; api?: SketchApi; scene?: any }>());
   const restoreElements = useRef<typeof import("@excalidraw/excalidraw").restoreElements | null>(null);
   // the full-screen Excalidraw viewer's API; it keeps its own zoom and pan while the scene changes under it
   const viewerApi = useRef<SketchApi | null>(null);
-  const viewerFitted = useRef(false);
+  const viewerFitted = useRef(new WeakSet<object>()); // instances already fitted (dev strict mode constructs Excalidraw twice)
   const viewerScene = lightbox?.type === "excalidraw" ? lightbox.scene : null;
   const viewerShown = useRef<unknown>(null); // the scene the open viewer was last given
   useEffect(() => {
@@ -323,7 +375,7 @@ export function NotebookContent({ html, live = false, board = false }: { html: s
     if (toDraw.length) {
       tasks.push(
         loadMermaid()
-          .then(async (m) => {
+          .then((m) => withMermaid(async () => {
             if (cancelled) return;
             const mermaid = m.default;
             if (mermaidInitializedFor !== configKey) {
@@ -376,7 +428,7 @@ export function NotebookContent({ html, live = false, board = false }: { html: s
                 console.error("[notebook] mermaid render failed", e);
               }
             }
-          })
+          }))
           .catch((e) => {
             inDoc("pre.mermaid").forEach((b) => !b.querySelector("svg") && b.classList.add("is-failed"));
             mermaidLoad = null; // don't cache a failed chunk load forever — retry next time
@@ -386,37 +438,74 @@ export function NotebookContent({ html, live = false, board = false }: { html: s
     }
 
     const drawn = sketches.current;
+    // a block's source is its scene JSON, or Mermaid text that is converted into a scene
+    const sourceOf = (b: HTMLElement) => b.dataset.scene ?? b.dataset.mermaid ?? "";
     const toMount = inDoc(".md-excalidraw").filter((b) => {
       const s = drawn.get(b);
-      return !s || s.mode !== mode || s.b64 !== b.dataset.scene;
+      return !s || s.mode !== mode || s.key !== sourceOf(b);
     });
     if (toMount.length) {
       tasks.push(
         loadExcalidraw()
-          .then(([mod, { createRoot }]) => {
+          .then(async ([mod, { createRoot }]) => {
             if (cancelled) return;
             const Excal = mod.Excalidraw;
             restoreElements.current = mod.restoreElements;
             setExcalidraw(() => Excal);
             for (const block of toMount) {
-              const b64 = block.dataset.scene;
-              if (!b64 || !block.isConnected) continue;
+              const key = sourceOf(block);
+              if (!key || !block.isConnected) continue;
+              const wrap = block.closest<HTMLElement>(".md-excalidraw-wrap");
+              const was = drawn.get(block);
+              const ekey = (block.dataset.ekey ||= `e${++diagramSeq}`);
               let scene;
               try {
-                scene = JSON.parse(decodeScene(b64));
-              } catch {
-                block.textContent = "Couldn't load this diagram (invalid Excalidraw scene JSON).";
+                // an unchanged source (a theme switch) keeps the scene it was already turned into
+                scene =
+                  was && was.key === key
+                    ? was.scene
+                    : block.dataset.mermaid !== undefined
+                      ? await sketchScene(mod, decodeScene(key), ekey)
+                      : JSON.parse(decodeScene(key));
+              } catch (e) {
+                if (cancelled) return;
+                if (!block.isConnected) continue;
+                const msg = String((e as Error)?.message ?? e).split("\n")[0].slice(0, 160);
+                if (was?.api && wrap) {
+                  // keep the last good drawing on screen, with a notice
+                  wrap.classList.add("is-stale");
+                  wrap.dataset.error = msg;
+                } else {
+                  block.textContent = `Couldn't draw this sketch: ${msg}`;
+                  block.dataset.failed = "1";
+                }
+                console.error("[notebook] sketch failed", e);
                 continue;
+              }
+              if (cancelled) return;
+              if (!block.isConnected) continue;
+              wrap?.classList.remove("is-stale");
+              if (wrap) delete wrap.dataset.error;
+              if (block.dataset.failed) {
+                block.replaceChildren(); // clear the error text before React takes the container over
+                delete block.dataset.failed;
               }
               const elements = scene.elements ?? [];
               const fit = (api: SketchApi) => api.scrollToContent(elements, { fitToViewport: true, viewportZoomFactor: 0.85, animate: false });
-              const ekey = (block.dataset.ekey ||= `e${++diagramSeq}`);
-              const was = drawn.get(block);
+              // a board is taller or wider than one diagram, so its embed takes the board's shape (capped; full screen is for detail)
+              const reshaped = !!wrap && (scene.aspect ? true : wrap.style.getPropertyValue("--sketch-h") !== "");
+              if (wrap) {
+                if (scene.aspect) wrap.style.setProperty("--sketch-h", `${Math.round(Math.min(760, Math.max(320, wrap.clientWidth * scene.aspect + 48)))}px`);
+                else wrap.style.removeProperty("--sketch-h");
+              }
               if (was?.api && was.mode === mode && roots.has(block)) {
                 // same drawing surface, edited scene: swap the elements in place instead of tearing the embed down
+                const files = Object.values(scene.files ?? {});
+                if (files.length) was.api.addFiles?.(files);
                 was.api.updateScene({ elements: mod.restoreElements(elements, null) });
-                fit(was.api);
-                drawn.set(block, { ...was, b64 });
+                if (reshaped) setTimeout(() => fit(was.api!), 80); // let the canvas finish resizing first
+                else fit(was.api);
+                drawn.set(block, { ...was, key, scene });
                 setLightbox((cur) => (cur?.type === "excalidraw" && cur.ekey === ekey ? { ...cur, scene, gone: false } : cur));
                 continue;
               }
@@ -425,7 +514,7 @@ export function NotebookContent({ html, live = false, board = false }: { html: s
                 root = createRoot(block);
                 roots.set(block, root);
               }
-              drawn.set(block, { b64, mode, api: was?.api });
+              drawn.set(block, { key, mode, api: was?.api, scene });
               root.render(
                 <Excal
                   initialData={{
@@ -446,14 +535,21 @@ export function NotebookContent({ html, live = false, board = false }: { html: s
               );
               // a click opens whatever scene the block holds now, not the one it had when this handler was made
               const open = () => {
-                try {
-                  setLightbox({ type: "excalidraw", scene: JSON.parse(decodeScene(block.dataset.scene!)), ekey });
-                } catch {
-                  /* the block shows its own parse error */
-                }
+                const current = drawn.get(block)?.scene;
+                if (current) setLightbox({ type: "excalidraw", scene: current, ekey });
               };
-              const wrap = block.closest(".md-excalidraw-wrap");
               if (wrap && !wrap.querySelector(".md-expand")) {
+                // Scrolling the page must not get swallowed when the pointer happens to be over a sketch (the
+                // canvas would zoom or pan instead). Only Ctrl/Cmd + wheel, which is also how a trackpad pinch
+                // arrives, reaches the canvas; everything else is stopped before Excalidraw sees it, so the
+                // browser scrolls the page as usual. The full-screen viewer is separate and keeps wheel zoom.
+                wrap.addEventListener(
+                  "wheel",
+                  (e) => {
+                    if (!e.ctrlKey && !e.metaKey) e.stopPropagation();
+                  },
+                  { capture: true, passive: true }
+                );
                 const btn = document.createElement("button");
                 btn.type = "button";
                 btn.title = "Expand & zoom";
@@ -481,7 +577,6 @@ export function NotebookContent({ html, live = false, board = false }: { html: s
           })
       );
     }
-
     // "Follow edits": once the changed block has its final height (diagrams drawn), bring it into view
     Promise.allSettled(tasks).then(() => {
       const target = followTarget.current;
@@ -529,7 +624,6 @@ export function NotebookContent({ html, live = false, board = false }: { html: s
           title={lightbox.gone ? "Diagram (removed from the note)" : "Diagram"}
           onClose={() => {
             viewerApi.current = null;
-            viewerFitted.current = false;
             setLightbox(null);
           }}
         >
@@ -547,11 +641,16 @@ export function NotebookContent({ html, live = false, board = false }: { html: s
               // effect above), which leaves the viewer's own zoom and pan alone.
               excalidrawAPI={(api) => {
                 viewerApi.current = api;
-                if (viewerFitted.current) return;
-                viewerFitted.current = true;
-                setTimeout(() =>
-                  api.scrollToContent(lightbox.scene.elements ?? [], { fitToViewport: true, viewportZoomFactor: 0.9, animate: false })
-                );
+                if (viewerFitted.current.has(api)) return;
+                viewerFitted.current.add(api);
+                // a big board can still be sizing its canvas at the first moment, and fitting then does nothing
+                const fitWhenSized = (tries: number) => {
+                  const size = api.getAppState?.();
+                  if (size && size.width > 0 && size.height > 0) {
+                    api.scrollToContent(lightbox.scene.elements ?? [], { fitToViewport: true, viewportZoomFactor: 0.9, animate: false });
+                  } else if (tries > 0) setTimeout(() => fitWhenSized(tries - 1), 150);
+                };
+                setTimeout(() => fitWhenSized(25));
               }}
             />
           </div>

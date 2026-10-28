@@ -37,11 +37,24 @@ this skill adds the live-session protocol.
 
 - **No numbers in headings.** Board `##` headings are numbered automatically. Write
   `## High-level design`, not `## 3. High-level design`.
-- **Mermaid only.** Use `flowchart TD`, `sequenceDiagram`, `erDiagram`, `classDiagram`,
-  `stateDiagram-v2`. Never write Excalidraw JSON by hand.
+- **Write Mermaid, and pick the fence by the look you want.** Both fences take the same Mermaid:
+  - ` ```mermaid `: crisp and themed. Use it for `erDiagram`, `classDiagram`, `stateDiagram-v2`, mindmaps
+    and anything dense.
+  - ` ```excalidraw ` with the Mermaid inside: the whiteboard look. `flowchart TD` and `sequenceDiagram`
+    become hand-drawn shapes (your `classDef` colours carry over); other types become a picture. Best for
+    the high-level design and the request flow of a design explanation.
+  - A native Excalidraw scene (JSON) only if the user pasted one. Never write that JSON by hand; to change
+    a sketch, change its Mermaid.
+  A sketch is drawn at a fixed height, so keep it to one idea and about 10 nodes. Switching a section from
+  one fence to the other, or editing its Mermaid, updates it in place on the user's screen.
+- **For a design with several pictures, build ONE multi-diagram sketch instead of many sketches.** Nest the
+  pictures as parts of a single four-backtick ` ```excalidraw ` fence (`mermaid`, `skeleton` and `scene`
+  parts, `layout: grid 3`, `link:` lines): see the `notes` skill, section 6. Start it with the first one or
+  two parts, then add a part per turn; only the part you touch is redrawn, and the user's zoom and pan in
+  full screen are kept. Put parts in reading order so linked cards are neighbours.
 - **One idea per diagram, one sentence after it** saying what to notice. Phone rules from the
   `notes` skill apply (at most 4 sequence participants, prefer `TD`).
-- **Get the syntax right the first time.** A diagram that fails to parse keeps the *previous*
+- **Get the syntax right the first time.** A diagram or sketch that fails to parse keeps the *previous*
   drawing on screen with an amber error message, which confuses a live session. Quote labels
   that contain punctuation: `A["Cache (Redis)"]`. Use the semantic `classDef` colours from the
   `notes` skill.

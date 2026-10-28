@@ -6,6 +6,7 @@ Talk to an AI about a design while it edits one markdown file. The page in your 
 > - **Notes in `whiteboard/` are boards.** Steps are numbered, diagrams use the full width, and **Follow** is on by default.
 > - The AI just **edits the file**. No plugin, MCP server or SDK is involved. A file watcher streams every save to your open tab.
 > - Only the **blocks that changed** are replaced, so unchanged diagrams stay drawn and open quiz cards stay open.
+> - **Diagrams update live too:** Mermaid diagrams, hand-drawn sketches, and several diagrams on one canvas. In full screen your zoom and pan are kept.
 
 ## The loop
 
@@ -23,6 +24,16 @@ flowchart TD
 
 The tab is a passive screen: you steer by talking, and the file is the only thing that moves.
 
+## What the AI can draw
+
+| It writes... | You see... |
+|---|---|
+| a ` ```mermaid ` fence | A crisp diagram in the site's theme |
+| an ` ```excalidraw ` fence with Mermaid inside | The same diagram as a hand-drawn sketch |
+| an ` ```excalidraw ` fence with nested parts | Several diagrams (Mermaid, plain shapes, exported drawings) on one canvas, with arrows between them |
+
+The nested form suits a design with several pictures that belong together, such as the write path, the read path and the data model. The syntax, with a live example, is in [Several diagrams on one canvas](/notebook/notebook-features#several-diagrams-on-one-canvas).
+
 ## Start a session
 
 1. Open the board you want in the Notebook (or ask the AI to create one under `whiteboard/`).
@@ -35,7 +46,9 @@ The tab is a passive screen: you steer by talking, and the file is the only thin
 |---|---|
 | rewords a paragraph | flashes that block once; your scroll position does not move |
 | appends a new step | scrolls to it when **Follow** is on |
-| writes a diagram with a syntax error | keeps the last good drawing and shows an amber message with the parse error |
+| writes a diagram or sketch with a syntax error | keeps the last good drawing and shows an amber message with the parse error |
+| edits one part of a multi-diagram sketch | redraws only that part; the other diagrams on the canvas are left alone |
+| edits a diagram you have open full screen | the full-screen view switches to the new drawing and keeps your zoom and pan |
 | edits the note you have open in the editor | the editor follows the file if you have no unsaved changes, otherwise it asks |
 | changes a note while the tab is in the background | refreshes once when you come back |
 | is unreachable (server stopped) | shows *Reconnecting…* and catches up when it returns |
@@ -43,4 +56,4 @@ The tab is a passive screen: you steer by talking, and the file is the only thin
 > [!NOTE]
 > The board is one-way: the AI draws, you read, pan and zoom. Dragging shapes on screen is not saved back to the file.
 
-**Related:** [Design a URL shortener](/notebook/whiteboard/url-shortener) is a finished board to look at.
+**Related:** [Several diagrams on one canvas](/notebook/notebook-features#several-diagrams-on-one-canvas) has the drawing syntax, and [Design a train ticket booking system](/notebook/whiteboard/train-ticket-booking) is a finished board to look at.

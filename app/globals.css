@@ -565,8 +565,23 @@ article[data-board] .md-body h2::before {
 @media (min-width: 640px) {
   article[data-board] .md-body pre.mermaid svg { width: 100% !important; max-width: none !important; max-height: 78vh; }
 }
-.md-body .md-excalidraw-wrap { height: 460px; overflow: hidden; }
+.md-body .md-excalidraw-wrap { height: var(--sketch-h, 460px); overflow: hidden; } /* --sketch-h: set for multi-part boards */
 .md-body .md-excalidraw { height: 100%; width: 100%; }
+/* a sketch whose Mermaid doesn't convert: keep the last good drawing under a notice, or explain why there is none */
+.md-body .md-excalidraw-wrap.is-stale::before {
+  content: "Showing the last working sketch. The new source has an error: " attr(data-error);
+  position: absolute;
+  inset: 0.5rem 3rem auto 0.5rem;
+  z-index: 6;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid rgb(245 158 11 / 0.45);
+  border-radius: 0.5rem;
+  background: rgb(245 158 11 / 0.18);
+  color: rgb(var(--c-slate-300));
+  font: 600 12px/1.45 ui-sans-serif, system-ui, sans-serif;
+  pointer-events: none;
+}
+.md-body .md-excalidraw[data-failed] { padding: 1rem; color: rgb(var(--c-slate-300)); font-size: 0.9rem; white-space: pre-wrap; }
 /* read-only embed: no menu needed, every canvasAction is already disabled */
 .md-body .md-excalidraw .main-menu-trigger { display: none; }
 .md-body .md-expand {
@@ -721,7 +736,7 @@ article[data-board] .md-body h2::before {
     height: auto !important;
   }
 
-  .md-body .md-excalidraw-wrap { height: 300px; }
+  .md-body .md-excalidraw-wrap { height: min(var(--sketch-h, 300px), 440px); }
   .md-body figure.md-code pre { padding: 0.85rem 0.9rem; }
   .md-body figure.md-code pre code { font-size: 12.5px; }
   .md-alert { padding: 0.75rem 0.85rem; }

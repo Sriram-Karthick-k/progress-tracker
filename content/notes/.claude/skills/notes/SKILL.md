@@ -67,7 +67,7 @@ but **every note gets at least one diagram and a TL;DR**.
 | Evolution / history / phases | `timeline` | Ordered events |
 | Two-axis trade-off (cost vs latency…) | `quadrantChart` | Positions options relative to each other |
 | Cloud / infra boxes with real logos | `architecture-beta` + `logos:` / `mdi:` icons | Recognisable icons |
-| Freeform illustration (ByteByteGo-style) | ` ```excalidraw ` scene (see §6) | Hand-drawn layout Mermaid can't do |
+| Whiteboard look for system design (ByteByteGo-style) | ` ```excalidraw ` with Mermaid inside (see §6) | Same Mermaid you already write, drawn as a hand-drawn sketch |
 
 Rules: **one idea per diagram**, ≤ ~12 nodes (split otherwise), labels ≤ 4–5 words,
 and always add a sentence after the diagram saying what to notice.
@@ -167,10 +167,25 @@ Deleting is idempotent; the next read loads the committed row.
   Never mark an answer *(verified)* unless the note's own content records that it was reproduced.
   Inside `<summary>`, write generics as `List&lt;T&gt;` (raw `<` is read as an HTML tag).
 
-## 6. Excalidraw (freeform illustrations)
+## 6. Excalidraw (hand-drawn sketches)
 
-For a hand-drawn panel Mermaid can't lay out, embed a real Excalidraw scene:
-draw at excalidraw.com → menu → **Save to disk** → paste the `.excalidraw` file's JSON:
+An ` ```excalidraw ` fence draws a hand-drawn, pannable, zoomable sketch. Its body is one of two things:
+
+**Mermaid source: use this.** Same syntax as a `mermaid` fence, drawn in Excalidraw's whiteboard style.
+Flowcharts and sequence diagrams become real Excalidraw shapes (your `classDef` colours carry over);
+class, ER, state and other types come through as a picture of the Mermaid drawing.
+
+````markdown
+```excalidraw
+flowchart TD
+    C([Client]):::app --> A[App server]:::app --> D[(Database)]:::db
+    classDef app fill:#e0e7ff,stroke:#6366f1,color:#1e1b4b
+    classDef db  fill:#ffedd5,stroke:#ea580c,color:#7c2d12
+```
+````
+
+**A native scene** (JSON starting with `{`): draw at excalidraw.com → menu → **Save to disk** →
+paste the `.excalidraw` file's JSON. For freeform layouts Mermaid can't express.
 
 ````markdown
 ```excalidraw
@@ -178,9 +193,52 @@ draw at excalidraw.com → menu → **Save to disk** → paste the `.excalidraw`
 ```
 ````
 
-**Never hand-write or invent this JSON** (each element needs ~25 exact fields). If the user
-hasn't given you an export, use Mermaid instead or ask them to draw it.
+**Never hand-write scene JSON** (each element needs ~25 exact fields). If you need a sketch and have no
+export, write Mermaid in the fence.
 
+Which fence?
+
+| You want | Use |
+|---|---|
+| Crisp, compact, themed diagram; anything beyond flowchart/sequence | ` ```mermaid ` |
+| The same diagram with a whiteboard look, for system-design explanations | ` ```excalidraw ` + Mermaid |
+| A drawing you made yourself | ` ```excalidraw ` + scene JSON |
+
+Keep a sketch to one idea and about 10 nodes: it is drawn at a fixed height, so large ones get small
+(readers can tap or click to open it full screen).
+
+**Several diagrams on one canvas (a multi-diagram sketch).** When a design needs several pictures that belong together,
+nest them as parts of one fence: the outer fence has four backticks, each part three. Mermaid parts are
+converted, plain shapes are a short JSON list, and an exported scene can be dropped in too.
+
+~~~markdown
+````excalidraw
+layout: grid 3
+
+```mermaid title="Create path"
+flowchart TD
+    C([Client]) --> A[App] --> D[(Database)]
+```
+
+```skeleton title="Click events"
+[{"type":"rectangle","id":"q","x":0,"y":0,"width":170,"height":60,"label":{"text":"Queue"}}]
+```
+
+link: Create path -> Click events "queues a click"
+````
+~~~
+
+- **Part types:** `mermaid` (converted like a single sketch); `skeleton` (a JSON list of boxes and arrows with
+  `type`, `x`, `y`, `width`, `height`, `label.text`, colours; an arrow takes `start`/`end` as `{"id": "box-id"}`
+  to attach to boxes, and `points` instead of `width: 0` for a straight vertical arrow); `scene` (exported JSON).
+- **Layout:** `layout: grid N` (N cards per row, the default is 2), `row` or `column`; `gap: 90`. Per part:
+  `title="..."`, `id=name`, `at=x,y`. `link: A -> B "label"` draws a blue arrow between two cards by title or id.
+- **Order the parts in reading order, three per row,** so cards that link to each other sit side by side
+  (a link is a straight arrow, so it crosses anything between the two cards).
+- **A broken part** keeps its last good drawing under a warning, or shows an error card; the rest of the
+  board is unaffected. Editing one part reconverts only that part.
+- A finished example, with the full syntax tables: the "Several diagrams on one canvas" section of
+  [`notebook-features.md`](../../../notebook-features.md).
 ## 7. Before you finish — checklist
 
 - [ ] `# Title` is specific; hook sentence + `[!TIP]` TL;DR present
