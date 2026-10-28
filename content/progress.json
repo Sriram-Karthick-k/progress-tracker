@@ -3,10 +3,11 @@
   "activity": {},
   "goal": null,
   "customCards": [],
-  "lastRoute": "/notebook/zz-live-test",
+  "lastRoute": "/notebook/whiteboard/train-ticket-booking",
   "scroll": {
     "/notebook/README": 2868,
-    "/notebook/zz-live-test": 1100
+    "/notebook/zz-live-test": 1100,
+    "/notebook/whiteboard/train-ticket-booking": 0
   },
   "events": []
 }
