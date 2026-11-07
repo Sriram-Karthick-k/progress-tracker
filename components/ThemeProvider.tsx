@@ -11,6 +11,7 @@ type Mode = "light" | "dark";
 // React Flow).
 export const THEME_MODE = {
   dark: "dark",
+  noir: "dark",
   light: "light",
   dracula: "dark",
   nord: "dark",

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { PanelLeft, PanelLeftClose, X } from "lucide-react";
 import { NotebookTree } from "@/components/notebook/NotebookTree";
 import { LiveNotes } from "@/components/notebook/LiveNotes";
+import { useKeepScroll } from "@/components/notebook/treeState";
 import type { NoteNode } from "@/lib/notes";
 
 const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
@@ -13,6 +14,8 @@ export function NotebookShell({ tree, active, children }: { tree: NoteNode[]; ac
   const [open, setOpen] = useState(false); // mobile drawer
   const [collapsed, setCollapsed] = useState(false); // desktop tree hidden
   const path = usePathname();
+  const deskScroll = useKeepScroll<HTMLElement>();
+  const drawerScroll = useKeepScroll<HTMLElement>();
 
   useEffect(() => setOpen(false), [path]);
   useEffect(() => setCollapsed(localStorage.getItem("notebookTreeCollapsed") === "1"), []);
@@ -43,13 +46,14 @@ export function NotebookShell({ tree, active, children }: { tree: NoteNode[]; ac
     <div className="flex">
       <LiveNotes />
       {/* desktop tree */}
-      <aside className={`sticky top-0 hidden h-screen w-64 shrink-0 overflow-y-auto border-r border-white/10 p-3 ${collapsed ? "lg:hidden" : "lg:block"}`}>
+      <aside {...deskScroll} className={`sticky top-0 hidden h-screen w-64 shrink-0 overflow-y-auto border-r border-white/10 p-3 ${collapsed ? "lg:hidden" : "lg:block"}`}>
         <NotebookTree tree={tree} active={active} trailing={collapseBtn} />
       </aside>
 
       {/* mobile drawer */}
       {open && <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden" onClick={() => setOpen(false)} aria-hidden />}
       <aside
+        {...drawerScroll}
         className={`fixed inset-y-0 left-0 z-50 w-72 overflow-y-auto border-r border-white/10 bg-slate-950/95 p-3 backdrop-blur transition-transform duration-200 lg:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}

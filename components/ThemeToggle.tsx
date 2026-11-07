@@ -9,6 +9,7 @@ import { useTheme, THEME_MODE, type ThemeName, type ThemePref } from "@/componen
 // swatch is a compile error.
 const THEMES: Record<ThemeName, { label: string; bg: string; accent: string }> = {
   dark: { label: "Midnight", bg: "#070a12", accent: "#a5b4fc" },
+  noir: { label: "Pure Black", bg: "#000000", accent: "#39ff14" },
   dracula: { label: "Dracula", bg: "#282a36", accent: "#bd93f9" },
   nord: { label: "Nord", bg: "#2e3440", accent: "#88c0d0" },
   solarized: { label: "Solarized", bg: "#002b36", accent: "#268bd2" },

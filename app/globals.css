@@ -35,6 +35,32 @@
     radial-gradient(900px 700px at -8% 112%, rgba(94, 53, 177, 0.16), transparent 55%);
   --scrollbar: 51 65 85;
   --c-code-fg: 165 180 252;
+
+  /* accent hue (Tailwind indigo + violet). Variables so a theme can retint
+     the whole app's accent; only noir does. Text on accent-coloured chips. */
+  --c-onaccent: 255 255 255;
+  --c-indigo-50: 238 242 255;
+  --c-indigo-100: 224 231 255;
+  --c-indigo-200: 199 210 254;
+  --c-indigo-300: 165 180 252;
+  --c-indigo-400: 129 140 248;
+  --c-indigo-500: 99 102 241;
+  --c-indigo-600: 79 70 229;
+  --c-indigo-700: 67 56 202;
+  --c-indigo-800: 55 48 163;
+  --c-indigo-900: 49 46 129;
+  --c-indigo-950: 30 27 75;
+  --c-violet-50: 245 243 255;
+  --c-violet-100: 237 233 254;
+  --c-violet-200: 221 214 254;
+  --c-violet-300: 196 181 253;
+  --c-violet-400: 167 139 250;
+  --c-violet-500: 139 92 246;
+  --c-violet-600: 124 58 237;
+  --c-violet-700: 109 40 217;
+  --c-violet-800: 91 33 182;
+  --c-violet-900: 76 29 149;
+  --c-violet-950: 46 16 101;
 }
 
 [data-theme="light"] {
@@ -363,6 +389,65 @@
   --scrollbar: 216 210 210;
   --c-code-fg: 110 93 130;
 }
+
+/* Pure Black — true #000 canvas, neutral greys, white text. Colour is reserved
+   for meaning: diagrams keep their own palette and the accent is neon (green
+   for highlights/links/active items, cyan as its partner in gradients).
+   indigo/violet are remapped here, so every existing accent class turns neon. */
+[data-theme="noir"] {
+  color-scheme: dark;
+  --c-white: 255 255 255;
+  --c-black: 0 0 0;
+  --c-slate-50: 255 255 255;
+  --c-slate-100: 245 245 245;
+  --c-slate-200: 229 229 229;
+  --c-slate-300: 212 212 212;
+  --c-slate-400: 170 170 170;
+  --c-slate-500: 150 150 150;
+  --c-slate-600: 140 140 140;
+  --c-slate-700: 64 64 64;
+  --c-slate-800: 38 38 38;
+  --c-slate-900: 20 20 20;
+  --c-slate-950: 10 10 10;
+
+  --c-bg: 0 0 0;
+  --bg-grad: none;
+  --scrollbar: 82 82 82;
+  --c-code-fg: 57 255 20;
+  --c-onaccent: 0 0 0; /* black reads on neon; white would not */
+
+  --c-indigo-50: 240 255 237;
+  --c-indigo-100: 218 255 209;
+  --c-indigo-200: 183 255 163;
+  --c-indigo-300: 140 255 100;
+  --c-indigo-400: 87 255 42;
+  --c-indigo-500: 57 255 20;
+  --c-indigo-600: 36 214 0;
+  --c-indigo-700: 28 168 0;
+  --c-indigo-800: 22 120 0;
+  --c-indigo-900: 14 77 0;
+  --c-indigo-950: 6 38 0;
+  --c-violet-50: 232 253 255;
+  --c-violet-100: 204 250 255;
+  --c-violet-200: 153 245 255;
+  --c-violet-300: 102 238 255;
+  --c-violet-400: 51 230 255;
+  --c-violet-500: 0 229 255;
+  --c-violet-600: 0 184 212;
+  --c-violet-700: 0 145 168;
+  --c-violet-800: 0 105 125;
+  --c-violet-900: 0 66 79;
+  --c-violet-950: 0 33 40;
+}
+[data-theme="noir"] ::selection { background: rgb(57 255 20 / 0.35); color: #fff; }
+[data-theme="noir"] .md-body figure.md-code { background: #050505; border-color: rgb(255 255 255 / 0.16); }
+[data-theme="noir"] .md-body figure.md-code figcaption { background: #101010; border-bottom-color: rgb(255 255 255 / 0.16); color: #a3a3a3; }
+[data-theme="noir"] .md-body figure.md-diagram,
+[data-theme="noir"] .md-body .md-excalidraw-wrap { border-color: rgb(255 255 255 / 0.18); }
+/* the neon "highlight" moments get a soft glow */
+[data-theme="noir"] .md-body a:hover { text-shadow: 0 0 10px rgb(var(--c-code-fg) / 0.55); }
+[data-theme="noir"] .md-body details[open] { box-shadow: 0 0 0 1px rgb(var(--c-code-fg) / 0.25), 0 0 18px -6px rgb(var(--c-code-fg) / 0.5); }
+[data-theme="noir"] .md-body :not(pre) > code { background: rgb(var(--c-code-fg) / 0.08); border-color: rgb(var(--c-code-fg) / 0.22); }
 
 body {
   background-color: rgb(var(--c-bg));

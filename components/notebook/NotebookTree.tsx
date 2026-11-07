@@ -16,6 +16,7 @@ import {
 import type { NoteNode } from "@/lib/notes";
 import { noteApi, openNoteEditor, cleanPath } from "@/components/notebook/noteClient";
 import { NOTES_EDITABLE as EDITABLE } from "@/components/notebook/editable";
+import { revealNote, setFolderOpen, useFolderOpen } from "@/components/notebook/treeState";
 
 const noteHref = (slug: string[]) => "/notebook/" + slug.join("/");
 
@@ -58,12 +59,14 @@ function NoteItem({ node, active, depth, onMenu }: { node: Extract<NoteNode, { t
 }
 
 function FolderItem({ node, active, depth, onMenu }: { node: Extract<NoteNode, { type: "folder" }>; active: string; depth: number; onMenu: (n: NoteNode, x: number, y: number) => void }) {
-  const [open, setOpen] = useState(active.startsWith(node.slug.join("/")));
+  const id = node.slug.join("/");
+  const open = useFolderOpen(id, active); // survives the remount every navigation causes
   return (
     <div>
       <div className="group relative flex items-center">
         <button
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => setFolderOpen(id, !open)}
+          aria-expanded={open}
           onContextMenu={(e) => { e.preventDefault(); onMenu(node, e.clientX, e.clientY); }}
           style={{ paddingLeft: 8 + depth * 14 }}
           className="flex min-w-0 flex-1 items-center gap-1.5 rounded-lg py-1.5 pr-7 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.03] hover:text-white"
@@ -111,6 +114,9 @@ export function NotebookTree({ tree, active, trailing }: { tree: NoteNode[]; act
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // landing on a note (link, search, back button) opens the folders around it
+  useEffect(() => revealNote(active), [active]);
 
   useEffect(() => {
     if (!menu) return;

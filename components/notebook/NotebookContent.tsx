@@ -111,6 +111,40 @@ const MERMAID_THEME = {
     cScaleLabel4: "#ffffff", cScaleLabel5: "#ffffff", cScaleLabel6: "#ffffff", cScaleLabel7: "#ffffff",
     git0: "#4f46e5", gitBranchLabel0: "#ffffff", // mindmap root node
   },
+  // Pure Black theme: neutral black/white scaffolding (nodes, lines, text), so the
+  // colour in a diagram is only what the note puts there (classDef) or the
+  // branch colours below, which are vivid enough to read as neon on black.
+  noir: {
+    fontFamily: MERMAID_FONT,
+    fontSize: "15px",
+    darkMode: true,
+    background: "transparent",
+    primaryColor: "#0a0a0a",
+    primaryTextColor: "#ffffff",
+    nodeTextColor: "#ffffff",
+    primaryBorderColor: "#ffffff",
+    secondaryColor: "#0a0a0a",
+    secondaryBorderColor: "#39ff14",
+    tertiaryColor: "#0a0a0a",
+    tertiaryBorderColor: "#00e5ff",
+    lineColor: "#d4d4d4",
+    textColor: "#f5f5f5",
+    noteBkgColor: "#141400",
+    noteBorderColor: "#ffea00",
+    noteTextColor: "#fffde7",
+    actorBkg: "#0a0a0a",
+    actorBorder: "#ffffff",
+    actorTextColor: "#ffffff",
+    signalColor: "#e5e5e5",
+    signalTextColor: "#f5f5f5",
+    clusterBkg: "#080808",
+    clusterBorder: "#525252",
+    cScale0: "#00e5ff", cScale1: "#39ff14", cScale2: "#ff9100", cScale3: "#ff2bd6",
+    cScale4: "#448aff", cScale5: "#ffea00", cScale6: "#b388ff", cScale7: "#1de9b6",
+    cScaleLabel0: "#000000", cScaleLabel1: "#000000", cScaleLabel2: "#000000", cScaleLabel3: "#000000",
+    cScaleLabel4: "#000000", cScaleLabel5: "#000000", cScaleLabel6: "#000000", cScaleLabel7: "#000000",
+    git0: "#ffffff", gitBranchLabel0: "#000000", // mindmap root node
+  },
 };
 
 // Phones get a tighter layout: less spacing and wrapped labels give a much narrower
@@ -238,7 +272,8 @@ function sketchScene(mod: typeof import("@excalidraw/excalidraw"), source: strin
 // to them. `board` = a whiteboard note (follow is on by default there).
 export function NotebookContent({ html, live = false, board = false }: { html: string; live?: boolean; board?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
-  const { mode } = useTheme();
+  const { mode, theme } = useTheme();
+  const look = theme === "noir" ? "noir" : mode; // Mermaid palette; Excalidraw only knows light/dark (mode)
   const phone = usePhone();
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
   const [Excalidraw, setExcalidraw] = useState<typeof ExcalidrawType | null>(null);
