@@ -103,7 +103,9 @@ function slugify(text: string): string {
   );
 }
 
-function buildRenderer() {
+// forIndex: used by the search index only. Code is kept as plain `<pre>` text (so it is searchable)
+// and diagrams are dropped; headings still go through the same slug logic as the real page.
+function buildRenderer(forIndex = false) {
   const pending: { lang: string; code: string }[] = [];
   const headings: Heading[] = [];
   const slugCounts = new Map<string, number>();
@@ -127,6 +129,7 @@ function buildRenderer() {
       },
       code(token: { lang?: string; text: string }) {
         const lang = (token.lang || "").trim().toLowerCase();
+        if (forIndex) return lang === "mermaid" || lang === "excalidraw" ? "" : `<pre>${escapeHtml(token.text)}</pre>`;
         if (lang === "mermaid") {
           // escaped: mermaid reads textContent, and raw `<` (List<String>) would otherwise become markup
           return `<figure class="md-diagram"><pre class="mermaid">${escapeHtml(token.text)}</pre></figure>`;
@@ -329,7 +332,39 @@ export function countNotes(): number {
   return getAllNoteSlugs().length;
 }
 
-export type NoteSearchEntry = { title: string; slug: string[]; text: string };
+// One searchable section of a note. `id` is the heading's anchor on the rendered page, so a search
+// hit can open `/notebook/<slug>#<id>`. The first section (before any heading) has h = "" and id = "".
+export type NoteSearchSection = { h: string; id: string; t: string };
+export type NoteSearchEntry = { title: string; slug: string[]; sections: NoteSearchSection[] };
+
+const SECTION_CAP = 8000; // chars of text kept per section
+
+const htmlToText = (html: string) =>
+  unescapeHtml(html.replace(/<a class="md-anchor"[^>]*>#<\/a>/g, "").replace(/<[^>]+>/g, " "))
+    .replace(/\s+/g, " ")
+    .trim();
+
+// Splits a note into sections at every heading, using the same renderer (and so the same heading
+// anchors) as the page. Code and table cells are included, which the old 4,000-character blob dropped.
+function sectionsOf(raw: string): NoteSearchSection[] {
+  const { marked } = buildRenderer(true);
+  const html = (marked.parse(raw) as string).replace(/^\s*<h1[^>]*>[\s\S]*?<\/h1>\s*/, ""); // title is its own field
+  const out: NoteSearchSection[] = [];
+  const re = /<h([1-6]) id="([^"]+)">([\s\S]*?)<\/h\1>/g;
+  let cur = { h: "", id: "" };
+  let from = 0;
+  const push = (to: number) => {
+    const t = htmlToText(html.slice(from, to)).slice(0, SECTION_CAP);
+    if (cur.h || t) out.push({ h: cur.h, id: cur.id, t });
+  };
+  for (let m = re.exec(html); m; m = re.exec(html)) {
+    push(m.index);
+    cur = { h: htmlToText(m[3]), id: m[2] };
+    from = m.index + m[0].length;
+  }
+  push(html.length);
+  return out;
+}
 
 // Plain-text body for the command palette's content search — strips markdown
 // syntax so the client can substring-match without pulling in a parser.
@@ -350,7 +385,7 @@ export async function getSearchIndex(): Promise<NoteSearchEntry[]> {
       const file = path.join(ROOT, ...slug) + ".md";
       const raw = fs.readFileSync(file, "utf8");
       const title = titleFromFile(file, humanize(slug[slug.length - 1] || "Note"));
-      return { title, slug, text: stripMarkdown(raw) };
+      return { title, slug, sections: sectionsOf(raw) };
     })
   );
 }

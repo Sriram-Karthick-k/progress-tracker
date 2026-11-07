@@ -85,7 +85,7 @@ export default function SqlPracticePage() {
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
-        <Link href="/cheatsheets?tab=sql" className="ml-auto text-sm font-medium text-indigo-300 transition hover:text-indigo-200">
+        <Link href="/notebook/cheat-sheets/sql" className="ml-auto text-sm font-medium text-indigo-300 transition hover:text-indigo-200">
           SQL cheat sheet →
         </Link>
       </div>

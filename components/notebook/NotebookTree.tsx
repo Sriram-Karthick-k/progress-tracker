@@ -12,8 +12,10 @@ import {
   FolderPlus,
   Trash2,
   MoreVertical,
+  Lock,
 } from "lucide-react";
 import type { NoteNode } from "@/lib/notes";
+import { isLocked, LOCKED_MESSAGE } from "@/lib/noteLock";
 import { noteApi, openNoteEditor, cleanPath } from "@/components/notebook/noteClient";
 import { NOTES_EDITABLE as EDITABLE } from "@/components/notebook/editable";
 import { revealNote, setFolderOpen, useFolderOpen } from "@/components/notebook/treeState";
@@ -30,14 +32,24 @@ type Dialog =
 
 // -------------------------------- nodes --------------------------------
 
+// Shown instead of the "⋮" menu on locked notes and folders (lib/noteLock.ts).
+function LockBadge() {
+  return (
+    <span title={LOCKED_MESSAGE} aria-label="Locked" className="absolute right-2 grid h-6 w-6 place-items-center text-slate-600">
+      <Lock size={12} />
+    </span>
+  );
+}
+
 function NoteItem({ node, active, depth, onMenu }: { node: Extract<NoteNode, { type: "note" }>; active: string; depth: number; onMenu: (n: NoteNode, x: number, y: number) => void }) {
   const on = active === node.slug.join("/");
+  const locked = isLocked(node.slug);
   return (
     <div className="group relative flex items-center">
       <Link
         href={noteHref(node.slug)}
         aria-current={on ? "page" : undefined}
-        onContextMenu={(e) => { e.preventDefault(); onMenu(node, e.clientX, e.clientY); }}
+        onContextMenu={(e) => { e.preventDefault(); if (!locked) onMenu(node, e.clientX, e.clientY); }}
         style={{ paddingLeft: 8 + depth * 14 }}
         className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg py-1.5 pr-7 text-sm transition ${
           on ? "bg-indigo-500/15 font-medium text-white" : "text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
@@ -46,7 +58,8 @@ function NoteItem({ node, active, depth, onMenu }: { node: Extract<NoteNode, { t
         <FileText size={14} className="shrink-0 opacity-70" />
         <span className="truncate">{node.title}</span>
       </Link>
-      {EDITABLE && (
+      {EDITABLE && locked && <LockBadge />}
+      {EDITABLE && !locked && (
         <button
           onClick={(e) => { e.preventDefault(); onMenu(node, e.clientX, e.clientY); }}
           aria-label="Note menu"
@@ -62,13 +75,14 @@ function NoteItem({ node, active, depth, onMenu }: { node: Extract<NoteNode, { t
 function FolderItem({ node, active, depth, onMenu }: { node: Extract<NoteNode, { type: "folder" }>; active: string; depth: number; onMenu: (n: NoteNode, x: number, y: number) => void }) {
   const id = node.slug.join("/");
   const open = useFolderOpen(id, active); // survives the remount every navigation causes
+  const locked = isLocked(node.slug);
   return (
     <div>
       <div className="group relative flex items-center">
         <button
           onClick={() => setFolderOpen(id, !open)}
           aria-expanded={open}
-          onContextMenu={(e) => { e.preventDefault(); onMenu(node, e.clientX, e.clientY); }}
+          onContextMenu={(e) => { e.preventDefault(); if (!locked) onMenu(node, e.clientX, e.clientY); }}
           style={{ paddingLeft: 8 + depth * 14 }}
           className="flex min-w-0 flex-1 items-center gap-1.5 rounded-lg py-1.5 pr-7 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.03] hover:text-white"
         >
@@ -76,7 +90,8 @@ function FolderItem({ node, active, depth, onMenu }: { node: Extract<NoteNode, {
           {open ? <FolderOpen size={14} className="shrink-0 text-indigo-300/80" /> : <Folder size={14} className="shrink-0 text-slate-500" />}
           <span className="truncate">{node.title}</span>
         </button>
-        {EDITABLE && (
+        {EDITABLE && locked && <LockBadge />}
+        {EDITABLE && !locked && (
           <button
             onClick={(e) => { e.preventDefault(); onMenu(node, e.clientX, e.clientY); }}
             aria-label="Folder menu"

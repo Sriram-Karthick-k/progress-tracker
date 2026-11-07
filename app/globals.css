@@ -889,3 +889,9 @@ article[data-board] .md-body h2::before {
   .md-body .md-excalidraw { pointer-events: none; }
   .md-body .md-excalidraw-tap { display: flex; }
 }
+
+/* global-search jump (components/notebook/SearchJump.tsx): the matched text, via the CSS Custom Highlight API */
+::highlight(search-hit) {
+  background-color: rgb(250 204 21 / 0.75);
+  color: #111827;
+}

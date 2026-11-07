@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Heading } from "@/lib/notes";
 
 // Collapsed "On this page" menu for screens too narrow for the sidebar rail (< xl).
@@ -34,6 +34,18 @@ export function MobileContents({ headings }: { headings: Heading[] }) {
 export function TableOfContents({ headings }: { headings: Heading[] }) {
   const [active, setActive] = useState<string | null>(headings[0]?.slug ?? null);
   const [progress, setProgress] = useState(0);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  // A long list scrolls inside the rail; keep the section you are reading in view.
+  useEffect(() => {
+    const ul = listRef.current;
+    const el = ul?.querySelector<HTMLElement>('[aria-current="location"]');
+    if (!ul || !el) return;
+    const u = ul.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    if (r.top < u.top + 8) ul.scrollBy({ top: r.top - u.top - 8, behavior: "smooth" });
+    else if (r.bottom > u.bottom - 8) ul.scrollBy({ top: r.bottom - u.bottom + 8, behavior: "smooth" });
+  }, [active]);
 
   useEffect(() => {
     if (headings.length < 2) return;
@@ -61,21 +73,23 @@ export function TableOfContents({ headings }: { headings: Heading[] }) {
   if (headings.length < 2) return null;
   return (
     <aside className="hidden w-60 shrink-0 xl:block">
-      <nav aria-label="On this page" className="sticky top-8">
-        <div className="mb-3 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+      {/* sticky + capped to the viewport: the header stays put and only the list scrolls */}
+      <nav aria-label="On this page" className="sticky top-8 flex max-h-[calc(100vh-4rem)] flex-col">
+        <div className="mb-3 flex shrink-0 items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-500">
           On this page
           <span className="tabular-nums normal-case tracking-normal">{Math.round(progress * 100)}%</span>
         </div>
-        <div className="mb-3 h-0.5 overflow-hidden rounded-full bg-white/10">
+        <div className="mb-3 h-0.5 shrink-0 overflow-hidden rounded-full bg-white/10">
           <div className="h-full bg-indigo-400 transition-[width] duration-150" style={{ width: `${progress * 100}%` }} />
         </div>
-        <ul className="space-y-0.5 border-l border-white/10 text-[13px]">
+        <ul ref={listRef} className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain border-l border-white/10 pr-1 text-[13px] [scrollbar-width:thin]">
           {headings.map((h) => {
             const on = h.slug === active;
             return (
               <li key={h.slug}>
                 <a
                   href={`#${h.slug}`}
+                  title={h.text}
                   aria-current={on ? "location" : undefined}
                   className={`-ml-px block truncate border-l py-1 transition ${h.depth === 3 ? "pl-6" : "pl-3"} ${
                     on ? "border-indigo-400 font-medium text-white" : "border-transparent text-slate-400 hover:text-slate-200"

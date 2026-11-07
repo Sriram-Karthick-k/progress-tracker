@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   ListChecks,
-  BookOpen,
   MessagesSquare,
   GitBranch,
   Boxes,
@@ -176,7 +175,6 @@ export function Sidebar({
 
       {heading("Reference")}
       {link("/sql-practice", "SQL Practice", Database, sqlPct, path === "/sql-practice")}
-      {link("/cheatsheets", "Cheat Sheets", BookOpen, null, path === "/cheatsheets")}
 
       <div className="flex-1" />
       {NOTES_EDITABLE && (

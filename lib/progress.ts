@@ -63,12 +63,18 @@ let store: Store = { ...EMPTY };
 let hydrating: Promise<void> | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let dirty = false;
+// True only once the real file has been read. Until then `store` is just an empty
+// placeholder, and saving it would replace your progress with nothing. That is how
+// content/progress.json got wiped when a first load failed (server still starting,
+// dev compile, a failed request) and the placeholder was written back on tab hide.
+let loaded = false;
 
 function serialize(): string {
   return JSON.stringify(store);
 }
 
 async function saveNow(): Promise<void> {
+  if (!loaded) return; // never write a store we could not read first
   dirty = false;
   try {
     await fetch("/api/progress", {
@@ -95,6 +101,7 @@ function scheduleSave() {
  * jump straight back, so nothing is ever lost between sessions.
  */
 function flushOnHide() {
+  if (!loaded) return;
   if (typeof window !== "undefined") {
     const route = window.location.pathname + window.location.search;
     if (store.lastRoute !== route || store.scroll[route] !== window.scrollY) {
@@ -185,13 +192,24 @@ async function hydrate(): Promise<void> {
   if (typeof window === "undefined") return;
   if (hydrating) return hydrating;
   hydrating = (async () => {
-    let server: Store = { ...EMPTY };
-    try {
-      const res = await fetch("/api/progress", { cache: "no-store" });
-      if (res.ok) server = { ...EMPTY, ...(await res.json()) };
-    } catch {
-      /* API unreachable — session-only until it comes back */
+    // A cold server (still starting, dev compile) can fail the first request, so
+    // retry for ~15s. If the file still cannot be read we stay read-only
+    // (`loaded` false): showing 0% is bad, overwriting your data with it is worse.
+    let server: Store | null = null;
+    for (let attempt = 0; attempt < 6 && !server; attempt++) {
+      try {
+        const res = await fetch("/api/progress", { cache: "no-store" });
+        if (res.ok) server = { ...EMPTY, ...(await res.json()) };
+      } catch {
+        /* retry below */
+      }
+      if (!server && attempt < 5) await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
     }
+    if (!server) {
+      hydrating = null; // let the next loadAll() try again
+      return;
+    }
+    loaded = true;
     // preserve a lastRoute/scroll write that landed on the placeholder store
     // during the fetch (e.g. an ultra-fast tab-hide right after opening) —
     // it's strictly newer than whatever was already on disk.

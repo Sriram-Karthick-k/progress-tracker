@@ -6,16 +6,20 @@ import { Search, CornerDownLeft, ExternalLink } from "lucide-react";
 import { PROBLEMS, PATTERN_ORDER } from "@/lib/seed-data";
 import { RESOURCE_DOMAINS, topicProgressId } from "@/lib/learn";
 import { ROADMAPS } from "@/lib/roadmap";
-import { CHEATSHEETS } from "@/lib/cheatsheets";
-import { CONCEPTS } from "@/lib/sqlsheet";
 import { SQL_PROBLEMS } from "@/lib/sql-problems";
 
-type Hit = { group: string; title: string; sub: string; href: string; external?: boolean; body?: string };
-type NoteSearchEntry = { title: string; slug: string[]; text: string };
+// note hits also carry: match (the section heading, lower-case, used for ranking), text (the
+// section's text, for the preview), hash (the heading anchor to jump to) and note (a Notebook hit).
+type Hit = {
+  group: string; title: string; sub: string; href: string; external?: boolean; body?: string;
+  match?: string; text?: string; hash?: string; note?: boolean;
+};
+type NoteSearchSection = { h: string; id: string; t: string };
+type NoteSearchEntry = { title: string; slug: string[]; sections: NoteSearchSection[] };
 
 // Static search index, built once per session. Indexes everything: pages,
 // roadmaps, topic hubs, every topic, every external resource link, patterns,
-// problems, behavioral, cheat-sheet sections and SQL concepts.
+// problems and behavioral. Notebook notes (including the locked cheat-sheets) are searched separately.
 function buildIndex(): Hit[] {
   const hits: Hit[] = [];
 
@@ -31,8 +35,6 @@ function buildIndex(): Hit[] {
     { title: "LeetCode Problems", href: "/problems" },
     { title: "SQL Practice", href: "/sql-practice" },
     { title: "Topics", href: "/topics" },
-    { title: "Cheat Sheets", href: "/cheatsheets" },
-    { title: "Class Tree (collections hierarchy)", href: "/cheatsheets?tab=hierarchy" },
   ].forEach((p) => hits.push({ group: "Pages", title: p.title, sub: "go to page", href: p.href }));
 
   ROADMAPS.forEach((r) =>
@@ -74,28 +76,15 @@ function buildIndex(): Hit[] {
     hits.push({ group: "SQL Practice", title: `${p.lc}. ${p.title}`, sub: `${p.difficulty} · ${p.category}`, href: `/sql-practice#${p.id}` })
   );
   hits.push({ group: "Interview", title: "Behavioral", sub: "tracker", href: "/rounds/behavioral" });
-  CHEATSHEETS.forEach((sheet) =>
-    sheet.sections.forEach((s) =>
-      hits.push({
-        group: "Cheat sheets",
-        title: `${sheet.lang}: ${s.title}`,
-        sub: "syntax reference",
-        href: `/cheatsheets#${s.id}`,
-      })
-    )
-  );
-  CONCEPTS.forEach((c) =>
-    hits.push({ group: "SQL", title: c.title, sub: "SQL cheat sheet", href: `/cheatsheets?tab=sql#${c.id}` })
-  );
   return hits;
 }
 
 function score(hit: Hit, q: string): number {
-  const t = hit.title.toLowerCase();
+  const t = hit.match ?? hit.title.toLowerCase(); // a section hit is ranked on its heading, not the note title
   const s = hit.sub.toLowerCase();
   if (t.startsWith(q)) return 3;
   if (t.includes(q)) return 2;
-  if (s.includes(q)) return 1;
+  if (!hit.hash && s.includes(q)) return 1; // path match: note-level hits only, not every section of it
   if (hit.body?.includes(q)) return 1;
   return 0;
 }
@@ -128,13 +117,25 @@ export function CommandPalette() {
   }, []);
 
   const index = useMemo<Hit[]>(() => {
-    const noteHits: Hit[] = notes.map((n) => ({
-      group: "Notebook",
-      title: n.title,
-      sub: n.slug.join(" / "),
-      href: `/notebook/${n.slug.join("/")}`,
-      body: n.text.toLowerCase(),
-    }));
+    // One hit for the note itself (matched on its title/path and intro text) plus one per section,
+    // so a search can open the exact section that matched.
+    const noteHits: Hit[] = notes.flatMap((n) => {
+      const href = `/notebook/${n.slug.join("/")}`;
+      const sub = n.slug.join(" / ");
+      const intro = n.sections.find((s) => !s.h);
+      const short = n.title.split(" — ")[0]; // "4. SQL Cheat Sheet", so the section name stays visible
+      const hits: Hit[] = [
+        { group: "Notebook", title: n.title, sub, href, note: true, body: intro?.t.toLowerCase(), text: intro?.t },
+      ];
+      for (const s of n.sections) {
+        if (!s.h) continue;
+        hits.push({
+          group: "Notebook", title: `${short} › ${s.h}`, match: s.h.toLowerCase(), sub, href,
+          note: true, hash: s.id, body: s.t.toLowerCase(), text: s.t,
+        });
+      }
+      return hits;
+    });
     return [...staticIndex, ...noteHits];
   }, [staticIndex, notes]);
 
@@ -172,18 +173,39 @@ export function CommandPalette() {
   const results = useMemo(() => {
     const query = q.trim().toLowerCase();
     if (!query) return [];
-    return index
+    const ranked = index
       .map((h) => ({ h, sc: score(h, query) }))
       .filter((x) => x.sc > 0)
-      .sort((a, b) => b.sc - a.sc)
-      .slice(0, 12)
-      .map((x) => x.h);
+      .sort((a, b) => b.sc - a.sc);
+    // at most 3 hits per note, so one long note cannot fill the whole list
+    const perNote = new Map<string, number>();
+    const out: Hit[] = [];
+    for (const { h } of ranked) {
+      if (h.note) {
+        const n = perNote.get(h.href) ?? 0;
+        if (n >= 3) continue;
+        perNote.set(h.href, n + 1);
+      }
+      out.push(h);
+      if (out.length === 12) break;
+    }
+    return out;
   }, [q, index]);
 
   function go(hit: Hit) {
+    const query = q.trim();
     close();
     if (hit.external || hit.href.startsWith("http")) {
       window.open(hit.href, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (hit.note) {
+      // open the note AT the match: ?q= says what to highlight, #hash is the section's anchor
+      const lq = query.toLowerCase();
+      const found = !!query && !!(hit.body?.includes(lq) || hit.match?.includes(lq));
+      router.push(`${hit.href}${found ? `?q=${encodeURIComponent(query)}` : ""}${hit.hash ? `#${hit.hash}` : ""}`);
+      // already on this note? the page does not remount, so tell it to jump
+      if (found) setTimeout(() => window.dispatchEvent(new CustomEvent("note-search-jump", { detail: { q: query, hash: hit.hash ?? "", path: hit.href } })), 250);
       return;
     }
     router.push(hit.href);
@@ -246,8 +268,8 @@ export function CommandPalette() {
               lastGroup = r.group;
               const query = q.trim().toLowerCase();
               // title/sub didn't match -> this hit only matched in note body; show why
-              const contentOnly = r.body && !r.title.toLowerCase().includes(query) && !r.sub.toLowerCase().includes(query);
-              const shown = contentOnly ? snippetAround(r.body!, query) : r.sub;
+              const contentOnly = r.body && !(r.match ?? r.title.toLowerCase()).includes(query) && !r.sub.toLowerCase().includes(query);
+              const shown = contentOnly ? snippetAround(r.text ?? r.body!, query) : r.sub;
               return (
                 <div key={`${r.href}-${i}`}>
                   {header && (

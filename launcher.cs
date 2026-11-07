@@ -16,6 +16,8 @@ class Launcher
     {
         Console.Title = "Interview Prep Tracker";
         string baseDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\');
+        // An older launcher that was still running when this one was installed gets renamed to this; tidy it up.
+        try { File.Delete(Path.Combine(baseDir, "InterviewPrep.old.exe")); } catch { }
 
         string nextBin = Path.Combine(baseDir, "node_modules", "next", "dist", "bin", "next");
         if (!File.Exists(nextBin))
@@ -31,6 +33,7 @@ class Launcher
         Console.WriteLine("  Interview Prep Tracker");
         Console.WriteLine("  ----------------------");
         Console.WriteLine("  Starting the local server, your browser will open at " + Url);
+        Console.WriteLine("  If the code changed since last time, the app updates itself first (1-2 minutes).");
         Console.WriteLine("  Notes are saved as markdown files under content\\notes\\. Progress is in your browser.");
         Console.WriteLine("  Keep this window open while you work; close it to stop the app.");
         Console.WriteLine();
@@ -40,7 +43,18 @@ class Launcher
         {
             Open(Url);
             Console.WriteLine("  A server is already running on port " + Port + ". Opened the browser.");
-            Console.WriteLine("\n  Press Enter to close this window.");
+            Console.WriteLine("  This window closes by itself; the app keeps running in the first window.");
+            // Do NOT wait for Enter here: this copy owns no server, so it would sit idle
+            // (and stay in Alt+Tab) long after the real server window was closed.
+            Thread.Sleep(2500);
+            return;
+        }
+
+        // Rebuild automatically when the code changed since the last build (no manual `npm run build`).
+        if (!EnsureBuild(baseDir, nextBin))
+        {
+            Console.WriteLine("  The app cannot start without a successful build. Fix the error above, then run this again.");
+            Console.WriteLine("  Press Enter to close.");
             Console.ReadLine();
             return;
         }
@@ -83,6 +97,148 @@ class Launcher
 
         node.WaitForExit();
         Console.WriteLine("\nServer stopped.");
+    }
+
+    // ---- automatic rebuild ------------------------------------------------------------------
+    // The server runs a PRODUCTION build (.next). Whenever the code changed since that build was
+    // made, rebuild before starting, so nobody has to run `npm run build` by hand. The working
+    // build is kept aside while the new one is made: if the rebuild fails, the previous version
+    // is restored and still starts. Notes and progress are read live and never need a rebuild.
+    static readonly string[] SourceDirs = { "app", "components", "lib", "public" };
+    static readonly string[] SourceFiles = { "next.config.mjs", "tailwind.config.ts", "postcss.config.mjs", "package.json" };
+
+    // returns false only when no usable build exists at the end
+    static bool EnsureBuild(string baseDir, string nextBin)
+    {
+        string next = Path.Combine(baseDir, ".next");
+        string prev = Path.Combine(baseDir, ".next-prev");
+        RecoverInterruptedBuild(next, prev);
+
+        string buildId = Path.Combine(next, "BUILD_ID");
+        string why = null;
+        if (!File.Exists(buildId)) why = "there is no build yet";
+        else
+        {
+            string newer = FirstNewerSource(baseDir, File.GetLastWriteTimeUtc(buildId));
+            if (newer != null) why = newer + " changed";
+        }
+        if (why == null) return true; // up to date: start straight away
+
+        Console.WriteLine("  The app code changed since the last build (" + why + ").");
+        Console.WriteLine("  Updating it now, this takes about 1-2 minutes. Keep this window open.");
+        Console.WriteLine();
+        Console.Title = "Interview Prep Tracker - updating...";
+
+        bool hadBuild = Directory.Exists(next);
+        bool keptPrevious = false;
+        if (hadBuild)
+        {
+            SafeDelete(prev);
+            try
+            {
+                Directory.Move(next, prev); // the next build starts from an empty .next
+                keptPrevious = true;
+                string cache = Path.Combine(prev, "cache"); // keep the compile cache: makes the rebuild faster
+                if (Directory.Exists(cache))
+                {
+                    Directory.CreateDirectory(next);
+                    Directory.Move(cache, Path.Combine(next, "cache"));
+                }
+            }
+            catch { /* locked files: build in place, there is just no fallback copy */ }
+        }
+
+        bool ok = RunBuild(baseDir, nextBin) && File.Exists(buildId);
+        Console.Title = "Interview Prep Tracker";
+        if (ok)
+        {
+            SafeDelete(prev);
+            Console.WriteLine();
+            Console.WriteLine("  Update finished.");
+            Console.WriteLine();
+            return true;
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("  The update FAILED (see the messages above).");
+        SafeDelete(next);
+        if (keptPrevious)
+        {
+            try
+            {
+                Directory.Move(prev, next);
+                Console.WriteLine("  Starting the previous version instead.");
+                Console.WriteLine();
+                return true;
+            }
+            catch { }
+        }
+        return false;
+    }
+
+    static bool RunBuild(string baseDir, string nextBin)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = ResolveNode(),
+            Arguments = "\"" + nextBin + "\" build",
+            WorkingDirectory = baseDir,
+            UseShellExecute = false,
+            CreateNoWindow = false,
+        };
+        psi.EnvironmentVariables["NEXT_PUBLIC_NOTES_READONLY"] = "0"; // build with the Notebook editor enabled
+        psi.EnvironmentVariables["NEXT_TELEMETRY_DISABLED"] = "1";
+        try
+        {
+            using (var p = Process.Start(psi))
+            {
+                JobObject.AssignToKillOnClose(p); // closing this window also stops the build
+                p.WaitForExit();
+                return p.ExitCode == 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("  Could not run the build: " + ex.Message);
+            return false;
+        }
+    }
+
+    // The window was closed in the middle of an update: put the last working build back.
+    static void RecoverInterruptedBuild(string next, string prev)
+    {
+        if (!Directory.Exists(prev)) return;
+        if (File.Exists(Path.Combine(next, "BUILD_ID"))) { SafeDelete(prev); return; } // the new build finished
+        SafeDelete(next);
+        try
+        {
+            Directory.Move(prev, next);
+            Console.WriteLine("  The last update was interrupted. Restored the previous version.");
+        }
+        catch { }
+    }
+
+    // first source file that is newer than the build, or null
+    static string FirstNewerSource(string baseDir, DateTime builtUtc)
+    {
+        foreach (string f in SourceFiles)
+        {
+            string p = Path.Combine(baseDir, f);
+            if (File.Exists(p) && File.GetLastWriteTimeUtc(p) > builtUtc) return f;
+        }
+        foreach (string d in SourceDirs)
+        {
+            string dir = Path.Combine(baseDir, d);
+            if (!Directory.Exists(dir)) continue;
+            foreach (string p in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+                if (File.GetLastWriteTimeUtc(p) > builtUtc) return p.Substring(baseDir.Length + 1);
+        }
+        return null;
+    }
+
+    static void SafeDelete(string dir)
+    {
+        try { if (Directory.Exists(dir)) Directory.Delete(dir, true); } catch { }
     }
 
     static string ResolveNode()

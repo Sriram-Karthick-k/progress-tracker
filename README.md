@@ -38,7 +38,7 @@ Leave `NEXT_PUBLIC_NOTES_EDITABLE` unset on the remote so it stays read-only.
 
 ## How data works
 
-- **Content** (problems, resources, cheatsheets, flashcards) — typed modules in `lib/`.
+- **Content** (problems, resources, flashcards) — typed modules in `lib/`. The Java, C++, JavaScript and SQL cheat sheets are locked, read-only Notebook notes in `content/notes/cheat-sheets/` (lock list: `lib/noteLock.ts`).
 - **Notes** — markdown under `content/notes/**.md`; folders become the Notebook tree.
 - **Progress** (status / confidence / notes / flags) — browser `localStorage`;
   snapshot it to a file anytime with **Export / Import** on the dashboard.

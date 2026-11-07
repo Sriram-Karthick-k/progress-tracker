@@ -15,13 +15,25 @@ export const dynamic = "force-dynamic";
 
 const EMPTY = { progress: {}, activity: {}, goal: null, customCards: [], lastRoute: null, scroll: {}, events: [] };
 
+type Saved = { progress?: object; activity?: object; events?: unknown[]; customCards?: unknown[] };
+
+// "Has the user actually saved anything?" — ignores lastRoute/scroll/goal, which
+// a blank page load writes on its own.
+const hasData = (s: Saved) =>
+  Object.keys(s.progress ?? {}).length > 0 ||
+  Object.keys(s.activity ?? {}).length > 0 ||
+  (s.events ?? []).length > 0 ||
+  (s.customCards ?? []).length > 0;
+
 export async function GET() {
+  if (!fs.existsSync(FILE)) return NextResponse.json(EMPTY); // first run: nothing saved yet
   try {
-    if (!fs.existsSync(FILE)) return NextResponse.json(EMPTY);
     const parsed = JSON.parse(fs.readFileSync(FILE, "utf8"));
     return NextResponse.json({ ...EMPTY, ...parsed });
   } catch {
-    return NextResponse.json(EMPTY);
+    // Never answer "empty" for a file that exists but can't be read: the client
+    // would treat it as real data and write it back over your progress.
+    return NextResponse.json({ error: "progress.json is unreadable" }, { status: 500 });
   }
 }
 
@@ -43,9 +55,29 @@ export async function POST(req: NextRequest) {
     scroll: typeof body.scroll === "object" && body.scroll !== null ? body.scroll : {},
     events: Array.isArray(body.events) ? body.events : [],
   };
+  // A page that failed to load your data (or a stale tab) holds a blank store.
+  // Refuse to let it replace a file that has real progress in it.
+  if (!hasData(store) && fs.existsSync(FILE)) {
+    try {
+      if (hasData(JSON.parse(fs.readFileSync(FILE, "utf8")))) {
+        return NextResponse.json({ error: "refusing to replace saved progress with an empty store" }, { status: 409 });
+      }
+    } catch {
+      /* unreadable current file: nothing to protect */
+    }
+  }
   try {
     fs.mkdirSync(path.dirname(FILE), { recursive: true });
-    fs.writeFileSync(FILE, JSON.stringify(store, null, 2) + "\n", "utf8");
+    const text = JSON.stringify(store, null, 2) + "\n";
+    const tmp = FILE + ".tmp";
+    try {
+      // write-then-rename, so a concurrent GET never sees a half-written file
+      fs.writeFileSync(tmp, text, "utf8");
+      fs.renameSync(tmp, FILE);
+    } catch {
+      fs.rmSync(tmp, { force: true });
+      fs.writeFileSync(FILE, text, "utf8"); // rename can fail if something holds the file open
+    }
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });

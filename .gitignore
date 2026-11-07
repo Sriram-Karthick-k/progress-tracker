@@ -8,3 +8,6 @@ next-env.d.ts
 .env
 .env*.local
 out
+# InterviewPrep.exe: temporary files while it updates itself
+.next-prev/
+InterviewPrep.old.exe

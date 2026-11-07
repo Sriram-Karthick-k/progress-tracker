@@ -24,6 +24,8 @@ A copy-paste skeleton is in [`template.md`](template.md).
 
 1. **Folder = sidebar section**, filename = URL. `system-design/caching.md` → `/notebook/system-design/caching`.
    Numeric prefixes order a series: `02-persistence/03-flyway-migrations.md`.
+   The sidebar sorts by **title**, not filename, so number the `# Title` too (`# 3. Flyway Migrations — …`;
+   use `01.`-style zero padding past 9 notes).
 2. **Names:** letters, digits, `-`, `_` only — anything else is stripped from the URL.
 3. **First line is exactly one `# Title`.** It becomes the page header, sidebar label and
    search title; it is removed from the body (don't repeat it). Be specific:
@@ -31,6 +33,10 @@ A copy-paste skeleton is in [`template.md`](template.md).
 4. **Existing file?** Read it first. Keep what's correct, restructure the rest. Never
    silently drop the author's content.
 5. Folders/files starting with `.` (like this `.claude/`) are hidden from the Notebook.
+6. **Locked folders are read-only.** `cheat-sheets/` is listed in `lib/noteLock.ts`: the app refuses
+   to edit, create in, or delete anything under it (HTTP 403, no Edit button). Do not change those
+   notes unless the user asks you to unlock the folder first. Cheat sheets are deliberately lean
+   (one page per language, reference tables, no diagrams or quizzes), unlike concept notes.
 
 ## 2. Required skeleton
 

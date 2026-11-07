@@ -9,7 +9,7 @@ because they'll reference Google/Striver/NeetCode/docs anyway.
 - **DSA = the LeetCode Problems tracker only** (`/problems`). LeetCode is enough; no in-app DSA content.
 - **Topics = resource hub** (`/topics`, `lib/learn/resources/`): java, concurrency, lld, hld, spring, react,
   lowlevel, cs-basics — each topic links to curated **free** resources + tracks progress.
-- **Interview** = behavioral + company trackers. **Reference** = cheatsheets + SQL.
+- **Interview** = behavioral + company trackers. **Reference** = SQL practice, plus the cheat sheets (now locked Notebook notes under `cheat-sheets/`).
 - Nav consolidated to kill the old Rounds/Learn duplication. All deep lessons + the visual-lesson
   engine were deleted (see [[content-inventory]], [[depth-standard]]).
 
@@ -70,7 +70,7 @@ Next: the 19 lower-freq patterns, then dsa-basics (11 lessons), then Java/Concur
 ---
 
 **State of the repo today (audited 2026-07-16):**
-- ✅ 470 LeetCode problems / 33 patterns with filters + progress (`/problems`); dashboard; cheat sheets; SQL handbook
+- ✅ 470 LeetCode problems / 33 patterns with filters + progress (`/problems`); dashboard; SQL practice (cheat sheets and the SQL handbook moved into the Notebook as locked notes)
 - ✅ Java (~30 lessons) and LLD (SOLID + 22 GoF patterns) content in `lib/learn/` — **text/code only, no visuals**
 - ❌ Learn system not rendered anywhere (no route, no sidebar link)
 - ❌ No diagrams anywhere in the app; lesson Block model has no visual block types
@@ -137,7 +137,7 @@ Build the rendering machinery once, so every later lesson can draw.
       (0-1★ → 1d, 2★ → 3d, 3★ → 7d, 4-5★ → 21d); revisit-flag = always due
 - [x] **Per-pattern mastery view:** dashboard card, weakest 12 patterns first, deep-links to
       `/problems?pattern=…` (problems page now reads URL filter params)
-- [x] **Global search** (Cmd+K or sidebar button): lessons, problems, patterns, rounds, cheat sheets, SQL
+- [x] **Global search** (Cmd+K or sidebar button): lessons, problems, patterns, rounds, SQL practice; Notebook notes (cheat sheets included) are searched too
 - [x] Activity heatmap (16 weeks, localStorage activity log) + day streak; JSON export/import (existed)
 - [ ] Light theme + responsive layout (readable on phone during commute) — the one Phase 2 item left
 - [x] Update stale README (says 65 problems; actual 470)

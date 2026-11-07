@@ -1,4 +1,5 @@
 // Client helpers for the Notebook editor (used by client components only).
+import { isLocked } from "@/lib/noteLock";
 
 export async function noteApi(action: string, slug: string[], content?: string) {
   const res = await fetch("/api/notes", {
@@ -32,6 +33,7 @@ export async function previewNote(content: string): Promise<string> {
 
 /** Open the full-screen editor for a note (creates it on save if new). */
 export function openNoteEditor(slug: string[], title?: string) {
+  if (isLocked(slug)) return; // locked folders (lib/noteLock.ts) are read-only
   window.dispatchEvent(new CustomEvent("open-note-editor", { detail: { slug, title } }));
 }
 

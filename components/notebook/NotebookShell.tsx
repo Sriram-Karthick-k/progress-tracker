@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { PanelLeft, PanelLeftClose, X } from "lucide-react";
 import { NotebookTree } from "@/components/notebook/NotebookTree";
 import { LiveNotes } from "@/components/notebook/LiveNotes";
+import { SearchJump } from "@/components/notebook/SearchJump";
 import { useKeepScroll } from "@/components/notebook/treeState";
 import type { NoteNode } from "@/lib/notes";
 
@@ -45,6 +46,7 @@ export function NotebookShell({ tree, active, children }: { tree: NoteNode[]; ac
   return (
     <div className="flex">
       <LiveNotes />
+      <SearchJump />
       {/* desktop tree */}
       <aside {...deskScroll} className={`sticky top-0 hidden h-screen w-64 shrink-0 overflow-y-auto border-r border-white/10 p-3 ${collapsed ? "lg:hidden" : "lg:block"}`}>
         <NotebookTree tree={tree} active={active} trailing={collapseBtn} />

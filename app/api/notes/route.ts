@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
+import { isLocked, LOCKED_MESSAGE } from "@/lib/noteLock";
 
 // CRUD for Notebook markdown files. Editing is ON by default; a public build
 // sets NEXT_PUBLIC_NOTES_READONLY=1 → every write 403s (read-only).
@@ -31,6 +32,9 @@ export async function POST(req: NextRequest) {
 
   const slug = sanitize(body.slug);
   if (!slug.length) return NextResponse.json({ error: "missing slug" }, { status: 400 });
+
+  // Locked folders (lib/noteLock.ts) refuse every write: save, create, mkdir, delete, deleteFolder.
+  if (isLocked(slug)) return NextResponse.json({ error: LOCKED_MESSAGE }, { status: 403 });
 
   const action: string = body.action ?? "save";
   const file = path.join(ROOT, ...slug) + ".md";

@@ -1,3 +1,6 @@
+# You normally do NOT need this: InterviewPrep.exe rebuilds the app itself on launch when the
+# code changed. Run it only after editing launcher.cs, or to force a full rebuild.
+#
 # Builds the Interview Prep Tracker for Windows:
 #   1) builds the Next app with the Notebook editor ENABLED (read-only OFF)
 #   2) compiles launcher.cs -> InterviewPrep.exe
