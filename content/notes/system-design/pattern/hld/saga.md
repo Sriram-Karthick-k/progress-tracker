@@ -546,6 +546,18 @@ book, reserve the pen, and if the second fails run the compensation that release
 payment service is a third participant that never joins a database transaction anyway.
 </details>
 
+## Where to use it
+
+| Where | How a saga shows up |
+|---|---|
+| Train-ticket booking | Hold the seat, take the payment, confirm. A refund is the compensation (see the [board](/notebook/whiteboard/train-ticket-booking)) |
+| Order platform | Order, stock and payment in separate services, as built in `playground/hld/saga-pattern` |
+| Travel booking | Flight, hotel and car in one trip: cancel the others if one fails |
+| Money transfer | Debit in one bank and credit in another, with a reversal if the credit fails |
+| Food delivery | Restaurant accepts, courier is assigned, payment is captured |
+| Tools | Axon Framework and workflow engines such as Temporal support sagas |
+| HLD interviews | Any design where one business step spans several services: ticket booking, ride hailing, e-commerce checkout |
+
 ## Key takeaways
 
 | Remember | Because |

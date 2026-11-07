@@ -160,6 +160,43 @@ It is missing `@Component`, so Spring never creates the bean and it is not in th
 A number between rail pass (20) and senior (30), for example 25. No existing strategy and not `FareService` change, because the numbers were spaced. The only edits are the new class and, if the rule needs new data, a new field on `Booking`.
 </details>
 
+## Variants
+
+Ours was classes in a Spring list, each saying `appliesTo`. Strategy has other common shapes:
+
+| Variant | Idea | Use it when |
+|---|---|---|
+| Classes in a list (ours) | One `@Component` per rule, each says `appliesTo` | Rules have dependencies, need their own tests, and keep arriving |
+| Lambda | The interface has one method, so a rule is a lambda | Small, stateless rules |
+| Enum with behaviour | Each enum constant holds its own rule | A closed set that is known at compile time |
+| Map by name | A `Map<String, Strategy>` injected by Spring, and the caller names the strategy | The request says which one to use, such as `"upi"` |
+
+```java
+// lambda: a one-method interface, so a rule is one line
+interface FareRule { int fare(Booking b); }
+FareRule tatkal = b -> b.baseFare() * 130 / 100;
+
+// enum with behaviour: a closed set, with no Spring wiring
+enum Quota {
+  SENIOR { int fare(int base) { return base * 60 / 100; } },
+  TATKAL { int fare(int base) { return base * 130 / 100; } };
+  abstract int fare(int base);
+}
+```
+
+Checked by running the lambda and the enum: Tatkal on 1000 gives 1300 and `Quota.SENIOR.fare(1000)` gives 600. The map variant was not run here.
+
+## Where to use it
+
+| Where | How Strategy shows up |
+|---|---|
+| Train-ticket fares | Base, Tatkal, senior and rail-pass rules (this lesson) |
+| Payment methods | One class per method (card, UPI, wallet), picked from the request |
+| Sorting | A `java.util.Comparator` passed to `sort` is a strategy for the ordering |
+| Spring Security | `PasswordEncoder` implementations (BCrypt, Argon2) are interchangeable strategies |
+| Spring transactions | `PlatformTransactionManager` has one implementation per technology, such as JPA or JDBC |
+| Machine-coding rounds | Parking-lot pricing, ride fare calculation, discount engines, and rate-limiter algorithms (token bucket or sliding window) |
+
 ## Key takeaways
 
 | Remember | Because |

@@ -33,6 +33,7 @@ mindmap
       Leader election
       Distributed lock
       Competing consumers
+      Publish and subscribe
 ```
 
 Four families: keep data right across services, survive a failing dependency, handle load, and stop two workers from stepping on each other.
@@ -55,5 +56,6 @@ Four families: keep data right across services, survive a failing dependency, ha
 | API gateway | Auth, limits and routing before the services | Planned |
 | Leader election, distributed lock | A job or a seat must be owned by exactly one worker | Planned |
 | Competing consumers | One queue, many workers, each message handled once | Planned |
+| Publish and subscribe | Many consumers need the same event, and the producer should not know them | Kafka topic and consumer group built in the sprint; no standalone note yet |
 
 **Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Train ticket booking board](/notebook/whiteboard/train-ticket-booking)

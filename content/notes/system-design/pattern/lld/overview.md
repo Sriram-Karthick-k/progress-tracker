@@ -50,9 +50,9 @@ Behavioural patterns decide who does what at run time, creational ones decide ho
 |---|---|---|---|---|---|
 | 1 | Strategy | Behavioural | An `if/else` chain choosing one of several algorithms | Fare: base, Tatkal surcharge, senior discount | Done: [Strategy](/notebook/system-design/pattern/lld/strategy) |
 | 2 | Observer | Behavioural | One event, many reactions, and the sender should not know them | Booking confirmed: email, SMS, analytics | Done: [Observer](/notebook/system-design/pattern/lld/observer) |
-| 3 | State | Behavioural | Behaviour depends on a status field, with `switch` everywhere | HELD, CONFIRMED, EXPIRED, CANCELLED | Next |
-| 4 | Factory Method | Creational | Callers should not know which concrete class to build | Pick the payment client for a merchant | Planned |
-| 5 | Singleton | Creational | Exactly one instance is needed and two threads must not make two (Spring beans already are one) | Config and shared clients | Planned |
+| 3 | State | Behavioural | Behaviour depends on a status field, with `switch` everywhere | HELD, CONFIRMED, EXPIRED, CANCELLED | Done: [State](/notebook/system-design/pattern/lld/state) |
+| 4 | Factory Method | Creational | Callers should not know which concrete class to build | Pick the payment client for a merchant | Done: [Factory Method](/notebook/system-design/pattern/lld/factory-method) |
+| 5 | Singleton | Creational | Exactly one instance is needed and two threads must not make two (Spring beans already are one) | Config and shared clients | Next |
 | 6 | Builder | Creational | A constructor with many optional arguments | A booking request: passengers, class, quota, preferences | Planned |
 | 7 | Decorator | Structural | Add behaviour around an object without changing it | Logging, retry and rate limit around the payment client | Planned |
 
@@ -72,7 +72,7 @@ Behavioural patterns decide who does what at run time, creational ones decide ho
 
 | # | Pattern | Family | The smell it fixes | In the train-ticket design | Status |
 |---|---|---|---|---|---|
-| 15 | Abstract Factory | Creational | A family of related objects must match each other | A merchant's client, signer and parser built as one set | Planned |
+| 15 | Abstract Factory | Creational | A family of related objects must match each other | A merchant's client, signer and parser built as one set | Introduced as a variant in [Factory Method](/notebook/system-design/pattern/lld/factory-method) |
 | 16 | Iterator | Behavioural | Walk a collection without exposing how it is stored | Walk coaches and seats in order | Planned |
 | 17 | Mediator | Behavioural | Many objects call each other directly and tangle | A booking coordinator between hold, payment and notification (the saga orchestrator is one) | Planned |
 | 18 | Memento | Behavioural | Save a snapshot so you can restore it (undo) | A draft booking: undo a passenger edit | Planned |

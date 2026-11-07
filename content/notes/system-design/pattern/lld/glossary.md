@@ -15,6 +15,7 @@ Pattern names come in pairs, and the two words always mean the same thing:
 | State and concrete state | State | Now: `BookingState` and `HeldState` |
 | Command and concrete command | Command | Later |
 | Observer and concrete observer | Observer | Now: `BookingObserver` and `EmailNotifier` |
+| Product and concrete product | Factory Method | Now: `PaymentClient` and `RazorpayClient` |
 | Abstract factory and concrete factory (also abstract product and concrete product) | Abstract Factory | Later |
 | Component and concrete component (also decorator and concrete decorator) | Decorator | Later |
 
@@ -43,6 +44,11 @@ Not every part has a pair. In Strategy only the strategy side is split into abst
 | State (the interface) | The interface that lists what can be done to the object, whatever its status | `BookingState` |
 | Concrete state | One class per status, holding that status's rules | `HeldState`, `ConfirmedState` |
 | Transition | A move from one status to the next, made by the current state | HELD to CONFIRMED |
+| Product | The interface of the thing a factory creates | `PaymentClient` |
+| Concrete product | One real class that a factory can create | `RazorpayClient`, `PaytmClient` |
+| Factory | The one place that decides which concrete class to create and builds it | `PaymentClientFactory` |
+| Factory method | The method of the factory that creates and returns the product | `create(merchant)` |
+| Creator | In the Gang of Four Factory Method, the abstract class that holds the shared flow and the abstract factory method | `PaymentProcessor` |
 
 ## Words from the map
 

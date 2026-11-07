@@ -161,6 +161,43 @@ The loop is synchronous: it runs on the caller's thread, so the confirmation ret
 Only the first matching observer would be told, and the others would be skipped silently. With the email and SMS observers, one of them would never be notified, depending on the list order. `orElseThrow` would also turn "nobody is interested" into an error. Strategy picks one, and Observer tells all and lets each observer decide.
 </details>
 
+## Variants
+
+| Variant | Idea | Trade-off |
+|---|---|---|
+| Push (ours) | The event carries the data: `BookingConfirmed` holds the id, passenger, fare and email flag | Simple, but the event grows when one observer needs more |
+| Pull | The observer gets the subject and asks for what it needs | Each observer takes only what it needs, but it depends on the subject and the data may have changed |
+| List in the subject (ours) | The subject keeps the observers and calls them | One app, and you control the order and the failures |
+| Event bus (Spring) | The publisher publishes, and `@EventListener` methods subscribe. No list to keep | The container does the wiring, and it is still synchronous by default |
+| Broker | A Kafka topic with consumers, which is publish and subscribe | Across services, asynchronous and survives a crash, but needs more infrastructure |
+
+```java
+// push: the event carries the data
+void onConfirmed(BookingConfirmed event);
+
+// pull: the observer gets the subject and asks for what it needs
+void onConfirmed(BookingService subject, String bookingId);
+
+// Spring's event bus: there is no list to keep, the container wires the listeners
+applicationEventPublisher.publishEvent(new BookingConfirmed("B-101", "Sriram", 1300, true));
+
+@EventListener
+void on(BookingConfirmed event) { /* send the email */ }
+```
+
+The Spring event bus was timed in Step 6 (synchronous). The pull and broker variants were not run here.
+
+## Where to use it
+
+| Where | How Observer shows up |
+|---|---|
+| Train-ticket bookings | Booking confirmed: email, SMS and analytics react (this lesson) |
+| Spring events | `ApplicationEventPublisher` is the subject and `@EventListener` methods are the observers. `@TransactionalEventListener` runs after the commit |
+| User interfaces | Click handlers: `addEventListener` in browsers, `ActionListener` in Swing |
+| Across services | The same idea with a broker in between is publish and subscribe, such as a Kafka topic with consumers |
+| Real products | Price-drop alerts, order-status notifications, cache invalidation when data changes |
+| Machine-coding rounds | Notification service, stock ticker, channel subscriptions, an in-memory pub/sub |
+
 ## Key takeaways
 
 | Remember | Because |
