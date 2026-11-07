@@ -48,9 +48,9 @@ Behavioural patterns decide who does what at run time, creational ones decide ho
 
 | # | Pattern | Family | The smell it fixes | In the train-ticket design | Status |
 |---|---|---|---|---|---|
-| 1 | Strategy | Behavioural | An `if/else` chain choosing one of several algorithms | Fare: base, Tatkal surcharge, senior discount | Next |
-| 2 | Observer | Behavioural | One event, many reactions, and the sender should not know them | Booking confirmed: email, SMS, analytics | Planned |
-| 3 | State | Behavioural | Behaviour depends on a status field, with `switch` everywhere | HELD, CONFIRMED, EXPIRED, CANCELLED | Planned |
+| 1 | Strategy | Behavioural | An `if/else` chain choosing one of several algorithms | Fare: base, Tatkal surcharge, senior discount | Done: [Strategy](/notebook/system-design/pattern/lld/strategy) |
+| 2 | Observer | Behavioural | One event, many reactions, and the sender should not know them | Booking confirmed: email, SMS, analytics | Done: [Observer](/notebook/system-design/pattern/lld/observer) |
+| 3 | State | Behavioural | Behaviour depends on a status field, with `switch` everywhere | HELD, CONFIRMED, EXPIRED, CANCELLED | Next |
 | 4 | Factory Method | Creational | Callers should not know which concrete class to build | Pick the payment client for a merchant | Planned |
 | 5 | Singleton | Creational | Exactly one instance is needed and two threads must not make two (Spring beans already are one) | Config and shared clients | Planned |
 | 6 | Builder | Creational | A constructor with many optional arguments | A booking request: passengers, class, quota, preferences | Planned |

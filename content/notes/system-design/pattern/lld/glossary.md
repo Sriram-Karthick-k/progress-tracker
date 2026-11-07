@@ -12,9 +12,9 @@ Pattern names come in pairs, and the two words always mean the same thing:
 | Pair | Pattern | Where |
 |---|---|---|
 | Strategy and concrete strategy | Strategy | Now: `FareStrategy` and `TatkalFare` |
-| State and concrete state | State | Later |
+| State and concrete state | State | Now: `BookingState` and `HeldState` |
 | Command and concrete command | Command | Later |
-| Observer and concrete observer | Observer | Later |
+| Observer and concrete observer | Observer | Now: `BookingObserver` and `EmailNotifier` |
 | Abstract factory and concrete factory (also abstract product and concrete product) | Abstract Factory | Later |
 | Component and concrete component (also decorator and concrete decorator) | Decorator | Later |
 
@@ -31,6 +31,18 @@ Not every part has a pair. In Strategy only the strategy side is split into abst
 | Concrete strategy | One real class that implements the interface. One way to do the job | `TatkalFare`, `SeniorFare`, `BaseFare` |
 | Client or caller | Whoever uses the context: a controller or a test | The controller that asks for a fare |
 | Interface | A contract of method signatures with no logic | `FareStrategy` |
+| Precedence | Which strategy wins when several could apply. Here it is the first one in the `@Order` list | Tatkal before rail pass before senior |
+| Default (catch-all) strategy | The strategy that always applies, so it goes last | `BaseFare` |
+| Subject (publisher) | The object that announces that something happened and keeps the list of observers | `BookingService` |
+| Observer (listener, subscriber) | The interface for anything that wants to react to the subject | `BookingObserver` |
+| Event | The description of what happened, passed to every observer | A booking was confirmed |
+| Subscribe (register) | Adding an observer to the subject's list | `EmailNotifier` joins the list |
+| Notify | The subject calling every observer on its list | `confirm` announces the confirmed booking |
+| Synchronous | The caller waits until the work has finished, on the same thread | The loop in `BookingService` waits for every observer |
+| Asynchronous | The work runs on another thread or through a queue, and the caller does not wait | `@Async` or a Kafka consumer |
+| State (the interface) | The interface that lists what can be done to the object, whatever its status | `BookingState` |
+| Concrete state | One class per status, holding that status's rules | `HeldState`, `ConfirmedState` |
+| Transition | A move from one status to the next, made by the current state | HELD to CONFIRMED |
 
 ## Words from the map
 

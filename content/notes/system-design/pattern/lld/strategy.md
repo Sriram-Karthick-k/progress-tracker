@@ -2,6 +2,11 @@
 
 Strategy puts each way of doing one job in its own class behind one interface, so the caller picks one at run time instead of branching on a flag. Unsure of a word? See the [glossary](/notebook/system-design/pattern/lld/glossary).
 
+> [!TIP]
+> - **The smell:** an `if/else` that picks an algorithm, with a new branch for every new rule.
+> - **The fix:** one interface, one class per rule, and a context that holds the list and never branches.
+> - **The catch:** with "first match wins", the order of the strategies is part of the design, and a forgotten annotation fails silently.
+
 ## Step 1: the smell
 
 This is how the train fare is calculated today. The numbers are made up, not real railway rules.
@@ -116,3 +121,54 @@ The first run was wrong. `RailPassFare` had `@Order(20)`, but the others were 1,
 | Tatkal and rail pass | 1300 (Tatkal comes first) |
 
 Lesson: leave gaps in the order numbers (10, 20, 30) and keep the catch-all default far at the end, so the next rule slots in without touching the old ones.
+
+## Step 6: break it, the forgotten `@Component`
+
+We added a throwaway strategy, `GhostFare`, that applies only when the base fare is 777 and returns 1. We ran it twice: once with `@Component` and once without.
+
+| | Beans that are a `FareStrategy` | Fare for a base fare of 777 |
+|---|---|---|
+| With `@Component` | ghostFare, baseFare, railPassFare, seniorFare, tatkalFare | 1 |
+| Without `@Component` | baseFare, railPassFare, seniorFare, tatkalFare | 777 |
+
+Without the annotation the class compiles, the app starts and no error appears, but Spring never creates the bean, so the rule is silently skipped. A new strategy that "does nothing" is usually a missing `@Component`.
+
+## Step 7: pitfalls and questions
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| A new strategy never applies and there is no error | Missing `@Component`, so no bean exists | Look at the bean list, then add the annotation |
+| The bean exists but its rule never applies | No `@Order` (a bean without one sorts last, after the catch-all) or a number past the default | Give it a number before the default |
+| Two rules match and only one applies | First match wins | Decide the precedence on purpose. If both must apply, strategy is the wrong tool |
+| Adding a rule means renumbering the old ones | Consecutive `@Order` numbers | Space them (10, 20, 30) and keep the default far at the end |
+
+<details>
+<summary>A senior citizen books a Tatkal ticket and is charged 1300, with no senior discount, although SeniorFare has no bug. What decides this?</summary>
+
+`FareService.fare` walks the injected list in order and stops at the first strategy whose `appliesTo` is true (`findFirst`). `TatkalFare` has `@Order(10)`, which is before `SeniorFare` (30), and it applies, so `SeniorFare` is never even asked. The result is decided by the order numbers and the first-match rule together.
+</details>
+
+<details>
+<summary>A teammate adds LadiesFare. It compiles and the app starts, but ladies bookings still pay the base fare. What are the two most likely causes?</summary>
+
+It is missing `@Component`, so Spring never creates the bean and it is not in the list. Or it is a bean without `@Order` (or with a number past the default), so it sorts after `BaseFare`, which always applies, and the loop stops before reaching it. Tell them apart by printing the beans of type `FareStrategy`: if it is missing from the list, it is the annotation, and if it is present, look at the order.
+</details>
+
+<details>
+<summary>A student fare must beat the senior fare but lose to the rail pass. Which @Order number does it get, and which existing files change?</summary>
+
+A number between rail pass (20) and senior (30), for example 25. No existing strategy and not `FareService` change, because the numbers were spaced. The only edits are the new class and, if the rule needs new data, a new field on `Booking`.
+</details>
+
+## Key takeaways
+
+| Remember | Because |
+|---|---|
+| Strategy is an interface, one class per rule, and a context that never branches | The `if/else` leaves the caller |
+| Each strategy says when it applies (`appliesTo`) | The context stays unchanged when a rule is added |
+| Spring injects every bean of a type as a `List`, sorted by `@Order` | The container is the registry |
+| First match wins, so the order is a rule you declare | No order means last, and a catch-all must be last |
+| Space the order numbers | The next rule slots in without renumbering |
+| Every strategy needs `@Component` | No annotation means no bean and a silent skip |
+
+**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Glossary](/notebook/system-design/pattern/lld/glossary) · [Train ticket booking board](/notebook/whiteboard/train-ticket-booking)
