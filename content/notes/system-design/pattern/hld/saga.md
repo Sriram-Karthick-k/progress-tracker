@@ -409,7 +409,7 @@ The orchestrator has one job: call the steps in order and, on any exception, cal
 payment call sits **between** two transactions, never inside one, so no database lock is held while
 waiting for an external system.
 
-### What we built and verified (`playground/saga-pattern`)
+### What we built and verified (`playground/hld/saga-pattern`)
 
 Built: the `V1` tables `orders` and `inventory`, `OrderEntity` and `OrderStatus`, `InventoryRepository`
 (guarded `reserve` and `release`), `OrderSteps`, the orchestrator `OrderSagaOrchestrator`, a toy

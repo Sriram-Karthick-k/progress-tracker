@@ -3,12 +3,23 @@
   "activity": {},
   "goal": null,
   "customCards": [],
-  "lastRoute": "/notebook/whiteboard/how-it-works",
+  "lastRoute": "/notebook/spring-boot-system-design/01-spring-boot-basics/dependency-injection-and-layers",
   "scroll": {
     "/notebook/README": 2868,
     "/notebook/zz-live-test": 1100,
     "/notebook/whiteboard/train-ticket-booking": 0,
-    "/notebook/whiteboard/how-it-works": 0
+    "/notebook/whiteboard/how-it-works": 0,
+    "/notebook/welcome": 0,
+    "/notebook/notebook-features": 0,
+    "/notebook/system-design/caching": 0,
+    "/notebook/system-design/pattern/saga": 0,
+    "/flashcards": 0,
+    "/roadmap": 0,
+    "/today": 0,
+    "/notebook/system-design/pattern/hld/overview": 1200,
+    "/notebook/system-design/pattern/lld/strategy": 1908,
+    "/notebook/system-design/pattern/lld/overview": 1203,
+    "/notebook/spring-boot-system-design/01-spring-boot-basics/dependency-injection-and-layers": 2366
   },
   "events": []
 }

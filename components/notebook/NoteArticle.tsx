@@ -5,6 +5,7 @@ import { NotebookContent } from "@/components/notebook/NotebookContent";
 import { NoteEditButton } from "@/components/notebook/NoteEditButton";
 import { LivePill } from "@/components/notebook/LivePill";
 import { TableOfContents, MobileContents } from "@/components/notebook/TableOfContents";
+import { ARTICLE_WIDTH, BOARD_WIDTH } from "@/components/notebook/layout";
 
 const href = (slug: string[]) => `/notebook/${slug.join("/")}`;
 
@@ -14,8 +15,8 @@ export function NoteArticle({ note, editable }: { note: LoadedNote; editable: bo
   const board = note.slug[0] === "whiteboard"; // notes in whiteboard/ are drawn live with an AI, see notes skill
 
   return (
-    <div className="flex gap-10">
-      <article data-board={board || undefined} className={`min-w-0 flex-1 ${board ? "max-w-[64rem]" : "max-w-[46rem]"}`}>
+    <div className="flex justify-center gap-10">
+      <article data-board={board || undefined} className={`min-w-0 flex-1 ${board ? BOARD_WIDTH : ARTICLE_WIDTH}`}>
         <header className="mb-8 border-b border-white/10 pb-6">
           <div className="mb-4 flex items-start justify-between gap-3">
             <nav aria-label="Breadcrumb" className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-slate-400">

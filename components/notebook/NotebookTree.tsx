@@ -36,6 +36,7 @@ function NoteItem({ node, active, depth, onMenu }: { node: Extract<NoteNode, { t
     <div className="group relative flex items-center">
       <Link
         href={noteHref(node.slug)}
+        aria-current={on ? "page" : undefined}
         onContextMenu={(e) => { e.preventDefault(); onMenu(node, e.clientX, e.clientY); }}
         style={{ paddingLeft: 8 + depth * 14 }}
         className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg py-1.5 pr-7 text-sm transition ${

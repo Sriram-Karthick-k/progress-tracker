@@ -124,9 +124,9 @@ const MERMAID_THEME = {
     nodeTextColor: "#ffffff",
     primaryBorderColor: "#ffffff",
     secondaryColor: "#0a0a0a",
-    secondaryBorderColor: "#39ff14",
+    secondaryBorderColor: "#a3a3a3",
     tertiaryColor: "#0a0a0a",
-    tertiaryBorderColor: "#00e5ff",
+    tertiaryBorderColor: "#737373",
     lineColor: "#d4d4d4",
     textColor: "#f5f5f5",
     noteBkgColor: "#141400",
@@ -141,9 +141,10 @@ const MERMAID_THEME = {
     clusterBorder: "#525252",
     cScale0: "#00e5ff", cScale1: "#39ff14", cScale2: "#ff9100", cScale3: "#ff2bd6",
     cScale4: "#448aff", cScale5: "#ffea00", cScale6: "#b388ff", cScale7: "#1de9b6",
-    cScaleLabel0: "#000000", cScaleLabel1: "#000000", cScaleLabel2: "#000000", cScaleLabel3: "#000000",
-    cScaleLabel4: "#000000", cScaleLabel5: "#000000", cScaleLabel6: "#000000", cScaleLabel7: "#000000",
-    git0: "#ffffff", gitBranchLabel0: "#000000", // mindmap root node
+    // neo look draws mindmap nodes dark with the branch colour as the edge, so labels stay white
+    cScaleLabel0: "#ffffff", cScaleLabel1: "#ffffff", cScaleLabel2: "#ffffff", cScaleLabel3: "#ffffff",
+    cScaleLabel4: "#ffffff", cScaleLabel5: "#ffffff", cScaleLabel6: "#ffffff", cScaleLabel7: "#ffffff",
+    git0: "#ffffff", gitBranchLabel0: "#ffffff", // mindmap root node
   },
 };
 
@@ -402,7 +403,7 @@ export function NotebookContent({ html, live = false, board = false }: { html: s
 
     // Diagrams that aren't drawn yet for this source + theme + screen size. An unchanged diagram
     // keeps its drawing across note updates; a theme/phone change invalidates every one.
-    const configKey = `${mode}-${phone ? "phone" : "wide"}`;
+    const configKey = `${look}-${phone ? "phone" : "wide"}`;
     const toDraw = inDoc("pre.mermaid").filter((b) => {
       b.dataset.src ??= b.textContent ?? "";
       return b.dataset.rendered !== `${configKey}|${b.dataset.src}`;
@@ -418,7 +419,7 @@ export function NotebookContent({ html, live = false, board = false }: { html: s
               mermaid.initialize({
                 startOnLoad: false,
                 theme: "base",
-                themeVariables: MERMAID_THEME[mode],
+                themeVariables: MERMAID_THEME[look],
                 ...(phone ? MERMAID_COMPACT : {}),
                 // "neo": rounded, shadowed, solid fills. handDrawn's rough.js hatching
                 // made text on coloured nodes hard to read.
@@ -644,7 +645,7 @@ export function NotebookContent({ html, live = false, board = false }: { html: s
       cancelled = true;
       setTimeout(sweep);
     };
-  }, [html, mode, phone, live, board]);
+  }, [html, mode, look, phone, live, board]);
 
   return (
     <>

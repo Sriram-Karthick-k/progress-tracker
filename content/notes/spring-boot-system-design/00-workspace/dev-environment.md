@@ -102,19 +102,19 @@ database files Postgres opens, so every project keeps its own data next to its o
 
 ```bash
 # .env
-PROJECT=saga-pattern
+PROJECT=hld/saga-pattern
 DB_NAME=saga_db
 
 docker compose up -d --force-recreate postgres dev    # apply a switch
 ```
 
-**New project:** one command creates everything, including the Bruno collection folder:
+**New project:** one command creates everything, including the Bruno collection folder. `--group hld` (system-design patterns) or `--group lld` (class-level patterns) picks the folder under `playground/`:
 
 ```bash
-node infra/scaffold/new-project.cjs cache-aside --activate
+node infra/scaffold/new-project.cjs cache-aside --group hld --activate
 ```
 
-| Created in `playground/cache-aside/` | What it is |
+| Created in `playground/hld/cache-aside/` | What it is |
 |---|---|
 | `pom.xml`, `mvnw`, `.mvn/` | Maven project with the standard dependencies (web, JPA, Flyway, tracing, devtools) and the wrapper |
 | `src/main/java/com/learn/cache/CacheAsideApplication.java` | Application class; package = first word of the name (`--package` to change) |

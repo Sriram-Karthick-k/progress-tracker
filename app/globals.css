@@ -390,12 +390,15 @@
   --c-code-fg: 110 93 130;
 }
 
-/* Pure Black — true #000 canvas, neutral greys, white text. Colour is reserved
-   for meaning: diagrams keep their own palette and the accent is neon (green
-   for highlights/links/active items, cyan as its partner in gradients).
-   indigo/violet are remapped here, so every existing accent class turns neon. */
+/* Pure Black: a true #000 canvas, white text, neutral greys. Nothing is tinted.
+   The app's indigo/violet accent is remapped to greys, so active rows, chips and
+   cards read as white-on-black. Colour appears only where it carries meaning:
+   diagrams keep their own palette, and --neon (one variable, change it to taste)
+   marks a few thin highlights: links, text selection, keyboard focus, the current
+   section, open quiz cards and the changed-block flash. */
 [data-theme="noir"] {
   color-scheme: dark;
+  --neon: 57 255 20;
   --c-white: 255 255 255;
   --c-black: 0 0 0;
   --c-slate-50: 255 255 255;
@@ -413,41 +416,50 @@
   --c-bg: 0 0 0;
   --bg-grad: none;
   --scrollbar: 82 82 82;
-  --c-code-fg: 57 255 20;
-  --c-onaccent: 0 0 0; /* black reads on neon; white would not */
+  --c-code-fg: 245 245 245; /* inline code, links, tags: white, not tinted */
+  --c-onaccent: 0 0 0; /* text on the light logo / icon chips */
 
-  --c-indigo-50: 240 255 237;
-  --c-indigo-100: 218 255 209;
-  --c-indigo-200: 183 255 163;
-  --c-indigo-300: 140 255 100;
-  --c-indigo-400: 87 255 42;
-  --c-indigo-500: 57 255 20;
-  --c-indigo-600: 36 214 0;
-  --c-indigo-700: 28 168 0;
-  --c-indigo-800: 22 120 0;
-  --c-indigo-900: 14 77 0;
-  --c-indigo-950: 6 38 0;
-  --c-violet-50: 232 253 255;
-  --c-violet-100: 204 250 255;
-  --c-violet-200: 153 245 255;
-  --c-violet-300: 102 238 255;
-  --c-violet-400: 51 230 255;
-  --c-violet-500: 0 229 255;
-  --c-violet-600: 0 184 212;
-  --c-violet-700: 0 145 168;
-  --c-violet-800: 0 105 125;
-  --c-violet-900: 0 66 79;
-  --c-violet-950: 0 33 40;
+  /* accent ramps -> greys. 500 is white so "bg-indigo-500/15" is a grey wash and
+     focus borders are white. Only 400, the shade used for active indicators and
+     hover borders (current TOC entry, Live pill, card hover), is neon. */
+  --c-indigo-50: 250 250 250;
+  --c-indigo-100: 245 245 245;
+  --c-indigo-200: 235 235 235;
+  --c-indigo-300: 225 225 225;
+  --c-indigo-400: var(--neon);
+  --c-indigo-500: 255 255 255;
+  --c-indigo-600: 200 200 200;
+  --c-indigo-700: 120 120 120;
+  --c-indigo-800: 70 70 70;
+  --c-indigo-900: 45 45 45;
+  --c-indigo-950: 24 24 24;
+  --c-violet-50: 248 248 248;
+  --c-violet-100: 240 240 240;
+  --c-violet-200: 225 225 225;
+  --c-violet-300: 205 205 205;
+  --c-violet-400: 185 185 185;
+  --c-violet-500: 160 160 160;
+  --c-violet-600: 130 130 130;
+  --c-violet-700: 100 100 100;
+  --c-violet-800: 70 70 70;
+  --c-violet-900: 45 45 45;
+  --c-violet-950: 24 24 24;
 }
-[data-theme="noir"] ::selection { background: rgb(57 255 20 / 0.35); color: #fff; }
+[data-theme="noir"] ::selection { background: rgb(var(--neon) / 0.35); color: #fff; }
+[data-theme="noir"] :is(a, button, summary, [tabindex]):focus-visible { outline: 2px solid rgb(var(--neon)); outline-offset: 2px; }
 [data-theme="noir"] .md-body figure.md-code { background: #050505; border-color: rgb(255 255 255 / 0.16); }
 [data-theme="noir"] .md-body figure.md-code figcaption { background: #101010; border-bottom-color: rgb(255 255 255 / 0.16); color: #a3a3a3; }
 [data-theme="noir"] .md-body figure.md-diagram,
 [data-theme="noir"] .md-body .md-excalidraw-wrap { border-color: rgb(255 255 255 / 0.18); }
-/* the neon "highlight" moments get a soft glow */
-[data-theme="noir"] .md-body a:hover { text-shadow: 0 0 10px rgb(var(--c-code-fg) / 0.55); }
-[data-theme="noir"] .md-body details[open] { box-shadow: 0 0 0 1px rgb(var(--c-code-fg) / 0.25), 0 0 18px -6px rgb(var(--c-code-fg) / 0.5); }
-[data-theme="noir"] .md-body :not(pre) > code { background: rgb(var(--c-code-fg) / 0.08); border-color: rgb(var(--c-code-fg) / 0.22); }
+/* the neon highlights */
+[data-theme="noir"] a[aria-current="page"] { box-shadow: inset 2px 0 0 rgb(var(--neon)); }
+[data-theme="noir"] .md-body a { text-decoration-color: rgb(var(--neon) / 0.75); }
+[data-theme="noir"] .md-body a:hover { color: rgb(var(--neon)); text-decoration-color: rgb(var(--neon)); }
+[data-theme="noir"] .md-body blockquote { border-left-color: rgb(var(--neon) / 0.75); }
+[data-theme="noir"] .md-body details[open] { border-color: rgb(var(--neon) / 0.55); }
+[data-theme="noir"] .md-body .md-flash { --c-code-fg: var(--neon); }
+/* callouts are black and white too; the icon and title say which kind it is */
+[data-theme="noir"] .md-alert { --alert: 212 212 212; }
 
 body {
   background-color: rgb(var(--c-bg));
