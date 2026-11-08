@@ -17,7 +17,7 @@ Pattern names come in pairs, and the two words always mean the same thing:
 | Observer and concrete observer | Observer | Now: `BookingObserver` and `EmailNotifier` |
 | Product and concrete product | Factory Method | Now: `PaymentClient` and `RazorpayClient` |
 | Abstract factory and concrete factory (also abstract product and concrete product) | Abstract Factory | Later |
-| Component and concrete component (also decorator and concrete decorator) | Decorator | Later |
+| Component and concrete component (also decorator and concrete decorator) | Decorator | Now: `PaymentClient` and `RazorpayClient` |
 
 Not every part has a pair. In Strategy only the strategy side is split into abstract and concrete. The context is an ordinary class, so there is no "abstract context" here.
 
@@ -54,6 +54,15 @@ Not every part has a pair. In Strategy only the strategy side is split into abst
 | Access point | The method that hands out the one instance | `getInstance()` |
 | Constructor injection | A class receives what it needs through its constructor, so the dependency is visible and a test can pass a fake | `SpringBookingService(NumberGenerator numbers)` |
 | Singleton scope | Spring's default: the container creates one instance of the bean and shares it | `@Component` on `NumberGenerator` |
+| Builder | A helper object that collects the values by name and then creates the finished object | `BookingRequest.Builder` |
+| Fluent | A setting method that returns the builder itself, so the calls chain | `.quota("TATKAL").meal("VEG")` |
+| `build()` | The last call, which creates the finished object and is the place to validate | `build()` |
+| Immutable | An object whose fields cannot change after it is created | `BookingRequest` with `final` fields |
+| Telescoping constructors | One constructor for each combination of options, the smell Builder replaces | The four `BookingRequest` constructors |
+| Component | The interface that both the plain object and its wrappers implement | `PaymentClient` |
+| Concrete component | The plain object that does the real work | `RazorpayClient` |
+| Decorator | A wrapper with the same interface that holds another object and adds behaviour around the call | `LoggingClient`, `RetryClient` |
+| Delegating | Passing the call on to the wrapped object | `wrapped.charge(amount)` |
 
 ## Words from the map
 

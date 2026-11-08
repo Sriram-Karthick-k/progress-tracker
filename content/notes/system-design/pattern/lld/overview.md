@@ -53,14 +53,14 @@ Behavioural patterns decide who does what at run time, creational ones decide ho
 | 3 | State | Behavioural | Behaviour depends on a status field, with `switch` everywhere | HELD, CONFIRMED, EXPIRED, CANCELLED | Done: [State](/notebook/system-design/pattern/lld/state) |
 | 4 | Factory Method | Creational | Callers should not know which concrete class to build | Pick the payment client for a merchant | Done: [Factory Method](/notebook/system-design/pattern/lld/factory-method) |
 | 5 | Singleton | Creational | Exactly one instance is needed and two threads must not make two (Spring beans already are one) | Config and shared clients | Done: [Singleton](/notebook/system-design/pattern/lld/singleton) |
-| 6 | Builder | Creational | A constructor with many optional arguments | A booking request: passengers, class, quota, preferences | Next |
-| 7 | Decorator | Structural | Add behaviour around an object without changing it | Logging, retry and rate limit around the payment client | Planned |
+| 6 | Builder | Creational | A constructor with many optional arguments | A booking request: passengers, class, quota, preferences | Done: [Builder](/notebook/system-design/pattern/lld/builder) |
+| 7 | Decorator | Structural | Add behaviour around an object without changing it | Logging, retry and rate limit around the payment client | Done: [Decorator](/notebook/system-design/pattern/lld/decorator) |
 
 ### Tier 2: common in real code and in follow-up questions
 
 | # | Pattern | Family | The smell it fixes | In the train-ticket design | Status |
 |---|---|---|---|---|---|
-| 8 | Command | Behavioural | A request must be stored, queued, retried or undone | Book, pay and refund as objects; the refund job retries stored commands | Planned |
+| 8 | Command | Behavioural | A request must be stored, queued, retried or undone | Book, pay and refund as objects; the refund job retries stored commands | Next |
 | 9 | Chain of Responsibility | Behavioural | A request passes several checks, each able to stop it, and the list changes | Gateway checks: authentication, rate limit, validation (Spring's filter chain) | Planned |
 | 10 | Adapter | Structural | A third-party API does not match your interface | One interface over every merchant's payment API | Planned |
 | 11 | Facade | Structural | Callers juggle many classes to do one thing | One `book()` call that hides search, hold and pay | Planned |

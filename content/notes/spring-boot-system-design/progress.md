@@ -16,7 +16,7 @@
 | 06 Scaling | Redis caching, rate limiting, sharding, replication | Not started |
 | 07 HLD and LLD | [Train ticket booking board](/notebook/whiteboard/train-ticket-booking) (one canvas: scope, numbers, architecture, flows, API, data model, 16 decisions; long text in the [written version](/notebook/whiteboard/train-ticket-booking-written)); more designs and LLD planned | Started: one full HLD interview done (2026-11-07) |
 
-Capstone: an Order and Payment Platform (order, inventory, payment and notification services). Today there are seven learning sandboxes under `playground/`: `hello-boot` (basics, persistence, outbox, Kafka, idempotency, retry), `hld/saga-pattern` (the order saga), `lld/strategy-pattern` (the Strategy lesson, done), `lld/observer-pattern` (the Observer lesson, done), `lld/state-pattern` (the State lesson, done), `lld/factory-pattern` (the Factory Method lesson, done) and `lld/singleton-pattern` (the Singleton lesson, done). One `.env` file picks which one runs.
+Capstone: an Order and Payment Platform (order, inventory, payment and notification services). Today there are nine learning sandboxes under `playground/`: `hello-boot` (basics, persistence, outbox, Kafka, idempotency, retry), `hld/saga-pattern` (the order saga), `lld/strategy-pattern` (the Strategy lesson, done), `lld/observer-pattern` (the Observer lesson, done), `lld/state-pattern` (the State lesson, done), `lld/factory-pattern` (the Factory Method lesson, done), `lld/singleton-pattern` (the Singleton lesson, done), `lld/builder-pattern` (the Builder lesson, done) and `lld/decorator-pattern` (the Decorator lesson, done). One `.env` file picks which one runs.
 
 ## Next
 
