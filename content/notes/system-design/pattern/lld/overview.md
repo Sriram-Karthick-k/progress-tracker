@@ -52,8 +52,8 @@ Behavioural patterns decide who does what at run time, creational ones decide ho
 | 2 | Observer | Behavioural | One event, many reactions, and the sender should not know them | Booking confirmed: email, SMS, analytics | Done: [Observer](/notebook/system-design/pattern/lld/observer) |
 | 3 | State | Behavioural | Behaviour depends on a status field, with `switch` everywhere | HELD, CONFIRMED, EXPIRED, CANCELLED | Done: [State](/notebook/system-design/pattern/lld/state) |
 | 4 | Factory Method | Creational | Callers should not know which concrete class to build | Pick the payment client for a merchant | Done: [Factory Method](/notebook/system-design/pattern/lld/factory-method) |
-| 5 | Singleton | Creational | Exactly one instance is needed and two threads must not make two (Spring beans already are one) | Config and shared clients | Next |
-| 6 | Builder | Creational | A constructor with many optional arguments | A booking request: passengers, class, quota, preferences | Planned |
+| 5 | Singleton | Creational | Exactly one instance is needed and two threads must not make two (Spring beans already are one) | Config and shared clients | Done: [Singleton](/notebook/system-design/pattern/lld/singleton) |
+| 6 | Builder | Creational | A constructor with many optional arguments | A booking request: passengers, class, quota, preferences | Next |
 | 7 | Decorator | Structural | Add behaviour around an object without changing it | Logging, retry and rate limit around the payment client | Planned |
 
 ### Tier 2: common in real code and in follow-up questions

@@ -49,6 +49,11 @@ Not every part has a pair. In Strategy only the strategy side is split into abst
 | Factory | The one place that decides which concrete class to create and builds it | `PaymentClientFactory` |
 | Factory method | The method of the factory that creates and returns the product | `create(merchant)` |
 | Creator | In the Gang of Four Factory Method, the abstract class that holds the shared flow and the abstract factory method | `PaymentProcessor` |
+| Singleton | The one instance of a class that every caller shares | `TicketNumberGenerator` |
+| Private constructor | A constructor only the class itself can call, so nobody else can make another instance | `private TicketNumberGenerator()` |
+| Access point | The method that hands out the one instance | `getInstance()` |
+| Constructor injection | A class receives what it needs through its constructor, so the dependency is visible and a test can pass a fake | `SpringBookingService(NumberGenerator numbers)` |
+| Singleton scope | Spring's default: the container creates one instance of the bean and shares it | `@Component` on `NumberGenerator` |
 
 ## Words from the map
 
