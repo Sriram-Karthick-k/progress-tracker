@@ -1725,6 +1725,14 @@
       "notes": "",
       "attempts": 0,
       "touched": 1794237709424
+    },
+    "p-lc213": {
+      "status": "DONE",
+      "confidence": 3,
+      "revisit": false,
+      "notes": "",
+      "attempts": 0,
+      "touched": 1794238638244
     }
   },
   "activity": {
@@ -1771,7 +1779,7 @@
     "2026-09-10": 6,
     "2026-09-15": 9,
     "2026-09-16": 4,
-    "2026-11-09": 50
+    "2026-11-09": 54
   },
   "goal": 3,
   "customCards": [],
@@ -1827,6 +1835,50 @@
     "/problems?pattern=Dynamic+Programming+%E2%80%93+1D": 0
   },
   "events": [
+    {
+      "id": "ev-1794238638244-2ojug1",
+      "ts": 1794238638244,
+      "itemId": "p-lc213",
+      "changes": {
+        "status": {
+          "from": "LEARNING",
+          "to": "DONE"
+        }
+      }
+    },
+    {
+      "id": "ev-1794238638102-gu3y2f",
+      "ts": 1794238638102,
+      "itemId": "p-lc213",
+      "changes": {
+        "status": {
+          "from": "ATTEMPTED",
+          "to": "LEARNING"
+        }
+      }
+    },
+    {
+      "id": "ev-1794238637924-5yvl4j",
+      "ts": 1794238637924,
+      "itemId": "p-lc213",
+      "changes": {
+        "status": {
+          "from": "TODO",
+          "to": "ATTEMPTED"
+        }
+      }
+    },
+    {
+      "id": "ev-1794238637376-l09nmy",
+      "ts": 1794238637376,
+      "itemId": "p-lc213",
+      "changes": {
+        "confidence": {
+          "from": 0,
+          "to": 3
+        }
+      }
+    },
     {
       "id": "ev-1794237709424-v3h6fw",
       "ts": 1794237709424,
@@ -6180,50 +6232,6 @@
         "confidence": {
           "from": 5,
           "to": 4
-        }
-      }
-    },
-    {
-      "id": "ev-1786796897821-k33cwt",
-      "ts": 1786796897821,
-      "itemId": "p-lc110",
-      "changes": {
-        "confidence": {
-          "from": 0,
-          "to": 5
-        }
-      }
-    },
-    {
-      "id": "ev-1786796897217-u62dmr",
-      "ts": 1786796897217,
-      "itemId": "p-lc110",
-      "changes": {
-        "status": {
-          "from": "TODO",
-          "to": "ATTEMPTED"
-        }
-      }
-    },
-    {
-      "id": "ev-1786796896277-g9ylas",
-      "ts": 1786796896277,
-      "itemId": "p-lc543",
-      "changes": {
-        "status": {
-          "from": "LEARNING",
-          "to": "DONE"
-        }
-      }
-    },
-    {
-      "id": "ev-1786796896129-66zd8w",
-      "ts": 1786796896129,
-      "itemId": "p-lc543",
-      "changes": {
-        "status": {
-          "from": "ATTEMPTED",
-          "to": "LEARNING"
         }
       }
     }
