@@ -7,9 +7,9 @@
 
 | Step | Who | What |
 |---|---|---|
-| Recap | Me | Two or three lines on what the keyword does, with one tiny query that I run so you see the rows. |
-| Warm-up | You | An easy problem. You write the query in `block-N.sql` and say "check". |
-| Real problem | You | A question in plain English, with the expected rows. I run your query and we read any difference together. |
+| Problem | Me | LeetCode style: a title, the table columns, the question in plain English, and the expected output. Nothing before it. Easy first, harder later in the item. |
+| Solve | You | You write the query in `block-N.sql` and say "check". |
+| Check | Me | I run your query and we read any difference together. After you solve it, two or three lines on what the keyword does, only if you ask. |
 | Find the bug | You | A query that looks right and returns wrong rows. You spot the trap before I run it. |
 | Cheat sheet | Me | When an item passes, I rewrite its section of `cheat-sheets/sql.md` and tell you in one line what changed. |
 
@@ -37,7 +37,7 @@ Rules for the rewrite:
 | 4 | 4. Subqueries, CTEs and set operations |
 | 5 | 3. Joins (`FULL OUTER JOIN` built from `UNION`) |
 | 6 | 5. Window functions (real results on `daily_sales`) |
-| 7 and 8 | 7. Changing data and speed (`ON DUPLICATE KEY UPDATE`, a real `EXPLAIN`) |
+| 8 | 7. Changing data and speed: the real `EXPLAIN` part comes from item 8. The `INSERT`, `UPDATE`, `DELETE` and `ON DUPLICATE KEY UPDATE` part is a nice-to-have: I convert it to MySQL at C, with no problems for you. |
 | C | 6. Functions, 8. Keyword glossary, 9. Traps, the title and the intro |
 
 ## Data used
@@ -55,12 +55,12 @@ Ready before the clock starts: MySQL 8.4 in one Docker container, with the cheat
 | 5 | Joins | MUST | 20 | | |
 | 6 | Window functions | MUST | 15 | | |
 | R1 | Mixed review (traps from items 1-6) | review | 10 | | |
-| 7 | Changing data: `INSERT`, `UPDATE`, `DELETE`, upsert | SHOULD | 10 | | |
-| 8 | Indexes and `EXPLAIN`, a first look | SHOULD | 10 | | |
+| 7 | ~~Changing data: `INSERT`, `UPDATE`, `DELETE`, upsert~~ (dropped by you, now module 2) | SHOULD | 0 | | |
+| 8 | Indexes and `EXPLAIN`, a first look | SHOULD | 15 | | |
 | R2 | Final review (every card, no hints) | review | 10 | | |
 | C | Cheat sheet read-through: you read the rewritten sheet and we fix what is still wrong | MUST | 10 | | |
 
-MUST is 85 min, which is 63% of the 135 usable minutes, slightly over the 60% rule. I accepted that because the cheat sheet read-through is the one item you asked for by name. Total planned is 135 min.
+MUST is 85 min, which is 63% of the 135 usable minutes, slightly over the 60% rule. I accepted that because the cheat sheet read-through is the one item you asked for by name. After you dropped item 7 (10 min) and item 8 grew to 15 min, the total planned is 130 min.
 
 ## Clock
 
@@ -70,7 +70,7 @@ MUST is 85 min, which is 63% of the 135 usable minutes, slightly over the 60% ru
 | Break | 10 min | |
 | 2 | 45 min | Items 5, 6, then R1 |
 | Break | 10 min | |
-| 3 | 40 min | Items 7, 8, then R2, then C |
+| 3 | 35 min | Item 8, then R2, then C |
 | Buffer | 25 min | Overruns, or the lightning round on functions from "Not now" |
 
 ## What each item covers
@@ -81,39 +81,40 @@ MUST is 85 min, which is 63% of the 135 usable minutes, slightly over the 60% ru
 - **4. Subqueries and CTEs.** `IN (SELECT ...)`, a one-value subquery, `EXISTS` and `NOT EXISTS`, `WITH`, and `UNION` against `UNION ALL`. Trap: `NOT IN` returns nothing when the subquery has a `NULL`.
 - **5. Joins.** `INNER JOIN`, `LEFT JOIN`, counting including zeros, a self join. Traps: a filter on the right table belongs in `ON`, and a one-to-many join that double-counts a `SUM`. MySQL differs: no `FULL OUTER JOIN`.
 - **6. Window functions.** `OVER (PARTITION BY ...)`, `ROW_NUMBER`, `RANK`, `DENSE_RANK`, top N per group, running total, `LAG`. MySQL differs: `NULL` already sorts last on `DESC`, and `NULLS LAST` does not exist.
-- **7. Changing data.** `INSERT`, `UPDATE`, `DELETE` and why they always need a `WHERE`, `ON DUPLICATE KEY UPDATE` (MySQL's upsert; there is no `RETURNING`).
+- **7. Changing data (dropped by you, so no problems).** `INSERT`, `UPDATE`, `DELETE` and why they always need a `WHERE`, `ON DUPLICATE KEY UPDATE` (MySQL's upsert; there is no `RETURNING`).
 - **8. Indexes and `EXPLAIN`.** What an index is, `EXPLAIN` on a 1M-row table, one index added and the plan read again, and why a function on an indexed column stops the index from being used.
 
 ## Checklist
 
-- [ ] 1. Reading rows: every problem solved, or each miss explained in own words
-- [ ] 2. `NULL` and `CASE`: can say why `= NULL` returns nothing
-- [ ] 3. Grouping: can say what `GROUP BY` does, where `HAVING` fits, and the order a query runs in
-- [ ] 4. Subqueries and CTEs: can write `EXISTS` and say why `NOT IN` can fail
-- [ ] 5. Joins: can say why a right-table filter in `WHERE` turns a `LEFT JOIN` into an inner join
-- [ ] 6. Windows: top N per group solved without hints
-- [ ] R1. Mixed review passed
-- [ ] 7. Changing data: can write an upsert and say what happens without a `WHERE`
-- [ ] 8. Indexes and `EXPLAIN`: can read a plan and say whether it scanned the table or used an index
-- [ ] R2. Final review passed (all cards answered without hints)
-- [ ] C. Cheat sheet read through and signed off
+- [x] **1** Reading rows: every problem solved, or each miss explained in own words
+- [x] **2** `NULL` and `CASE`: can say why `= NULL` returns nothing
+- [x] **3** Grouping: can say what `GROUP BY` does, where `HAVING` fits, and the order a query runs in
+- [x] **4** Subqueries and CTEs: can write `EXISTS` and say why `NOT IN` can fail
+- [x] **5** Joins: can say why a right-table filter in `WHERE` turns a `LEFT JOIN` into an inner join
+- [x] **6** Windows: top N per group solved without hints
+- [x] **R1** Mixed review passed
+- [ ] ~~**7** Changing data: can write an upsert and say what happens without a `WHERE`~~ dropped by you, moved to module 2
+- [ ] **8** Indexes and `EXPLAIN`: can read a plan and say whether it scanned the table or used an index
+- [ ] **R2** Final review passed (all cards answered without hints)
+- [ ] **C** Cheat sheet read through and signed off
 
 ## Cheat sheet sections
 
-- [ ] Sample data (full `CREATE TABLE` and `INSERT` rows)
-- [ ] 1. Reading data
-- [ ] 2. Aggregation and grouping
-- [ ] 3. Joins
-- [ ] 4. Subqueries, CTEs and set operations
-- [ ] 5. Window functions
-- [ ] 6. Functions and types
-- [ ] 7. Changing data and speed
-- [ ] 8. Keyword glossary
-- [ ] 9. Traps to remember
+- [x] Sample data (full `CREATE TABLE` and `INSERT` rows)
+- [x] **1** Reading data
+- [x] **2** Aggregation and grouping
+- [x] **3** Joins
+- [x] **4** Subqueries, CTEs and set operations
+- [x] **5** Window functions
+- [ ] **6** Functions and types
+- [ ] **7** Changing data and speed
+- [ ] **8** Keyword glossary
+- [ ] **9** Traps to remember
 - [ ] Title and intro say MySQL
 
 ## Not now
 
+- Changing data: `INSERT`, `UPDATE`, `DELETE`, upsert (SHOULD): you dropped the problems. It stays in the cheat sheet as a nice-to-have, converted to MySQL at C, and it can come back in module 2.
 - Functions you will be asked about (string, date, number) (COULD): I still rewrite section 6 of the sheet in MySQL during C. The 10-question lightning round for you goes in the buffer, if time is left.
 - `WITH RECURSIVE`, `ANY` and `ALL`, `INTERSECT` and `EXCEPT` (COULD): the sheet sections are fixed in C, but they are not taught as items. Module 2.
 - Composite and covering indexes, rewriting slow queries (SHOULD): module 2. Item 8 only shows the idea.
