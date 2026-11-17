@@ -2,6 +2,7 @@
 
 **Goal:** Get back every core MySQL query by solving problems: say what each clause does and the order a query runs in, write the query for a plain-English question, find the bug in a query that returns wrong rows, and take a first look at `EXPLAIN`. By the end, the [SQL cheat sheet](/notebook/cheat-sheets/sql) is rewritten for MySQL with real outputs.
 **Budget:** 3 h (usable 135 min) · **Level on entry:** knows what SQL is, has forgotten the details (what `GROUP BY` does, where `HAVING` fits), so it starts at `SELECT` · **Goal type:** interview revision, plus a cheat sheet that can be trusted
+**Status:** paused on 2026-11-16 after items 1 to 6, item 7 dropped and R1 passed. Left: item 8 (indexes and `EXPLAIN`), R2 and C. Problem 8.1 is waiting in `playground/mysql-practice/block-3.sql`, and `big_orders` has its 1,000,000 rows. You switched to the [Amazon preparation](/notebook/amazon-preparation/plan).
 
 ## How each block runs
 
