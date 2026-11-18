@@ -76,6 +76,12 @@ MUST is now 90 min, which is 67% of the 135 usable minutes and over the 60% rule
 - Item 3 is ticked: 56, 57 and 435 are solved, and the cost of 435 was stated correctly (O(n log n) time, O(1) extra space apart from the sort). Still to explain, in the greedy check: why 435 sorts by end (the exchange argument).
 - Item 3 history: 56 Merge Intervals was solved with a walk-back loop that is O(n squared) in the worst case (measured: 3.6 s at 80,000 intervals against 6 ms for the usual version), an output in reverse order, and a `-1` marker that changes the input. 57 Insert Interval is solved. 435 Non-overlapping Intervals is left. To state: why the clean version (compare with the last kept interval) is O(n log n).
 
+## DP progress (item 6, not ticked yet)
+
+- Coin Change II (518): the attempt had no return value and the memo key was only the amount, so it counted ordered sequences. Diagnosed, then viewed the solution.
+- 983 Minimum Cost For Tickets: solved with the four-question routine (contract, state, choices and combine, base case), written in words before any code. Two off-by-one bugs were found by tests (base case `days.length`, and a pass of length L covers `d` to `d+L-1`). Left to fix: the memo was an instance field, so a reused instance returns stale answers.
+- Still to do: one problem with a 2D state (state is two indexes), then fill its table by hand. Chosen: 1143 Longest Common Subsequence, planned for the morning of 2026-11-18. First question to answer in words: what do `i` and `j` point at, and what does `f(i, j)` return?
+
 ## Not now
 
 - Task Scheduler (621) and Reorganize String (767) (SHOULD): dropped from item 4 to make room for DP.
@@ -90,3 +96,4 @@ MUST is now 90 min, which is 67% of the 135 usable minutes and over the 60% rule
 - Leadership Principles: 8 STAR stories from your Zoho work, written and said aloud.
 - Timed practice: 2 mediums in 70 minutes, three times a week, plus your "revisit" list cold.
 - Payments design: one ledger or payments service design for the Financial Technology team.
+- DP from recursion (needs more than the 30 minutes in item 6): a ladder of about 8 problems, written as contract, state, transition and base cases in words before any code. Ladder: 198 House Robber, 322 Coin Change, 518 Coin Change II, 62 Unique Paths, 1143 Longest Common Subsequence, 72 Edit Distance, 416 Partition Equal Subset Sum.
