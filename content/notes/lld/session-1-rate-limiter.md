@@ -39,8 +39,22 @@ From the project folder, with the JDK 17 on your machine:
 
 ```bash
 cd playground/lld-practice/rate-limiter
-javac -d out *.java
-java -cp out Main
+javac -d out $(find src -name "*.java")
+java -cp out demo.Main
+```
+
+In PowerShell the compile line is `javac -d out (Get-ChildItem src -Recurse -Filter *.java).FullName`.
+
+The code is split into packages, and a package never depends on one that depends on it:
+
+```text
+src/
+  demo/Main.java                      wires the factories and runs the checks
+  ratelimiter/
+    RateLimiter.java, Request.java    the entry point and its input
+    config/    Rule, Algorithm        the rule for an API, as plain data
+    strategy/  RateLimitStrategy, FixedWindow, SlidingWindowLog     the algorithms
+    factory/   StrategyFactory, FixedWindowFactory, SlidingWindowFactory   how a rule becomes an algorithm
 ```
 
 ## Checklist
@@ -63,26 +77,29 @@ java -cp out Main
 
 ## Design
 
-This design was produced independently by a fresh agent that was given only the problem and the clarified requirements. It is plain Java 17, with the clock as a plain `LongSupplier`.
+The first version of this design came from a fresh agent that was given only the problem and the requirements. One part was then reworked: the rule used to carry a factory passed in as a constructor reference, which hid which algorithm a rule uses. Now the rule names its algorithm with an enum, there is one small factory class per algorithm, and a map from algorithm to factory is wired in one place. There is no `switch`. It is plain Java 17, with the clock as a plain `LongSupplier`.
 
 ### Classes and interfaces
 
-Seven types, two of them tiny interfaces. Nothing else is needed.
+Ten types, two of them interfaces. Nothing else is needed.
 
 | Type | Kind | Responsibility, and why it exists |
 |---|---|---|
 | `Request` | record | `(clientId, api)`. Value object. It also serves as the map key (records give correct `equals` and `hashCode`, with no `"client:api"` string-concatenation collisions). Rejects null fields. |
-| `RateLimiter` | final class | The only entry point, `allow(Request)`. Picks the rule, finds or creates the state for that `(client, api)`, delegates, and supplies the time. It knows nothing about any concrete algorithm. |
-| `Rule` | record | Immutable config for one API: `maxRequests`, `Duration window`, `StrategyFactory`. Validates `max > 0` and `window > 0` at startup. Has `newStrategy()`. Exists so config is data, not code scattered in the limiter. |
-| `StrategyFactory` | functional interface | `create(int maxRequests, long windowMillis)` returns a fresh `RateLimitStrategy`. A rule names its algorithm as `FixedWindow::new`. Adding token bucket means a new class and a new constructor reference, with no edit to `RateLimiter` or callers. |
-| `RateLimitStrategy` | interface | `boolean tryAcquire(long nowMillis)`. One instance holds the state of exactly one `(client, api)` pair. This is the algorithm seam. |
+| `RateLimiter` | final class | The only entry point, `allow(Request)`. Picks the rule, asks the factory registered for the rule's algorithm to create the state for that `(client, api)` the first time, delegates, and supplies the time. It knows nothing about any concrete algorithm. It fails at construction if a rule uses an algorithm that has no factory. |
+| `Rule` | record | Immutable config for one API: `Algorithm algorithm`, `int maxRequests`, `Duration window`. Validates the numbers at startup. Plain data with no behaviour. |
+| `Algorithm` | enum | `FIXED_WINDOW`, `SLIDING_WINDOW`. Names the algorithm a rule wants, so the rule holds a name and not code. |
+| `StrategyFactory` | interface | `create(Rule)` returns a fresh `RateLimitStrategy`. One implementation per algorithm. |
+| `FixedWindowFactory` | class | Implements `StrategyFactory`: returns a new `FixedWindow` from the rule's numbers. |
+| `SlidingWindowFactory` | class | Implements `StrategyFactory`: returns a new `SlidingWindowLog` from the rule's numbers. |
+| `RateLimitStrategy` | interface | `boolean tryAcquire(LongSupplier clock)`. One instance holds the state of exactly one `(client, api)` pair. It must be thread-safe, and it reads the clock itself, inside its own lock. This is the algorithm seam. |
 | `FixedWindow` | class | Required algorithm: counter plus window id. |
 | `SlidingWindowLog` | class | Optional algorithm: exact, stores timestamps in a deque. |
 
 Not classes, on purpose:
 
 - The clock is a plain `LongSupplier` (epoch millis). Production passes `System::currentTimeMillis`. Tests pass `now::get` backed by an `AtomicLong`, so no sleeping.
-- No `Key` class (`Request` is the key). No builder, no `Algorithm` enum, no config object.
+- No `Key` class (`Request` is the key). No builder, no config object, no clock interface.
 
 ### Class diagram
 
@@ -95,18 +112,28 @@ classDiagram
     }
     class Rule {
         <<record>>
+        +Algorithm algorithm
         +int maxRequests
         +Duration window
-        +StrategyFactory factory
-        +newStrategy() RateLimitStrategy
+    }
+    class Algorithm {
+        <<enumeration>>
+        FIXED_WINDOW
+        SLIDING_WINDOW
     }
     class StrategyFactory {
         <<interface>>
-        +create(int maxRequests, long windowMillis) RateLimitStrategy
+        +create(Rule rule) RateLimitStrategy
+    }
+    class FixedWindowFactory {
+        +create(Rule rule) RateLimitStrategy
+    }
+    class SlidingWindowFactory {
+        +create(Rule rule) RateLimitStrategy
     }
     class RateLimitStrategy {
         <<interface>>
-        +tryAcquire(long nowMillis) boolean
+        +tryAcquire(LongSupplier clock) boolean
     }
     class RateLimiter {
         -rulesByApi
@@ -125,40 +152,48 @@ classDiagram
     RateLimiter ..> Request : key and input
     RateLimiter --> Rule : rulesByApi and defaultRule
     RateLimiter --> RateLimitStrategy : one per Request key
-    Rule --> StrategyFactory
+    RateLimiter --> StrategyFactory : one per Algorithm
+    Rule --> Algorithm
+    StrategyFactory ..> Rule : reads
     StrategyFactory ..> RateLimitStrategy : creates
+    FixedWindowFactory ..|> StrategyFactory
+    SlidingWindowFactory ..|> StrategyFactory
     FixedWindow ..|> RateLimitStrategy
     SlidingWindowLog ..|> RateLimitStrategy
 ```
 
-Fields of `RateLimiter`: `Map<String,Rule> rulesByApi` (immutable copy), `Rule defaultRule`, `ConcurrentHashMap<Request,RateLimitStrategy> state`, `LongSupplier clock`.
+Fields of `RateLimiter`: `Map<String,Rule> rulesByApi` (immutable copy), `Rule defaultRule`, `Map<Algorithm,StrategyFactory> factories` (immutable copy), `ConcurrentHashMap<Request,RateLimitStrategy> state`, `LongSupplier clock`. The map is built once, in the code that creates the limiter (`Main` in the exercise).
 
 ### Flow of `allow(request)`
 
 ```java
 public boolean allow(Request r) {
-    Rule rule = rulesByApi.getOrDefault(r.api(), defaultRule);               // 1
-    RateLimitStrategy s = state.computeIfAbsent(r, k -> rule.newStrategy()); // 2
-    return s.tryAcquire(clock.getAsLong());                                  // 3
+    Rule rule = rulesByApi.getOrDefault(r.api(), defaultRule);                 // 1
+    StrategyFactory factory = factories.get(rule.algorithm());                 // 2
+    RateLimitStrategy s = state.computeIfAbsent(r, k -> factory.create(rule)); // 3
+    return s.tryAcquire(clock);   // 4: the strategy reads the time itself
 }
 ```
 
 1. Resolve the rule by the exact API string. A missing API falls back to the default rule.
-2. Get the strategy for this `(clientId, api)`. If absent, create it from the rule's factory. Because the key includes the client and the API, budgets are isolated both ways.
-3. Read the time and ask the strategy. It checks and consumes in one step, then returns true or false. A rejected request does not consume budget.
+2. Look up the factory registered for the rule's algorithm.
+3. Get the strategy for this `(clientId, api)`. If absent, ask that factory to create one. Because the key includes the client and the API, budgets are isolated both ways.
+4. Ask the strategy and hand it the clock. It reads the time itself, inside its own lock, then checks and consumes in one step and returns true or false. A rejected request does not consume budget.
 
-`FixedWindow.tryAcquire(now)`, all inside `synchronized`:
+`FixedWindow.tryAcquire(clock)`, all inside `synchronized`:
 
 ```java
+long now = clock.getAsLong();                               // read inside the lock
 long w = now / windowMillis;
 if (w > currentWindow) { currentWindow = w; count = 0; }   // new window: reset
 if (count >= max) return false;
 count++; return true;
 ```
 
-`SlidingWindowLog.tryAcquire(now)`, all inside `synchronized`:
+`SlidingWindowLog.tryAcquire(clock)`, all inside `synchronized`:
 
 ```java
+long now = clock.getAsLong();                               // read inside the lock
 long cutoff = now - windowMillis;
 while (!log.isEmpty() && log.peekFirst() <= cutoff) log.pollFirst(); // expire
 if (log.size() >= max) return false;
@@ -172,7 +207,7 @@ Test example for `max=3, window=1000`: t=0, 1, 2 give true; t=3 to 999 give fals
 | Pattern | Where | Force |
 |---|---|---|
 | Strategy | `RateLimitStrategy` with `FixedWindow` and `SlidingWindowLog` | The algorithm varies per API and will grow (token bucket). The core must depend only on the interface. |
-| Factory (as a functional interface, not a class hierarchy) | `StrategyFactory` held by `Rule` | Rules are shared immutable config, but strategies are stateful and needed one per key, created lazily. The core must make fresh instances without naming a concrete class. |
+| Factory Method (one factory per algorithm, found through a map) | `StrategyFactory`, `FixedWindowFactory`, `SlidingWindowFactory` | Rules are shared immutable data, but strategies are stateful and needed one per key, created lazily. `RateLimiter` must make fresh instances without naming a concrete class, and adding an algorithm must not change `RateLimiter`. |
 | Constructor injection of the clock | `RateLimiter(rules, default, LongSupplier)` | Time must be controllable in tests. This is a technique, not a GoF pattern. |
 
 Deliberately not used:
@@ -180,13 +215,20 @@ Deliberately not used:
 - **Singleton:** the limiter is created once at startup and injected, and a singleton would hurt tests.
 - **Builder:** only three constructor inputs.
 - **Decorator, Observer, Chain of Responsibility:** no force asks for them.
-- **Abstract factory:** there is only one product family.
+- **Abstract factory:** there is only one product (the strategy), not a family of products that must match each other.
 
 Adding token bucket later:
 
 - Write `TokenBucket implements RateLimitStrategy`.
-- Configure `new Rule(100, Duration.ofMinutes(1), TokenBucket::new)`.
-- Callers and `RateLimiter` are untouched.
+- Write `TokenBucketFactory implements StrategyFactory`.
+- Add `TOKEN_BUCKET` to `Algorithm` and one entry to the factories map.
+- Configure `new Rule(Algorithm.TOKEN_BUCKET, 100, Duration.ofMinutes(1))`.
+- `RateLimiter` and its callers are untouched. Only two one-line edits happen at the edge: a new `Algorithm` value and a new entry in the factories map.
+
+Tried first and dropped:
+
+- A `StrategyFactory` passed into each `Rule` as a constructor reference such as `FixedWindow::new`. It works, but it has no named implementation to find and it hides which algorithm a rule uses.
+- A `switch` on the enum inside one factory class. It is easy to read, but every new algorithm means editing that class.
 
 ### Concurrency approach
 
@@ -209,12 +251,15 @@ Rejected alternatives:
 - **One bucket per distinct API string:** the default rule creates one bucket per distinct API string. Callers should pass a route template (`/users/{id}`), not the raw URL.
 - **Fixed window burst:** it allows up to 2x max across a window boundary. That is its known weakness, which is why the sliding window exists.
 - **Sliding log memory:** `SlidingWindowLog` is exact but costs O(max) memory per key. A sliding-window counter (previous and current count, weighted) is O(1) memory but approximate.
-- **Time read before the lock:** a strategy can occasionally see timestamps slightly out of order (a few ms). This never over-grants: `FixedWindow` only resets on a larger window id, and the sliding log only evicts from the head, so it can only be conservative.
+- **The clock is read inside the lock.** An earlier version read it in `RateLimiter` before taking the lock. A slow thread then arrived with an older timestamp than the ones already stored, and the sliding window admitted more than the limit (a reviewer showed it with a stress test, and I reproduced it with `500, 900, 1950, 1400` against a limit of 2). Passing the clock into the strategy fixes it. A check in `Main` fails against the old version in 10 of 10 runs.
+- **Clock assumptions:** the clock is non-negative and never runs backwards. If it did, the limiter fails safe (it blocks until time catches up) and never over-admits.
 - **Wall-clock jumps (NTP):** the fixed window tolerates a backward jump (no reset, so no extra grants). A monotonic source (`System.nanoTime() / 1_000_000`) would be safer in production.
 - **Hot key:** it serializes on one monitor. That is fine for a single JVM.
 - **Boolean only:** there is no retry-after or remaining-quota, and adding it would change callers.
 - **Not covered:** no hot reload of rules, no path patterns, no metrics (as agreed).
 - **`Request` as the key:** if it ever gains fields that should not be part of the key (cost, timestamp), introduce a separate `Key`.
+- **A small factory class per algorithm:** two extra classes for two algorithms. In return no logic is edited when an algorithm is added: the enum and the map get one new line each, and the wiring is one map in one place.
+- **A missing factory:** `RateLimiter` checks at construction that every rule's algorithm has a factory, so a wiring mistake fails at start-up, not on the first request.
 - **Token bucket parameters:** via `(max, window)` it maps to capacity = max and refill = max/window. Richer parameters (burst different from rate) would need a richer `Rule`.
 
 ### Assumptions
@@ -226,7 +271,7 @@ Rejected alternatives:
 - `maxRequests >= 1`, `window > 0`, and a non-null default rule are required. Violations throw `IllegalArgumentException` or NPE at construction, not in `allow()`.
 - A null `Request` or a null field is a programming error and throws NPE. This is not the "limited" case, which always returns false.
 - API matching is an exact string match. An empty client id is a valid key.
-- A rule's algorithm is chosen in code by a factory reference, not by a string or enum from a config file. Config parsing is out of scope.
+- A rule names its algorithm with the `Algorithm` enum. Reading rules from a config file is out of scope.
 - Rules are fixed at construction, so a strategy can keep the parameters it was created with.
 
 

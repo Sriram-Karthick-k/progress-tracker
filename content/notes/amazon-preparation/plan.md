@@ -53,7 +53,7 @@ MUST is now 90 min, which is 67% of the 135 usable minutes and over the 60% rule
 - **2. Top K and K-way merge.** A min-heap of size K gives the K largest in O(n log k). Tie-break comparators. Merge several sorted lists by keeping one pointer per list in the heap. Problems: 973 K Closest Points to Origin, 692 Top K Frequent Words, 373 Find K Pairs with Smallest Sums, and 23 Merge k Sorted Lists as the stretch.
 - **3. Intervals.** Sort by start and merge; sort by end for the greedy choice. Problems: 56 Merge Intervals, 57 Insert Interval, 435 Non-overlapping Intervals.
 - **4. Scheduling.** A min-heap of end times counts the rooms needed, and a sweep line over start and end events counts overlaps. One problem only: 253 Meeting Rooms II (Premium; free alternative 1094 Car Pooling). 621 Task Scheduler and 767 Reorganize String are dropped.
-- **5. Greedy.** Pick the locally best step and prove it never hurts later (the exchange argument), and learn the signs that greedy fails and DP is needed. Problems: 55 Jump Game, 45 Jump Game II, 763 Partition Labels, and 134 Gas Station as the stretch.
+- **5. Greedy.** Pick the locally best step and prove it never hurts later (the exchange argument), and learn the signs that greedy fails and DP is needed. Problems: 55 Jump Game, 45 Jump Game II, 763 Partition Labels, and 134 Gas Station as the stretch. On 2026-11-18 you said 55 and 134 were already solved, so 763 is in the daily log and 45 and 452 are the next unsolved ones.
 - **6. DP beyond 1D.** Your LeetCode profile shows 22 DP problems, mostly 1D. This item is the harder part: define the state in words, write the transition, fill a 2D table by hand, then compress it. Problems: 62 Unique Paths, 1143 Longest Common Subsequence, 322 Coin Change, with 72 Edit Distance as the stretch.
 
 ## Checklist
@@ -80,7 +80,8 @@ MUST is now 90 min, which is 67% of the 135 usable minutes and over the 60% rule
 
 - Coin Change II (518): the attempt had no return value and the memo key was only the amount, so it counted ordered sequences. Diagnosed, then viewed the solution.
 - 983 Minimum Cost For Tickets: solved with the four-question routine (contract, state, choices and combine, base case), written in words before any code. Two off-by-one bugs were found by tests (base case `days.length`, and a pass of length L covers `d` to `d+L-1`). Left to fix: the memo was an instance field, so a reused instance returns stale answers.
-- Still to do: one problem with a 2D state (state is two indexes), then fill its table by hand. Chosen: 1143 Longest Common Subsequence, planned for the morning of 2026-11-18. First question to answer in words: what do `i` and `j` point at, and what does `f(i, j)` return?
+- 1143 Longest Common Subsequence (2026-11-18): the state was derived in words, and the plain recursion is correct (it matches a table-based reference on 2000 random pairs). The memo works but was kept as an instance field with string keys: 762 ms and about 103 MB at 1000 by 1000, against 9 ms with a local `int[][]`. Still to do: apply that fix, then fill the bottom-up table by hand.
+- Next 2D problem: 72 Edit Distance, in the daily log for 2026-11-18.
 
 ## Not now
 
