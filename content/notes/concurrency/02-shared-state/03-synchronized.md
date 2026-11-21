@@ -27,7 +27,7 @@ While A holds the lock, B cannot start its read-add-write, so B can never read a
 
 ## The experiment
 
-`src/lab/shared/Counter.java`, the counter from the previous chapter with two changes: a lock object, and `counter++` inside a `synchronized` block.
+`03-synchronized/Counter.java`, the counter from the previous chapter with two changes: a lock object, and `counter++` inside a `synchronized` block.
 
 ```java
 import java.util.*;

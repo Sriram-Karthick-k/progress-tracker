@@ -22,7 +22,7 @@ The `finally` block runs on both paths: when the critical section finishes norma
 
 ## The experiment
 
-`src/lab/shared/LockCounter.java`, written by you. It is the two-thread counter again, now guarded by a `ReentrantLock` from `java.util.concurrent.locks`.
+`06-reentrantlock/LockCounter.java`, written by you. It is the two-thread counter again, now guarded by a `ReentrantLock` from `java.util.concurrent.locks`.
 
 ```java
 import java.util.concurrent.locks.ReentrantLock;
@@ -137,7 +137,7 @@ The second line is the other thread looking at the lock: it does not hold it, bu
 
 `lock.tryLock(500, TimeUnit.MILLISECONDS)` waits at most 500 ms for the lock. It returns `true` if it got the lock and `false` if the time ran out. `TimeUnit.MILLISECONDS` is just the unit of the 500. A `synchronized` block has no way to give up, which is a Java rule I did not run.
 
-`src/lab/shared/TryLockDemo.java`: thread A holds the lock for 2 seconds, and `main` tries to take it twice, once while A holds it and once after A is finished.
+`06-reentrantlock/TryLockDemo.java`: thread A holds the lock for 2 seconds, and `main` tries to take it twice, once while A holds it and once after A is finished.
 
 ```java
 import java.util.concurrent.TimeUnit;

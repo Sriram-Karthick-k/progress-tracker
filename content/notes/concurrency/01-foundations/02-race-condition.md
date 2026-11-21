@@ -28,7 +28,7 @@ Both threads read 5 before either wrote. Each added 1 to its own copy, so both w
 
 ## The experiment
 
-`src/lab/shared/Counter.java`, written by you. Two threads each add 1 to a shared `static int` 100,000 times. The right answer is 200,000.
+`Counter.java`, written by you. This is its first version, with no protection. The file now lives in `03-synchronized/`, where it was changed into the synchronized version of the next chapter, so the code below is a snapshot. Two threads each add 1 to a shared `static int` 100,000 times. The right answer is 200,000.
 
 ```java
 import java.util.*;

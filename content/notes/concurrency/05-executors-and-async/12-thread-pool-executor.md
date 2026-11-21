@@ -27,7 +27,7 @@ Read it top to bottom for one task. The queue is checked before the pool is allo
 
 ## The experiment
 
-`src/lab/shared/PoolLimits.java`, written by you. The pool has 2 core threads, at most 4 threads, a keep-alive of 10 seconds, and a queue that holds 2 tasks. Eight tasks that each take 2 seconds are submitted at once.
+`12-thread-pool-executor/PoolLimits.java`, written by you. The pool has 2 core threads, at most 4 threads, a keep-alive of 10 seconds, and a queue that holds 2 tasks. Eight tasks that each take 2 seconds are submitted at once.
 
 ```java
 import java.util.concurrent.ArrayBlockingQueue;

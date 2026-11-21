@@ -65,20 +65,12 @@ A topic is ticked as done only when it was run and you can explain it back in yo
 
 ## Run the lab
 
-Git Bash, from the project root:
+The code is in `playground/lld-practice/concurrency-lab`, with one folder per chapter, named like the chapter's note (`03-synchronized`, `08-wait-and-notify`, and so on). Every example is one file with no package and no build. From that folder, in Git Bash or PowerShell:
 
 ```bash
-cd playground/lld-practice/concurrency-lab
-javac -d out $(find src -name "*.java") && java -cp out lab.shared.JoinDemo
+java 01-threads-first-steps/Hello.java
 ```
 
-PowerShell:
-
-```powershell
-cd playground\lld-practice\concurrency-lab
-javac -d out (Get-ChildItem src -Recurse -Filter *.java).FullName; java -cp out lab.shared.JoinDemo
-```
-
-Change the class name at the end to run another example. Virtual threads need JDK 21 and this machine has JDK 17, so those examples will run in a throwaway Docker container. That setup is not done yet.
+Change the path to run another example. A new chapter gets its folder when its first file arrives. Virtual threads need JDK 21 and this machine has JDK 17, so those examples will run in a throwaway Docker container. That setup is not done yet.
 
 **Related:** [Threads: start and join](/notebook/concurrency/threads-start-join) · [Race condition](/notebook/concurrency/race-condition) · [LLD session 1: rate limiter](/notebook/lld/session-1-rate-limiter)

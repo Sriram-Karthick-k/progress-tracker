@@ -21,7 +21,7 @@ The queue sits between the two threads and does all the waiting. Neither thread 
 
 ## The experiment
 
-`src/lab/shared/QueueDemo.java`, written by you. It is `SlotDemo` with `Slot` replaced by an `ArrayBlockingQueue` of capacity 1. `BlockingQueue` is the interface and `ArrayBlockingQueue` is a queue backed by a fixed-size array, both in `java.util.concurrent`.
+`09-blocking-queues/QueueDemo.java`, written by you. It is `SlotDemo` with `Slot` replaced by an `ArrayBlockingQueue` of capacity 1. `BlockingQueue` is the interface and `ArrayBlockingQueue` is a queue backed by a fixed-size array, both in `java.util.concurrent`.
 
 ```java
 import java.util.concurrent.ArrayBlockingQueue;

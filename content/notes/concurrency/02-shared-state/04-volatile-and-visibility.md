@@ -26,7 +26,7 @@ The worker read `false` once and never asked again. `main` changed the field, bu
 
 ## The experiment
 
-`src/lab/shared/Visibility.java`, written by you. The worker loops until `stop` becomes true, and `main` sets it after one second. `join(3000)` waits at most 3 seconds for the worker, and `System.exit(0)` ends the whole program even if the worker is still looping. This is the version with `volatile`:
+`04-volatile-and-visibility/Visibility.java`, written by you. The worker loops until `stop` becomes true, and `main` sets it after one second. `join(3000)` waits at most 3 seconds for the worker, and `System.exit(0)` ends the whole program even if the worker is still looping. This is the version with `volatile`:
 
 ```java
 public class Visibility {

@@ -23,7 +23,7 @@ flowchart TD
 
 ## The experiment
 
-`src/lab/shared/MiniPool.java`, written by you, with two small fixes described below.
+`10-thread-pool-from-scratch/MiniPool.java`, written by you, with two small fixes described below.
 
 ```java
 import java.util.concurrent.ArrayBlockingQueue;

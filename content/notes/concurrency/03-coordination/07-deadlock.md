@@ -23,7 +23,7 @@ Follow the arrows: thread 1 waits for `second`, which thread 2 holds, and thread
 
 ## The experiment
 
-`src/lab/shared/DeadlockDemo.java`, written by you. The two threads take the same two locks in opposite order. The `sleep(200)` gives each thread time to take its first lock before it asks for the second. `join(3000)` and `System.exit(0)` make sure the program ends even though the threads are stuck.
+`07-deadlock/DeadlockDemo.java`, written by you. The two threads take the same two locks in opposite order. The `sleep(200)` gives each thread time to take its first lock before it asks for the second. `join(3000)` and `System.exit(0)` make sure the program ends even though the threads are stuck.
 
 ```java
 public class DeadlockDemo {

@@ -21,7 +21,7 @@ flowchart LR
 
 ## The experiment
 
-`src/lab/shared/ExecutorDemo.java`, written by you. `ExecutorService` is the pool interface, `Executors` makes pools, and `TimeUnit` is the unit for a timeout, all in `java.util.concurrent`.
+`11-executor-service/ExecutorDemo.java`, written by you. `ExecutorService` is the pool interface, `Executors` makes pools, and `TimeUnit` is the unit for a timeout, all in `java.util.concurrent`.
 
 ```java
 import java.util.concurrent.ExecutorService;
@@ -123,7 +123,7 @@ All three tasks finished and `main` had ended, yet the program kept running. The
 
 A `Runnable` returns nothing. A **`Callable`** is a task that returns a value and may throw a checked exception. When you `submit` a lambda that returns a value, the pool treats it as a `Callable` and gives you a **`Future`**: a handle for a result that is not ready yet. `future.get()` waits until the task has finished and returns its result.
 
-`src/lab/shared/FutureDemo.java`. Three tasks each sleep for 500 ms and return the square of a number. The first version of the file had `Executor.newFixedThreadPool`, which does not exist: the factory methods are in the class `Executors`, with an `s`.
+`11-executor-service/FutureDemo.java`. Three tasks each sleep for 500 ms and return the square of a number. The first version of the file had `Executor.newFixedThreadPool`, which does not exist: the factory methods are in the class `Executors`, with an `s`.
 
 ```java
 import java.util.ArrayList;
@@ -181,7 +181,7 @@ total 513 ms
 
 ## When a task throws
 
-`src/lab/shared/FailingTask.java`. Two tasks throw `IllegalStateException("boom")`. The first one's `Future` is ignored, and the second one's `get()` is called inside a `try` that catches `ExecutionException`.
+`11-executor-service/FailingTask.java`. Two tasks throw `IllegalStateException("boom")`. The first one's `Future` is ignored, and the second one's `get()` is called inside a `try` that catches `ExecutionException`.
 
 ```java
 import java.util.concurrent.ExecutionException;

@@ -27,7 +27,7 @@ Both threads read 5, but only one wins the swap. The loser's check fails, so it 
 
 ## The experiment
 
-`src/lab/shared/AtomicCounter.java`, written by you. `AtomicInteger` is in `java.util.concurrent.atomic`. Two threads each call `incrementAndGet()` 100,000 times.
+`05-atomics-and-cas/AtomicCounter.java`, written by you. `AtomicInteger` is in `java.util.concurrent.atomic`. Two threads each call `incrementAndGet()` 100,000 times.
 
 ```java
 import java.util.concurrent.atomic.AtomicInteger;

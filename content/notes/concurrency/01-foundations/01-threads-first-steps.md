@@ -27,7 +27,7 @@ After step 1 two threads run at the same time. While `main` sleeps for 100 ms, t
 
 ## The experiment
 
-`src/lab/shared/Hello.java`, written by you and run with `java Hello.java`. That is the JDK's single-file mode: it compiles and runs one file, so there is no build and no package.
+`01-threads-first-steps/Hello.java`, written by you and run with `java Hello.java`. That is the JDK's single-file mode: it compiles and runs one file, so there is no build and no package.
 
 ```java
 import java.util.*;
