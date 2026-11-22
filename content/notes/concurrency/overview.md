@@ -1,13 +1,13 @@
-# 1. Concurrency roadmap: from Thread to virtual threads
+# 1. Concurrency handbook: from Thread to virtual threads
 
-Concurrency means several pieces of code making progress at the same time. Starting a second thread is easy. Almost every bug comes from one thing: **two threads touching the same data**.
+Concurrency means several pieces of code making progress at the same time. Starting a second thread is easy. Almost every bug comes from one thing: **two threads touching the same data**. This handbook goes from a single `Thread` to locks, queues, pools and the rest of `java.util.concurrent`, one small runnable example per idea.
 
 > [!TIP]
-> - **What this is:** a hands-on lab. The code lives in `playground/lld-practice/concurrency-lab`, one small example per idea, and each note here records what was run and what it showed.
-> - **The path:** five stages, from `Thread` and `synchronized` up to thread pools, ForkJoin and virtual threads. Every Java method is explained the first time it appears.
+> - **Shape of every chapter:** the problem, a runnable example with its output, the mechanism (often the JDK source), the pitfalls, interview questions and a key-takeaways table.
+> - **Reading order:** chapters are numbered in the order they build on each other. Shared state comes first, then the tools that fix it, then pools and async code.
 > - **The goal:** in an LLD round, pick the right tool to make a design thread-safe and say why. `synchronized` everywhere is one tool, not the only one.
 
-## The five stages at a glance
+## The areas at a glance
 
 ```mermaid
 mindmap
@@ -16,52 +16,60 @@ mindmap
       Race condition
       synchronized
       volatile
-    Coordination
-      wait and notify
+    Locks and signals
       ReentrantLock
-      Deadlock
-    Concurrent tools
-      Atomics and CAS
-      ConcurrentHashMap
+      wait and notify
+      Latch and semaphore
+    Queues and pools
       BlockingQueue
-    Executors
       ThreadPoolExecutor
+      ConcurrentHashMap
+    Async and parallel
       CompletableFuture
-    Parallelism
       ForkJoin
       Virtual threads
 ```
 
-Stage 1 is the problem (shared data breaks). Stages 2 and 3 are the tools that fix it. Stages 4 and 5 are how real programs run many tasks.
+Shared state is the problem. Locks and signals, atomics and concurrent collections are the tools that fix it. Queues, pools and async code are how real programs run many tasks.
 
-## Topics in order
+## Chapters
 
-| # | Topic | In plain words | Status |
-|---|---|---|---|
-| 1 | Threads: start and join | Run code on a second line of execution, and wait for it to finish | example run, see [note 2](/notebook/concurrency/threads-start-join) |
-| 2 | Race condition | Two threads change one variable and some changes are lost | example run, see [note 3](/notebook/concurrency/race-condition) |
-| 3 | synchronized | Let only one thread at a time run a block of code | next |
-| 4 | volatile | Make sure other threads see a change | not started |
-| 5 | wait and notify | A thread sleeps until another thread says something changed | not started |
-| 6 | ReentrantLock and Condition | A lock you control by hand, with the same waiting ability | not started |
-| 7 | Deadlock | Two threads each hold what the other needs, and both wait forever | not started |
-| 8 | Atomics and CAS | Thread-safe counters without a lock | not started |
-| 9 | ConcurrentHashMap | A map that many threads can use at once | not started |
-| 10 | BlockingQueue | A queue where producers wait when it is full and consumers wait when it is empty | not started |
-| 11 | ThreadPoolExecutor | A group of reusable threads that runs the tasks you submit | not started |
-| 12 | CompletableFuture | Run tasks in the background and combine their results | not started |
-| 13 | ForkJoin | Split a big task into pieces, run them in parallel, join the results | not started |
-| 14 | Virtual threads | Lightweight threads managed by the JVM instead of the operating system (JDK 21) | not started |
+| # | Chapter | In plain words |
+|---|---|---|
+| 01 | [Threads: create, start, join and sleep](/notebook/concurrency/01-foundations/01-threads-first-steps) | Run code on a second line of execution, and wait for it to finish |
+| 02 | [Race condition](/notebook/concurrency/01-foundations/02-race-condition) | Two threads change one variable and some changes are lost |
+| 03 | [synchronized](/notebook/concurrency/02-shared-state/03-synchronized) | Let only one thread at a time run a block of code |
+| 04 | [volatile](/notebook/concurrency/02-shared-state/04-volatile-and-visibility) | Make sure other threads see a change |
+| 05 | [Atomics and CAS](/notebook/concurrency/02-shared-state/05-atomics-and-cas) | Thread-safe counters without a lock |
+| 06 | [ReentrantLock](/notebook/concurrency/03-coordination/06-reentrantlock) | A lock taken and released by hand, with a timeout option |
+| 07 | [Deadlock](/notebook/concurrency/03-coordination/07-deadlock) | Two threads each hold what the other needs, and both wait forever |
+| 08 | [wait and notify](/notebook/concurrency/03-coordination/08-wait-and-notify) | A thread sleeps until another thread says something changed |
+| 09 | [BlockingQueue](/notebook/concurrency/04-collections-and-queues/09-blocking-queues) | A queue where producers wait when it is full and consumers wait when it is empty |
+| 10 | [A thread pool from scratch](/notebook/concurrency/05-executors-and-async/10-thread-pool-from-scratch) | Workers that take tasks from a queue |
+| 11 | [ExecutorService](/notebook/concurrency/05-executors-and-async/11-executor-service) | A ready-made pool, plus Future and failing tasks |
+| 12 | [ThreadPoolExecutor](/notebook/concurrency/05-executors-and-async/12-thread-pool-executor) | Core threads, queue, max threads and rejection |
+| 13 | [ConcurrentHashMap](/notebook/concurrency/04-collections-and-queues/13-concurrent-collections) | A map that many threads can use at once |
+| 14 | [CountDownLatch](/notebook/concurrency/03-coordination/14-countdownlatch) | Wait for N events, or hold everyone at a gate |
+| 15 | [Semaphore](/notebook/concurrency/03-coordination/15-semaphore) | Limit how many threads use a resource at once |
+| 16 | [ReadWriteLock](/notebook/concurrency/03-coordination/16-readwritelock) | Many readers share the lock, a writer is alone |
 
-A topic is ticked as done only when it was run and you can explain it back in your own words. Nothing is ticked yet.
+Planned next: `CompletableFuture`, ForkJoin, virtual threads (JDK 21), copy-on-write and synchronized collections, immutability and `ThreadLocal`, thread-safe class design for LLD (rate limiter, LRU cache), and reading thread dumps.
 
-## How each topic runs
+## Which tool for which problem
 
-1. I show one small runnable example and the output I got.
-2. I explain the one new idea in it, and every new method the first time it appears.
-3. You write your own version in the lab folder.
-4. I compile it, run it and review it.
-5. The result goes into the note for that topic. Anything marked *(verified)* was actually run.
+| Problem | Tool | Chapter |
+|---|---|---|
+| Two threads update one counter | `AtomicInteger`, or `synchronized` | 05, 03 |
+| A flag written by one thread and read by another | `volatile` | 04 |
+| Several variables must change together | `synchronized` or `ReentrantLock` | 03, 06 |
+| Give up on a lock after a timeout | `ReentrantLock.tryLock(timeout, unit)` | 06 |
+| Wait until a condition becomes true | `wait()` and `notifyAll()`, a `Condition`, or a `BlockingQueue` | 08, 09 |
+| Hand work from producers to consumers | `BlockingQueue` | 09 |
+| Run many tasks on a limited number of threads | `ThreadPoolExecutor` | 12 |
+| Many threads update one map | `ConcurrentHashMap.merge` and the other compound calls | 13 |
+| Wait for N tasks, or release many threads at once | `CountDownLatch` | 14 |
+| Limit concurrent access to a resource | `Semaphore` | 15 |
+| Data that is read much more often than it is written | `ReentrantReadWriteLock` | 16 |
 
 ## Run the lab
 
@@ -71,6 +79,6 @@ The code is in `playground/lld-practice/concurrency-lab`, with one folder per ch
 java 01-threads-first-steps/Hello.java
 ```
 
-Change the path to run another example. A new chapter gets its folder when its first file arrives. Virtual threads need JDK 21 and this machine has JDK 17, so those examples will run in a throwaway Docker container. That setup is not done yet.
+Change the path to run another example. Virtual threads need JDK 21 and the host has JDK 17, so those examples run in a throwaway JDK 21 Docker container.
 
-**Related:** [Threads: start and join](/notebook/concurrency/threads-start-join) · [Race condition](/notebook/concurrency/race-condition) · [LLD session 1: rate limiter](/notebook/lld/session-1-rate-limiter)
+**Related:** [LLD session 1: rate limiter](/notebook/lld/session-1-rate-limiter)

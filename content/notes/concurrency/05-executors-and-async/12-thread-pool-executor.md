@@ -4,7 +4,7 @@
 
 > [!TIP]
 > - **The order for each new task:** (1) fewer than the core number of threads running? Start a new thread. (2) Otherwise, does the queue have room? Queue it. (3) Otherwise, fewer than the maximum number of threads? Start an extra thread. (4) Otherwise, reject it.
-> - **The queue comes before the extra threads.** With 2 core threads, 4 maximum and a queue of 2, tasks 4 and 5 started on new threads while tasks 2 and 3 were still waiting in the queue.
+> - **The queue comes before the extra threads.** With 2 core threads, 4 maximum and a queue of 2, tasks 4 and 5 start on new threads while tasks 2 and 3 are still waiting in the queue.
 > - **`newFixedThreadPool` never grows and never rejects,** because its queue has no limit.
 
 ## The decision for every new task
@@ -25,9 +25,9 @@ flowchart TD
 
 Read it top to bottom for one task. The queue is checked before the pool is allowed to grow past its core size.
 
-## The experiment
+## Example
 
-`12-thread-pool-executor/PoolLimits.java`, written by you. The pool has 2 core threads, at most 4 threads, a keep-alive of 10 seconds, and a queue that holds 2 tasks. Eight tasks that each take 2 seconds are submitted at once.
+The pool has 2 core threads, at most 4 threads, a keep-alive of 10 seconds, and a queue that holds 2 tasks. Eight tasks that each take 2 seconds are submitted at once.
 
 ```java
 import java.util.concurrent.ArrayBlockingQueue;
@@ -35,14 +35,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class PoolLimits {
-  public static void main(String args[]) {
+
+  public static void main(String[] args) {
     ThreadPoolExecutor pool = new ThreadPoolExecutor(2, 4, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(2));
     for (int i = 0; i < 8; i++) {
       int taskId = i;
       try {
         pool.submit(() -> {
           try {
-
             System.err.println("task " + taskId + " started on " + Thread.currentThread().getName());
             Thread.sleep(2000);
           } catch (Exception e) {
@@ -53,13 +53,13 @@ public class PoolLimits {
         System.err.println("Task " + taskId + " rejected");
       }
     }
-    System.err.println("poolSize: "+pool.getPoolSize()+", queueSize: "+pool.getQueue().size());
+    System.err.println("poolSize: " + pool.getPoolSize() + ", queueSize: " + pool.getQueue().size());
     pool.shutdown();
   }
 }
 ```
 
-Output of the first run *(verified, a second run had the same shape)*:
+Example output:
 
 ```text
 Task 6 rejected
@@ -80,11 +80,11 @@ task 3 started on pool-1-thread-2
 | 4 and 5 | The queue was full, so it started extra threads | `task 4` on `pool-1-thread-3` and `task 5` on `pool-1-thread-4`, started at once. `poolSize: 4`. |
 | 6 and 7 | Both limits were reached, so it rejected them | `Task 6 rejected`, `Task 7 rejected` |
 
-Tasks 4 and 5 were submitted after tasks 2 and 3, yet they started first. The queued tasks waited about 2 seconds for a thread to free up. The `System.err` stream and `System.out` both show on the console, so the choice makes no difference here.
+Tasks 4 and 5 were submitted after tasks 2 and 3, yet they start first. The queued tasks wait about 2 seconds for a thread to free up.
 
 ## The same order in the JDK source
 
-Read from the `src.zip` of JDK 17.0.20 *(verified)*, comments removed:
+`ThreadPoolExecutor.execute` in the JDK 17 source, comments removed:
 
 ```java
 public void execute(Runnable command) {
@@ -112,7 +112,7 @@ public void execute(Runnable command) {
 
 ## The ready-made pools
 
-Also from the JDK source *(verified)*:
+Also from the JDK source:
 
 ```java
 public static ExecutorService newFixedThreadPool(int nThreads) {
@@ -130,13 +130,13 @@ public static ExecutorService newCachedThreadPool() {
 
 | Pool | Core and max threads | Queue | What it means |
 |---|---|---|---|
-| `newFixedThreadPool(n)` | n and n | `LinkedBlockingQueue` with no capacity given | Never grows past n. The queue has no practical limit, so it never fills and nothing is rejected: tasks pile up (documented, not run). |
-| `newCachedThreadPool()` | 0 and `Integer.MAX_VALUE` | `SynchronousQueue`, which holds no tasks | A task that finds no idle thread gets a new thread, so under heavy load the number of threads is not capped (documented, not run). |
+| `newFixedThreadPool(n)` | n and n | `LinkedBlockingQueue` with no capacity given | Never grows past n. The queue has no practical limit, so it never fills and nothing is rejected: tasks pile up. |
+| `newCachedThreadPool()` | 0 and `Integer.MAX_VALUE` | `SynchronousQueue`, which holds no tasks | A task that finds no idle thread gets a new thread, so under heavy load the number of threads is not capped. |
 
 > [!WARNING]
-> **A pool with an unbounded queue hides overload.** The fixed pool accepts every task and queues it, so a flood of work grows memory instead of failing fast. Build a `ThreadPoolExecutor` yourself with a bounded queue when you want a limit and a decision about what to do when it is reached. This follows from the source above, and I did not run an overload test.
+> **A pool with an unbounded queue hides overload.** The fixed pool accepts every task and queues it, so a flood of work grows memory instead of failing fast. Build a `ThreadPoolExecutor` with a bounded queue when a limit is wanted, and a decision about what to do when it is reached.
 
-The other settings, all from the documentation and not run here:
+Other settings of the constructor:
 
 | Setting | Meaning |
 |---|---|
@@ -146,9 +146,9 @@ The other settings, all from the documentation and not run here:
 ## Interview questions
 
 <details>
-<summary>A pool has 2 core threads, a maximum of 4 and a queue of 2. You submit 8 tasks that each take 2 seconds. Which run now, which wait, which are rejected?</summary>
+<summary>A pool has 2 core threads, a maximum of 4 and a queue of 2. Eight tasks that each take 2 seconds are submitted. Which run now, which wait, which are rejected?</summary>
 
-Tasks 0 and 1 run on the core threads. Tasks 2 and 3 go into the queue. Tasks 4 and 5 start on two extra threads, because the queue is full and the pool is below its maximum of 4. Tasks 6 and 7 are rejected. In the experiment `poolSize` was 4 and `queueSize` 2 right after the loop, and tasks 6 and 7 printed `rejected`.
+Tasks 0 and 1 run on the core threads. Tasks 2 and 3 go into the queue. Tasks 4 and 5 start on two extra threads, because the queue is full and the pool is below its maximum of 4. Tasks 6 and 7 are rejected. Right after the loop `poolSize` is 4 and `queueSize` is 2.
 </details>
 
 <details>
@@ -160,7 +160,7 @@ The pool tries the queue before it creates a thread above the core size. In `exe
 <details>
 <summary>A service uses Executors.newFixedThreadPool(10) and under a traffic spike its memory climbs until it fails. What is the likely cause and the change?</summary>
 
-The fixed pool is built on a `LinkedBlockingQueue` with no capacity, so every extra task waits in the queue and the pool never rejects anything. Build a `ThreadPoolExecutor` with a bounded queue and a rejection policy, so overload fails fast or slows the caller. This follows from the JDK source, and I did not run an overload test.
+The fixed pool is built on a `LinkedBlockingQueue` with no capacity, so every extra task waits in the queue and the pool never rejects anything. Build a `ThreadPoolExecutor` with a bounded queue and a rejection policy, so overload fails fast or slows the caller.
 </details>
 
 ## Key takeaways
@@ -168,8 +168,8 @@ The fixed pool is built on a `LinkedBlockingQueue` with no capacity, so every ex
 | Remember | Because |
 |---|---|
 | Core threads, then the queue, then extra threads, then rejection | The source of `execute` tries `addWorker`, then `offer`, then `addWorker` again, then `reject` |
-| The queue is used before the pool grows | Tasks 4 and 5 started on new threads while 2 and 3 waited in the queue |
-| 2 core, 4 max and a queue of 2 hold 6 tasks | Tasks 6 and 7 were rejected |
+| The queue is used before the pool grows | Tasks 4 and 5 start on new threads while 2 and 3 wait in the queue |
+| 2 core, 4 max and a queue of 2 hold 6 tasks | The 7th and 8th are rejected |
 | `newFixedThreadPool` has an unbounded queue | It is built with `new LinkedBlockingQueue<Runnable>()` |
 | `newCachedThreadPool` has no thread limit | Its maximum is `Integer.MAX_VALUE` |
 

@@ -4,8 +4,8 @@
 
 > [!TIP]
 > - **`synchronized (lock) { ... }`** is a block that only one thread at a time can be inside. A thread must hold the lock to enter, and any other thread waits at the door.
-> - **Threads exclude each other only if they use the same lock object.** That is why the lock is one shared `static final` object. With a separate lock per thread, 10 of 10 runs were wrong.
-> - **Result:** the two-thread counter printed 200000 in 10 of 10 runs, against 1 of 10 without it.
+> - **Threads exclude each other only if they use the same lock object.** A lock created separately for each thread protects nothing, because no two threads ever compete for it.
+> - **A lock belongs to an object, not to a method.** All `synchronized` instance methods of one object share that object's lock. Different objects have different locks.
 
 ## What happens, step by step
 
@@ -25,69 +25,53 @@ sequenceDiagram
 
 While A holds the lock, B cannot start its read-add-write, so B can never read a value that A is halfway through changing. The three steps of one thread now happen as one unit.
 
-## The experiment
+## Example: a shared lock object
 
-`03-synchronized/Counter.java`, the counter from the previous chapter with two changes: a lock object, and `counter++` inside a `synchronized` block.
+The counter from the previous chapter with two changes: a lock object, and `counter++` inside a `synchronized` block.
 
 ```java
-import java.util.*;
 public class Counter {
-  static int counter=0;
+
+  static int counter = 0;
   static final Object lock = new Object();
-  public static void main(String args[]) throws Exception{
-    int numberOfThreads = 2, maxCounter = 1_00_000;
-    Thread[] t = new Thread[2];
-    for(int i=0;i<numberOfThreads;i++){
-      t[i] = new Thread(()->{
-        for(int j=0;j<maxCounter;j++){
-          synchronized (lock){
+
+  public static void main(String[] args) throws Exception {
+    int numberOfThreads = 2, maxCounter = 100_000;
+    Thread[] t = new Thread[numberOfThreads];
+    for (int i = 0; i < numberOfThreads; i++) {
+      t[i] = new Thread(() -> {
+        for (int j = 0; j < maxCounter; j++) {
+          synchronized (lock) {
             counter++;
           }
         }
       });
       t[i].start();
     }
-    for(int i=0;i<numberOfThreads;i++){
+    for (int i = 0; i < numberOfThreads; i++) {
       t[i].join();
     }
-    System.out.print(counter);
+    System.out.println(counter);
   }
 }
 ```
 
-I ran it 10 times, one result per line *(verified)*:
+The output is `200000` on every run. Without the lock the same program gives a different wrong answer almost every run.
 
-```text
-200000
-200000
-200000
-200000
-200000
-200000
-200000
-200000
-200000
-200000
-```
-
-Without the lock the same program gave one correct result in 10 runs and nine different wrong ones.
-
-## Break it: a different lock for each thread
-
-The rule says the threads must share the lock. To see it fail, the `static final` lock field was removed and `Object lock = new Object();` was put inside the thread's lambda, so each thread takes a lock of its own. The `synchronized` block itself is unchanged:
+## Pitfall: a different lock for each thread
 
 ```java
-      t[i] = new Thread(()->{
-        Object lock = new Object();
-        for(int j=0;j<maxCounter;j++){
-          synchronized (lock){
+      t[i] = new Thread(() -> {
+        Object lock = new Object();          // a new lock for every thread
+        for (int j = 0; j < maxCounter; j++) {
+          synchronized (lock) {
             counter++;
           }
         }
       });
 ```
 
-Ten runs *(verified)*:
+Example output of ten runs:
 
 ```text
 189782
@@ -102,7 +86,7 @@ Ten runs *(verified)*:
 163552
 ```
 
-All ten are wrong. Each thread locks an object that only it uses, so neither thread ever waits for the other and the read-add-write steps overlap exactly as they did without any lock. `synchronized` did not fail: it only keeps out threads that want the same lock, and here nothing was shared.
+All are wrong. Each thread locks an object that only it uses, so neither thread ever waits for the other and the read-add-write steps overlap exactly as they do without any lock. `synchronized` did not fail: it only keeps out threads that want the same lock, and here nothing was shared.
 
 ## Why the lock is a separate object
 
@@ -111,55 +95,58 @@ Every Java object has a lock built in, and `synchronized (x)` means "take the lo
 | Question | Answer |
 |---|---|
 | Why not lock on `counter`? | It is an `int`, a primitive, and primitives have no lock. |
-| Why `static`? | There must be one lock shared by every thread. The threads here all run code of the same class, so a static field is one object for all of them. |
+| Why `static`? | There must be one lock shared by every thread. A static field is one object for all of them. |
 | Why `final`? | The field must never point to a different object, or two threads could end up locking different things. |
-| Could it be another object? | Yes. `synchronized (Counter.class)` would also work here, and so would `this` in non-static code. A private lock object is preferred because no outside code can take it. I did not run those variants. |
+| Could it be another object? | Yes. `synchronized (Counter.class)` also works, and so does `this` in non-static code. A private lock object is preferred because no outside code can take it. |
 
 ## synchronized on a method: the lock is `this`
 
-Inside a class you can mark a whole method `synchronized` instead of writing a block. The lock is then the object the method is called on, `this`, so no lock field is needed. This is `SafeCounter`, written by you. One instance is shared by both threads, so both threads take the same lock:
+A whole method can be marked `synchronized` instead of writing a block. The lock is then the object the method is called on, `this`, so no lock field is needed. One `SafeCounter` instance is shared by both threads, so both take the same lock:
 
 ```java
-import java.util.*;
-public class Counter {
-  public static void main(String args[]) throws Exception{
-    int numberOfThreads = 2, maxCounter = 1_00_000;
+public class SafeCounterDemo {
+
+  public static void main(String[] args) throws Exception {
+    int numberOfThreads = 2, maxCounter = 100_000;
     SafeCounter sc = new SafeCounter();
-    Thread[] t = new Thread[2];
-    for(int i=0;i<numberOfThreads;i++){
-      t[i] = new Thread(()->{
-        for(int j=0;j<maxCounter;j++){
+    Thread[] t = new Thread[numberOfThreads];
+    for (int i = 0; i < numberOfThreads; i++) {
+      t[i] = new Thread(() -> {
+        for (int j = 0; j < maxCounter; j++) {
           sc.increment();
         }
       });
       t[i].start();
     }
-    for(int i=0;i<numberOfThreads;i++){
+    for (int i = 0; i < numberOfThreads; i++) {
       t[i].join();
     }
-    System.out.print(sc.get());
+    System.out.println(sc.get());
   }
 }
-class SafeCounter{
-  private int counter  =0;
-  public synchronized int get(){
-    return this.counter;
+
+class SafeCounter {
+  private int counter = 0;
+
+  public synchronized int get() {
+    return counter;
   }
-  public synchronized void increment(){
-    counter+=1;
+
+  public synchronized void increment() {
+    counter += 1;
   }
 }
 ```
 
-Ten runs *(verified)*: all ten printed `200000`.
+The output is `200000` on every run.
 
-A `synchronized` method is shorthand for a block on `this`, so `increment()` behaves like `public void increment() { synchronized (this) { counter += 1; } }`. That equivalence comes from the Java language specification and was not run separately here.
+A `synchronized` method is shorthand for a block on `this`, so `increment()` behaves like `public void increment() { synchronized (this) { counter += 1; } }`.
 
 `get()` and `increment()` are both `synchronized`, so they use the same lock: while one thread is inside one of them, no other thread can be inside the other on the same object. Why `get()` also needs the lock is the topic of the next chapter.
 
 ## One object, one lock: two methods and two objects
 
-`Room.java`, run by you. It has two `synchronized` methods that each take one second. The same two calls run first on one `Room`, then on two different `Room` objects, and each case prints the total time. `room::a` is a method reference, shorthand for `() -> room.a()`.
+`Room` has two `synchronized` methods that each take one second. The same two calls run first on one `Room`, then on two different `Room` objects, and each case prints the total time. `room::a` is a method reference, shorthand for `() -> room.a()`.
 
 ```java
 public class Room {
@@ -209,7 +196,7 @@ public class Room {
 }
 ```
 
-Output of one run *(verified)*:
+Example output:
 
 ```text
 --- one Room, two threads ---
@@ -228,13 +215,13 @@ total: 1007 ms
 
 | Case | What the output shows | Why |
 |---|---|---|
-| One `Room` | `leave a` came before `enter b`, total about 2 seconds | `a()` and `b()` both lock on the same `room`, so `b()` waited for `a()` to release it |
-| Two `Room` objects | both `enter` lines came before any `leave`, total about 1 second | Two objects have two locks, so nothing waited |
+| One `Room` | `leave a` comes before `enter b`, total about 2 seconds | `a()` and `b()` both lock on the same `room`, so `b()` waits for `a()` to release it |
+| Two `Room` objects | both `enter` lines come before any `leave`, total about 1 second | Two objects have two locks, so nothing waits |
 
 > [!IMPORTANT]
-> **A lock belongs to an object, not to a method.** All `synchronized` instance methods of one object share that object's single lock. Different objects have different locks. This does not mean only one thread can touch the object: it means only one thread at a time can be inside synchronized code that uses that lock. A method that is not marked `synchronized` is not stopped by the lock. `Room` has no such method, so I checked this in a separate scratch file: while one thread held the lock inside a `synchronized` method, another thread called a plain method on the same object and it ran straight away *(verified)*.
+> **A lock belongs to an object, not to a method.** All `synchronized` instance methods of one object share that object's single lock. Different objects have different locks. This does not mean only one thread can touch the object: only one thread at a time can be inside synchronized code that uses that lock. A method that is not marked `synchronized` is not stopped by the lock, so it can run while another thread holds the lock inside a `synchronized` method.
 
-## What the lock does and does not give you
+## Vocabulary
 
 | Term | Meaning |
 |---|---|
@@ -246,27 +233,27 @@ total: 1007 ms
 ## Interview questions
 
 <details>
-<summary>After adding synchronized the counter printed 200000 in all 10 runs. Is it now proven thread-safe by those runs?</summary>
+<summary>After adding synchronized the counter printed 200000 in all ten test runs. Does that prove it is thread-safe?</summary>
 
-The runs are evidence, not the proof. The guarantee comes from the lock: only one thread at a time can run the read, add and write steps, so no update can be lost. The runs matter because the same program without the lock gave 1 correct result in 10.
+The runs are evidence, not the proof. The guarantee comes from the lock: only one thread at a time can run the read, add and write steps, so no update can be lost. The runs matter because the same program without the lock gives wrong answers in most runs.
 </details>
 
 <details>
 <summary>Two threads must exclude each other around counter++. What must be true of the object they synchronize on?</summary>
 
-It must be the same object for both threads. A lock only keeps out threads that try to take that same lock. A `static final` field gives one shared object. When each thread was given its own lock, all 10 runs were wrong (between 162869 and 199215).
+It must be the same object for both threads. A lock only keeps out threads that try to take that same lock. A `static final` field gives one shared object. If each thread creates its own lock object, the counter is still wrong, because the threads never compete for the same lock.
 </details>
 
 <details>
 <summary>A teammate says synchronized makes a program sequential, so threads are useless. Is that right?</summary>
 
-Only the code inside the synchronized block is one thread at a time. Anything outside it still runs in parallel. In this counter the whole loop body is inside the block, so there is almost nothing left to run in parallel, which is why a lock should cover as little code as possible. I did not measure the cost here.
+Only the code inside the synchronized block is one thread at a time. Anything outside it still runs in parallel. In this counter the whole loop body is inside the block, so there is almost nothing left to run in parallel, which is why a lock should cover as little code as possible.
 </details>
 
 <details>
 <summary>A class has two synchronized methods, a() and b(). Thread 1 is inside a(). Can thread 2 enter b() on the same object? On a different object?</summary>
 
-On the same object, no: both methods lock on `this`, so thread 2 waits until thread 1 leaves `a()`. On a different object, yes, because that object has its own lock. In the experiment, two calls of one second each took 2020 ms on one `Room` and 1007 ms on two `Room` objects.
+On the same object, no: both methods lock on `this`, so thread 2 waits until thread 1 leaves `a()`. On a different object, yes, because that object has its own lock. Two calls of one second each take about 2 seconds on one `Room` and about 1 second on two `Room` objects.
 </details>
 
 ## Key takeaways
@@ -276,9 +263,8 @@ On the same object, no: both methods lock on `this`, so thread 2 waits until thr
 | `synchronized (lock) { ... }` lets one thread in at a time | The others wait until the lock is released |
 | The lock is an object, and every object has one | A primitive like `int` cannot be a lock |
 | Threads must share the same lock object | A lock only keeps out threads that want that same lock |
-| The counter went from 1 of 10 correct to 10 of 10 | The three steps now run as one unit |
-| A different lock per thread protects nothing | All 10 runs were wrong when each thread had its own lock |
-| A `synchronized` method locks on `this` | `SafeCounter` shared by two threads gave 200000 in 10 of 10 runs |
-| Same object means same lock, different objects mean different locks | Two one-second calls took 2020 ms on one `Room` and 1007 ms on two |
+| A different lock per thread protects nothing | The threads never compete, so the steps still overlap |
+| A `synchronized` method locks on `this` | Two threads sharing one `SafeCounter` use the same lock |
+| Same object means same lock, different objects mean different locks | Two one-second calls take 2 seconds on one `Room` and 1 second on two |
 
 **Related:** [Concurrency handbook](/notebook/concurrency/overview) · **Previous:** [Race condition](/notebook/concurrency/01-foundations/02-race-condition)

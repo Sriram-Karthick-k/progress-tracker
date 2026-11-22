@@ -4,8 +4,9 @@ A deadlock is when threads wait for locks that are held by each other, so none o
 
 > [!TIP]
 > - **The shape:** thread 1 holds lock `first` and wants `second`. Thread 2 holds `second` and wants `first`. Each waits for the other forever.
-> - **Evidence:** after `join(3000)` both threads were still alive in 3 of 3 runs, with no exception and no output.
-> - **It depends on timing.** With a 200 ms pause between the two locks it happened every time. Without the pause, 10 of 10 runs finished normally, but the bug was still in the code.
+> - **From the outside:** both threads stay alive, the CPU is idle, and there is no exception and no output.
+> - **It depends on timing.** If the two threads rarely overlap, the code can pass every test and still deadlock in production.
+> - **The usual fix:** take the locks in the same order in every thread.
 
 ## What goes wrong
 
@@ -21,20 +22,21 @@ flowchart TD
 
 Follow the arrows: thread 1 waits for `second`, which thread 2 holds, and thread 2 waits for `first`, which thread 1 holds. That cycle is the deadlock.
 
-## The experiment
+## Example
 
-`07-deadlock/DeadlockDemo.java`, written by you. The two threads take the same two locks in opposite order. The `sleep(200)` gives each thread time to take its first lock before it asks for the second. `join(3000)` and `System.exit(0)` make sure the program ends even though the threads are stuck.
+Two threads take the same two locks in opposite order. The `sleep(200)` gives each thread time to take its first lock before it asks for the second. `join(3000)` and `System.exit(0)` make sure the demo ends even though the threads are stuck.
 
 ```java
 public class DeadlockDemo {
-  public static void main(String args[]) throws Exception {
+
+  public static void main(String[] args) throws Exception {
     Object first = new Object(), second = new Object();
     Thread t1 = new Thread(() -> {
       try {
         synchronized (first) {
           Thread.sleep(200);
           synchronized (second) {
-            System.out.print("T1 done");
+            System.out.println("T1 done");
           }
         }
       } catch (Exception e) {
@@ -65,14 +67,14 @@ public class DeadlockDemo {
 }
 ```
 
-Output, the same in 3 of 3 runs *(verified)*:
+Output:
 
 ```text
 T1 is alive: true
 T2 is alive: true
 ```
 
-Neither `T1 done` nor `T2 done` was printed, and both threads were still alive after 3 seconds each.
+Neither `T1 done` nor `T2 done` is printed, and both threads are still alive after 3 seconds each.
 
 ## The four conditions
 
@@ -89,20 +91,14 @@ Break any one of the four and the deadlock cannot happen.
 
 ## Why the sleep matters
 
-I ran a copy of the demo without the two `Thread.sleep(200)` lines 10 times *(verified)*:
-
-```text
-10 of 10 runs: T1 doneT2 done, T1 is alive: false, T2 is alive: false
-```
-
-All ten finished. Starting a thread takes a moment, so most likely thread 1 finished both of its locks before thread 2 even started, and the two never overlapped. The sleep forces the overlap. This is the same lesson as the counter race: timing can hide a bug, and the code is wrong either way.
+Without the two `Thread.sleep(200)` lines the demo normally finishes and prints `T1 doneT2 done`. Starting a thread takes a moment, so thread 1 usually takes both of its locks and finishes before thread 2 even starts, and the two never overlap. The sleep forces the overlap. This is the same lesson as the counter race: timing can hide a bug, and the code is wrong either way.
 
 > [!WARNING]
-> **A deadlock can pass every test and still be in the code.** Without the pause, 10 of 10 runs finished. The lock order is still opposite in the two threads, so under the right timing in production they will wait for each other forever, with no error message to point at it.
+> **A deadlock can pass every test and still be in the code.** The lock order is still opposite in the two threads, so under the right timing in production they wait for each other forever, with no error message to point at it.
 
 ## The fix: take the locks in the same order
 
-Thread 2 was changed to take `first` and then `second`, like thread 1. Only its two `synchronized` lines changed:
+Thread 2 takes `first` and then `second`, like thread 1. Only its two `synchronized` lines change:
 
 ```java
     Thread t2 = new Thread(() -> {
@@ -119,7 +115,7 @@ Thread 2 was changed to take `first` and then `second`, like thread 1. Only its 
     });
 ```
 
-Five runs, the same output every time *(verified)*:
+Output:
 
 ```text
 T1 doneT2 done
@@ -132,24 +128,32 @@ Now both threads ask for `first` first. Whichever gets it holds it, takes `secon
 > [!IMPORTANT]
 > **Give every lock a place in one global order and always take them in that order.** The order has to be the same in every thread and every method that takes more than one of these locks, including code written far apart.
 
+## Other ways out
+
+| Way | How it helps |
+|---|---|
+| `tryLock` with a timeout | A thread that cannot get its second lock in time releases the first and retries, which breaks hold and wait |
+| One lock instead of two | No second lock to wait for, at the cost of less parallelism |
+| A thread dump (`jstack`) | Does not prevent a deadlock, but reports "Found one Java-level deadlock" and names the threads and locks involved |
+
 ## Interview questions
 
 <details>
 <summary>A service stops responding. The CPU is idle, no exception was logged, and two threads are alive but not progressing. Thread 1 holds lock A and wants B, thread 2 holds B and wants A. What is this?</summary>
 
-A deadlock: a cycle of threads each waiting for a lock held by the next. In the experiment both threads were still alive after `join(3000)` and nothing was printed, which is how a deadlock looks from the outside. A thread dump is the usual way to confirm it; I did not run that yet.
+A deadlock: a cycle of threads each waiting for a lock held by the next. From the outside both threads stay alive and nothing is printed. A thread dump is the usual way to confirm it, because the JVM detects Java-level lock cycles and reports them.
 </details>
 
 <details>
-<summary>A teammate says the deadlock in the demo will go away if you remove the sleep. Is that true?</summary>
+<summary>A teammate says the deadlock in the demo will go away if the sleep is removed. Is that true?</summary>
 
-It will seem to. Without the sleep, 10 of 10 runs finished normally, because the two threads rarely overlap. The two threads still take the locks in opposite order, so a different timing can still deadlock them. Removing the timing does not remove the cycle.
+It will seem to. Without the sleep the two threads rarely overlap, so the demo normally finishes. The two threads still take the locks in opposite order, so a different timing can still deadlock them. Removing the timing does not remove the cycle.
 </details>
 
 <details>
-<summary>Which of the four deadlock conditions would you break to fix the demo, and how?</summary>
+<summary>Which of the four deadlock conditions would be broken to fix the demo, and how?</summary>
 
-The practical choice is circular wait: make both threads take `first` and then `second`, in the same order, so a cycle cannot form. With that change 5 of 5 runs finished and both threads were done. Another option is to give up on the second lock after a timeout with `tryLock`, which I have not run for this case.
+The practical choice is circular wait: make both threads take `first` and then `second`, in the same order, so a cycle cannot form. Another option is to give up on the second lock after a timeout with `tryLock` and retry, which breaks hold and wait.
 </details>
 
 ## Key takeaways
@@ -157,9 +161,9 @@ The practical choice is circular wait: make both threads take `first` and then `
 | Remember | Because |
 |---|---|
 | A deadlock is a cycle of waiting | Thread 1 waits for `second`, thread 2 waits for `first` |
-| It makes no noise | Both threads stayed alive and nothing was printed |
+| It makes no noise | Both threads stay alive and nothing is printed |
 | It needs all four conditions | Remove one and it cannot happen |
-| Timing can hide it | 10 of 10 runs passed without the sleep |
-| The same lock order everywhere prevents it | With both threads taking `first` then `second`, 5 of 5 runs finished |
+| Timing can hide it | Without the overlap the demo passes every time |
+| The same lock order everywhere prevents it | Nobody holds `second` while waiting for `first` |
 
 **Related:** [Concurrency handbook](/notebook/concurrency/overview) · **Previous:** [ReentrantLock](/notebook/concurrency/03-coordination/06-reentrantlock)

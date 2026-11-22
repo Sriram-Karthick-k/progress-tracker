@@ -1,11 +1,12 @@
 # 11. ExecutorService: a ready-made thread pool
 
-`Executors.newFixedThreadPool(3)` gives you what you built by hand in the previous chapter: a task queue and 3 reusable worker threads. You submit tasks and shut the pool down when you are finished.
+`Executors.newFixedThreadPool(3)` gives the pool built by hand in the previous chapter: a task queue and 3 reusable worker threads. Tasks are submitted, and the pool is shut down when finished.
 
 > [!TIP]
 > - **`pool.submit(task)`** puts a task on the pool's queue. A free worker runs it. The workers are named `pool-1-thread-1`, `pool-1-thread-2` and so on.
-> - **Always call `pool.shutdown()`.** Without it the worker threads wait for more tasks forever and the program never ends (it was still running after 5 seconds).
+> - **Always call `pool.shutdown()`.** Without it the worker threads wait for more tasks forever and the program never ends.
 > - **`pool.awaitTermination(10, TimeUnit.SECONDS)`** waits up to 10 seconds for the queued tasks to finish.
+> - **`submit` hides a failing task's exception inside the `Future`.** It surfaces only when `get()` is called.
 
 ## The life of a pool
 
@@ -19,9 +20,9 @@ flowchart LR
 
 `main` hands tasks to the pool and never starts a worker itself. `shutdown()` tells the pool to accept no more tasks. Tasks already on the queue still run.
 
-## The experiment
+## Example
 
-`11-executor-service/ExecutorDemo.java`, written by you. `ExecutorService` is the pool interface, `Executors` makes pools, and `TimeUnit` is the unit for a timeout, all in `java.util.concurrent`.
+`ExecutorService` is the pool interface, `Executors` makes pools, and `TimeUnit` is the unit for a timeout, all in `java.util.concurrent`.
 
 ```java
 import java.util.concurrent.ExecutorService;
@@ -29,7 +30,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class ExecutorDemo {
-  public static void main(String args[]) {
+
+  public static void main(String[] args) {
     int maxNumberOfThreads = 3;
     ExecutorService pool = Executors.newFixedThreadPool(maxNumberOfThreads);
     int numberOfTasks = 10;
@@ -49,26 +51,26 @@ public class ExecutorDemo {
 }
 ```
 
-Two runs *(verified)*:
+Example output of one run:
 
 ```text
-Task 2 on pool-1-thread-3         Task 0 on pool-1-thread-1
-Task 3 on pool-1-thread-3         Task 3 on pool-1-thread-1
-Task 4 on pool-1-thread-3         Task 4 on pool-1-thread-1
-Task 5 on pool-1-thread-3         Task 5 on pool-1-thread-1
-Task 6 on pool-1-thread-3         Task 6 on pool-1-thread-1
-Task 7 on pool-1-thread-3         Task 7 on pool-1-thread-1
-Task 8 on pool-1-thread-3         Task 8 on pool-1-thread-1
-Task 9 on pool-1-thread-3         Task 9 on pool-1-thread-1
-Task 1 on pool-1-thread-2         Task 2 on pool-1-thread-3
-Task 0 on pool-1-thread-1         Task 1 on pool-1-thread-2
+Task 2 on pool-1-thread-3
+Task 3 on pool-1-thread-3
+Task 4 on pool-1-thread-3
+Task 5 on pool-1-thread-3
+Task 6 on pool-1-thread-3
+Task 7 on pool-1-thread-3
+Task 8 on pool-1-thread-3
+Task 9 on pool-1-thread-3
+Task 1 on pool-1-thread-2
+Task 0 on pool-1-thread-1
 ```
 
-The left column is the first run and the right column is the second. In each run one worker ran 8 of the 10 tasks. The tasks only print a line, so they finish almost instantly. A worker that finishes a task takes the next one off the queue before the other workers have even started.
+One worker ran 8 of the 10 tasks. The tasks only print a line, so they finish almost instantly, and a worker that finishes a task takes the next one off the queue before the other workers have even started.
 
 ## Longer tasks spread out
 
-I ran a copy where each task also sleeps for 300 ms, as a real task that does work would *(verified in a scratch file)*:
+When each task also sleeps for 300 ms, as a task that does real work would, the tasks spread across the workers:
 
 ```java
       pool.submit(() -> {
@@ -77,7 +79,7 @@ I ran a copy where each task also sleeps for 300 ms, as a real task that does wo
       });
 ```
 
-One of the two runs, sorted by task number:
+Example output, sorted by task number:
 
 ```text
 Task 0 on pool-1-thread-1
@@ -93,37 +95,36 @@ Task 9 on pool-1-thread-2
 done
 ```
 
-The workers shared the 10 tasks as 3, 4 and 3 in both runs, because each task kept its worker busy long enough for the others to take the next ones. The `done` line is printed after `awaitTermination` returns.
+The workers share the 10 tasks as 3, 4 and 3, because each task keeps its worker busy long enough for the others to take the next ones. The `done` line is printed after `awaitTermination` returns.
 
 ## Without shutdown()
 
-I ran a copy without `shutdown()` and without `awaitTermination` *(verified in a scratch file)*. It submitted 3 tasks and printed `main ends here`:
+Without `shutdown()` and `awaitTermination`, a program that submits 3 tasks prints:
 
 ```text
 main: all tasks submitted, main ends here
 Task 1 on pool-1-thread-2
 Task 2 on pool-1-thread-3
 Task 0 on pool-1-thread-1
-exit code: 124 (still running, stopped after 5 seconds)
 ```
 
-All three tasks finished and `main` had ended, yet the program kept running. The three workers were still alive, waiting on the queue for more tasks.
+All three tasks finish and `main` ends, yet the process keeps running. The three workers are still alive, waiting on the queue for more tasks.
 
 > [!WARNING]
-> **A pool that is never shut down keeps your program alive.** Call `shutdown()` when you are done submitting, then `awaitTermination` if you need to wait for the tasks.
+> **A pool that is never shut down keeps the program alive.** Call `shutdown()` when done submitting, then `awaitTermination` to wait for the tasks.
 
 | Call | What it does |
 |---|---|
-| `Executors.newFixedThreadPool(3)` | Makes a pool with 3 worker threads and a task queue |
+| `Executors.newFixedThreadPool(3)` | Makes a pool with 3 worker threads and a task queue. The factory methods are in `Executors`, with an `s`. |
 | `pool.submit(task)` | Queues the task for a worker |
 | `pool.shutdown()` | Accepts no new tasks. Tasks already queued still run. It returns at once. |
-| `pool.awaitTermination(10, TimeUnit.SECONDS)` | Waits up to 10 seconds for the queued tasks to finish (documented behaviour, the order of the `done` line was not checked separately) |
+| `pool.awaitTermination(10, TimeUnit.SECONDS)` | Waits up to 10 seconds for the queued tasks to finish |
 
 ## Getting a result back: Callable and Future
 
-A `Runnable` returns nothing. A **`Callable`** is a task that returns a value and may throw a checked exception. When you `submit` a lambda that returns a value, the pool treats it as a `Callable` and gives you a **`Future`**: a handle for a result that is not ready yet. `future.get()` waits until the task has finished and returns its result.
+A `Runnable` returns nothing. A **`Callable`** is a task that returns a value and may throw a checked exception. When a lambda that returns a value is passed to `submit`, the pool treats it as a `Callable` and returns a **`Future`**: a handle for a result that is not ready yet. `future.get()` waits until the task has finished and returns its result.
 
-`11-executor-service/FutureDemo.java`. Three tasks each sleep for 500 ms and return the square of a number. The first version of the file had `Executor.newFixedThreadPool`, which does not exist: the factory methods are in the class `Executors`, with an `s`.
+Three tasks each sleep for 500 ms and return the square of a number:
 
 ```java
 import java.util.ArrayList;
@@ -133,7 +134,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class FutureDemo {
-  public static void main(String args[]) throws Exception {
+
+  public static void main(String[] args) throws Exception {
     ExecutorService pool = Executors.newFixedThreadPool(3);
     List<Future<Integer>> futures = new ArrayList<>();
 
@@ -159,7 +161,7 @@ public class FutureDemo {
 }
 ```
 
-Output of one run *(verified, a second run gave the same shape)*:
+Example output:
 
 ```text
 all 3 submitted after 1 ms
@@ -171,17 +173,17 @@ total 513 ms
 
 | Line | What it shows |
 |---|---|
-| `all 3 submitted after 1 ms` | `submit` returns at once. `main` did not wait for any task. |
-| `result 1 after 510 ms` | The first `get()` waited until the first task finished, about 500 ms. |
+| `all 3 submitted after 1 ms` | `submit` returns at once. `main` does not wait for any task. |
+| `result 1 after 510 ms` | The first `get()` waits until the first task finishes, about 500 ms. |
 | `result 4` and `result 9` at 513 ms | Those tasks had already finished, so `get()` returned straight away. |
-| `total 513 ms` | The three tasks ran at the same time. One after another they would have taken about 1500 ms. |
+| `total 513 ms` | The three tasks ran at the same time. One after another they would take about 1500 ms. |
 
 > [!WARNING]
-> **`get()` blocks the thread that calls it.** Call it only after you have submitted all the work. If you called `get()` right after each `submit`, the tasks would run one after another and you would lose the speed-up.
+> **`get()` blocks the thread that calls it.** Call it only after all the work has been submitted. Calling `get()` right after each `submit` runs the tasks one after another and loses the speed-up.
 
 ## When a task throws
 
-`11-executor-service/FailingTask.java`. Two tasks throw `IllegalStateException("boom")`. The first one's `Future` is ignored, and the second one's `get()` is called inside a `try` that catches `ExecutionException`.
+Two tasks throw `IllegalStateException("boom")`. The first one's `Future` is ignored, and the second one's `get()` is called inside a `try` that catches `ExecutionException`.
 
 ```java
 import java.util.concurrent.ExecutionException;
@@ -190,10 +192,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class FailingTask {
-  public static void main(String args[]) throws Exception {
+
+  public static void main(String[] args) throws Exception {
     ExecutorService pool = Executors.newFixedThreadPool(1);
 
-    // case 1: the task throws, and we ignore the Future
+    // case 1: the task throws, and the Future is ignored
     pool.submit(() -> {
       throw new IllegalStateException("boom");
     });
@@ -201,7 +204,7 @@ public class FailingTask {
 
     Thread.sleep(500);                       // give the task time to run and fail
 
-    // case 2: the task throws, and we keep the Future and call get()
+    // case 2: the task throws, and the Future is kept and get() is called
     Future<?> future = pool.submit(() -> {
       throw new IllegalStateException("boom");
     });
@@ -217,18 +220,18 @@ public class FailingTask {
 }
 ```
 
-Output, the same in 2 of 2 runs *(verified)*:
+Output:
 
 ```text
 case 1: submitted
 case 2: get() threw ExecutionException, cause = java.lang.IllegalStateException: boom
 ```
 
-In case 1 nothing at all was printed about the failure: no stack trace and no error. `submit` catches the exception and stores it inside the `Future`. In case 2, `get()` re-throws it wrapped in an **`ExecutionException`**, and `e.getCause()` is the real exception.
+In case 1 nothing at all is printed about the failure: no stack trace and no error. `submit` catches the exception and stores it inside the `Future`. In case 2, `get()` re-throws it wrapped in an **`ExecutionException`**, and `e.getCause()` is the real exception.
 
 ## execute() behaves differently
 
-I ran a scratch copy that uses `pool.execute(...)` instead of `submit(...)` for the same failing task *(verified)*:
+The same failing task run with `pool.execute(...)` instead of `submit(...)` prints:
 
 ```text
 Exception in thread "pool-1-thread-1" java.lang.IllegalStateException: boom
@@ -239,71 +242,71 @@ Exception in thread "pool-1-thread-1" java.lang.IllegalStateException: boom
 main: still running after execute()
 ```
 
-`execute` has no `Future`, so the exception reaches the worker thread's uncaught-exception handler and the stack trace is printed, as with a plain `Thread`. `main` carried on.
+`execute` has no `Future`, so the exception reaches the worker thread's uncaught-exception handler and the stack trace is printed, as with a plain `Thread`. `main` carries on.
 
 | Call | Returns | A task that throws |
 |---|---|---|
-| `pool.submit(task)` | a `Future` | The exception is stored in the `Future`. Nothing is printed unless you call `get()`. |
+| `pool.submit(task)` | a `Future` | The exception is stored in the `Future`. Nothing is printed unless `get()` is called. |
 | `pool.execute(task)` | nothing | The stack trace is printed on the console |
 
 > [!WARNING]
-> **A failure inside a `submit` task is silent unless you call `get()`.** If you never look at the `Future`, the work failed and nothing tells you. Either call `get()` and handle `ExecutionException`, or catch exceptions inside the task and log them.
+> **A failure inside a `submit` task is silent unless `get()` is called.** If the `Future` is never looked at, the work failed and nothing says so. Either call `get()` and handle `ExecutionException`, or catch exceptions inside the task and log them.
 
 ## Interview questions
 
 <details>
 <summary>main submits 3 tasks, prints "main ends here" and every task has finished, but the process keeps running. Why?</summary>
 
-The pool was never shut down. Its 3 worker threads stay alive waiting on the queue for more tasks, so the JVM cannot exit. In the experiment the program was still running after 5 seconds. Call `shutdown()` after the last `submit`.
+The pool was never shut down. Its 3 worker threads stay alive waiting on the queue for more tasks, so the JVM cannot exit. Call `shutdown()` after the last `submit`.
 </details>
 
 <details>
-<summary>You submit 10 quick tasks to a pool of 3 and one thread ran 8 of them. Is the pool broken?</summary>
+<summary>10 quick tasks are submitted to a pool of 3 and one thread ran 8 of them. Is the pool broken?</summary>
 
-No. A worker that finishes a quick task takes the next one before the other workers have started, so one worker can end up with most of them. When each task slept for 300 ms they spread as 3, 4 and 3 in both runs. Do not rely on an even split of short tasks.
+No. A worker that finishes a quick task takes the next one before the other workers have started, so one worker can end up with most of them. With tasks that take longer, they spread more evenly. Do not rely on an even split of short tasks.
 </details>
 
 <details>
 <summary>What is the difference between shutdown() and awaitTermination()?</summary>
 
-`shutdown()` returns at once and only tells the pool to accept no new tasks. `awaitTermination(10, TimeUnit.SECONDS)` blocks the caller for up to 10 seconds, until the queued tasks have finished or the time runs out. You normally call `shutdown()` first and then `awaitTermination`.
+`shutdown()` returns at once and only tells the pool to accept no new tasks. `awaitTermination(10, TimeUnit.SECONDS)` blocks the caller for up to 10 seconds, until the queued tasks have finished or the time runs out. Normally `shutdown()` is called first and then `awaitTermination`.
 </details>
 
 <details>
-<summary>Three tasks each take 500 ms and each returns a value. You submit them all, then call get() on each Future. How long does the whole thing take?</summary>
+<summary>Three tasks each take 500 ms and each returns a value. All are submitted, then get() is called on each Future. How long does the whole thing take?</summary>
 
-About 500 ms, not 1500 ms. `submit` returns at once and the three tasks run at the same time on three workers. The first `get()` waits about 500 ms, and the other two results are already there. The experiment printed a total of 513 ms.
+About 500 ms, not 1500 ms. `submit` returns at once and the three tasks run at the same time on three workers. The first `get()` waits about 500 ms, and the other two results are already there.
 </details>
 
 <details>
 <summary>What does submit() return when the lambda returns a value, and what does get() do?</summary>
 
-A `Future`, a handle for a result that is not ready yet. `get()` blocks the calling thread until the task has finished and then returns the result. In the experiment the first `get()` waited about 510 ms, and the later ones returned at once.
+A `Future`, a handle for a result that is not ready yet. `get()` blocks the calling thread until the task has finished and then returns the result. If the result is already there, it returns at once.
 </details>
 
 <details>
-<summary>A task submitted with pool.submit() throws an exception, but nothing appears in the logs and the program carries on. Where did the exception go, and how do you see it?</summary>
+<summary>A task submitted with pool.submit() throws an exception, but nothing appears in the logs and the program carries on. Where did the exception go, and how is it seen?</summary>
 
-`submit` catches it and stores it in the returned `Future`. Calling `get()` re-throws it wrapped in an `ExecutionException`, and `getCause()` returns the real exception. In the experiment the ignored `Future` produced no output at all, while `get()` printed `cause = java.lang.IllegalStateException: boom`.
+`submit` catches it and stores it in the returned `Future`. Calling `get()` re-throws it wrapped in an `ExecutionException`, and `getCause()` returns the real exception. An ignored `Future` produces no output at all.
 </details>
 
 <details>
 <summary>The same failing task is run with execute() instead of submit(). What is different?</summary>
 
-`execute` returns no `Future`, so the exception reaches the worker thread's uncaught-exception handler and the stack trace is printed to the console as `Exception in thread "pool-1-thread-1" ...`. `main` kept running. With `submit` the same failure was silent.
+`execute` returns no `Future`, so the exception reaches the worker thread's uncaught-exception handler and the stack trace is printed to the console as `Exception in thread "pool-1-thread-1" ...`. `main` keeps running. With `submit` the same failure is silent.
 </details>
 
 ## Key takeaways
 
 | Remember | Because |
 |---|---|
-| A fixed pool is a queue and reusable workers | It is your `MiniPool` as a ready-made class |
-| `shutdown()` is not optional | Without it the program was still running after 5 seconds |
-| Worker names are `pool-1-thread-N` | They appeared in every run |
-| Short tasks do not spread evenly | One worker ran 8 of 10 in both runs |
+| A fixed pool is a queue and reusable workers | It is the hand-built pool as a ready-made class |
+| `shutdown()` is not optional | Without it the idle workers keep the program alive |
+| Worker names are `pool-1-thread-N` | The default thread factory names them that way |
+| Short tasks do not spread evenly | One free worker can take most of them |
 | `submit` of a value-returning task gives a `Future` | `get()` waits for the result |
-| Submit everything first, then call `get()` | Three 500 ms tasks took 513 ms in total, not about 1500 ms |
-| `submit` hides a task's exception in the `Future` | Case 1 printed nothing, and `get()` threw `ExecutionException` |
+| Submit everything first, then call `get()` | Three 500 ms tasks take about 500 ms in total, not 1500 ms |
+| `submit` hides a task's exception in the `Future` | Nothing prints, and `get()` throws `ExecutionException` |
 | `execute` prints the stack trace | There is no `Future`, so the worker's handler reports it |
 
 **Related:** [Concurrency handbook](/notebook/concurrency/overview) · **Previous:** [A thread pool from scratch](/notebook/concurrency/05-executors-and-async/10-thread-pool-from-scratch)
