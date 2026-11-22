@@ -1,4 +1,4 @@
-# 1. Concurrency handbook: from Thread to virtual threads
+# 1. Concurrency handbook: from Thread to thread-safe design
 
 Concurrency means several pieces of code making progress at the same time. Starting a second thread is easy. Almost every bug comes from one thing: **two threads touching the same data**. This handbook goes from a single `Thread` to locks, queues, pools and the rest of `java.util.concurrent`, one small runnable example per idea.
 
@@ -27,7 +27,7 @@ mindmap
     Async and parallel
       CompletableFuture
       ForkJoin
-      Virtual threads
+      Interrupts
 ```
 
 Shared state is the problem. Locks and signals, atomics and concurrent collections are the tools that fix it. Queues, pools and async code are how real programs run many tasks.
@@ -52,8 +52,13 @@ Shared state is the problem. Locks and signals, atomics and concurrent collectio
 | 14 | [CountDownLatch](/notebook/concurrency/03-coordination/14-countdownlatch) | Wait for N events, or hold everyone at a gate |
 | 15 | [Semaphore](/notebook/concurrency/03-coordination/15-semaphore) | Limit how many threads use a resource at once |
 | 16 | [ReadWriteLock](/notebook/concurrency/03-coordination/16-readwritelock) | Many readers share the lock, a writer is alone |
+| 17 | [CompletableFuture](/notebook/concurrency/05-executors-and-async/17-completablefuture) | Run tasks in the background and chain or combine their results |
+| 18 | [ForkJoin](/notebook/concurrency/06-parallelism/18-fork-join) | Split a big CPU job into pieces, run them on all cores, add the answers |
+| 19 | [Interrupts](/notebook/concurrency/01-foundations/19-interrupts) | Ask a thread to stop: a soft request, and what `InterruptedException` means |
+| 20 | [ScheduledExecutorService](/notebook/concurrency/05-executors-and-async/20-scheduled-executor) | Run a task after a delay or on a repeating schedule |
+| 21 | [Thread-safe lists](/notebook/concurrency/04-collections-and-queues/21-thread-safe-lists) | `synchronizedList` versus `CopyOnWriteArrayList`, and why a loop of calls is not safe |
 
-Planned next: `CompletableFuture`, ForkJoin, virtual threads (JDK 21), copy-on-write and synchronized collections, immutability and `ThreadLocal`, thread-safe class design for LLD (rate limiter, LRU cache), and reading thread dumps.
+Planned next: the other blocking queues (`LinkedBlockingQueue`, `PriorityBlockingQueue`, `DelayQueue`), immutability and `ThreadLocal`, thread-safe class design for LLD (rate limiter, LRU cache), and reading thread dumps.
 
 ## Which tool for which problem
 
@@ -70,6 +75,12 @@ Planned next: `CompletableFuture`, ForkJoin, virtual threads (JDK 21), copy-on-w
 | Wait for N tasks, or release many threads at once | `CountDownLatch` | 14 |
 | Limit concurrent access to a resource | `Semaphore` | 15 |
 | Data that is read much more often than it is written | `ReentrantReadWriteLock` | 16 |
+| Call several services at the same time and merge the answers | `CompletableFuture` with `thenCombine` or `allOf` | 17 |
+| Split a big CPU-bound job across all cores | `ForkJoinPool` with `RecursiveTask` | 18 |
+| Ask a running thread or task to stop | `interrupt()`, with the task checking the flag or handling `InterruptedException` | 19 |
+| Run a task after a delay or on a repeating schedule | `ScheduledExecutorService`: `scheduleAtFixedRate` or `scheduleWithFixedDelay` | 20 |
+| A list read by many threads and changed rarely | `CopyOnWriteArrayList`, iterated with for-each | 21 |
+| Check then add to a shared list | `CopyOnWriteArrayList.addIfAbsent`, not `contains` followed by `add` | 21 |
 
 ## Run the lab
 
@@ -79,6 +90,6 @@ The code is in `playground/lld-practice/concurrency-lab`, with one folder per ch
 java 01-threads-first-steps/Hello.java
 ```
 
-Change the path to run another example. Virtual threads need JDK 21 and the host has JDK 17, so those examples run in a throwaway JDK 21 Docker container.
+Change the path to run another example.
 
 **Related:** [LLD session 1: rate limiter](/notebook/lld/session-1-rate-limiter)

@@ -64,7 +64,7 @@ Without the `Thread.sleep(100);` line the two lines usually come out the other w
 | `t.start()` | Launches the thread and returns immediately. The caller carries on. |
 | `Thread.sleep(100)` | Pauses the thread that calls it for 100 ms. |
 | `t.join()` | The caller waits until `t` has finished. |
-| `throws Exception` | `join()` and `sleep()` can throw a checked exception (`InterruptedException`), so the calling method must declare or handle it. |
+| `throws Exception` | `join()` and `sleep()` can throw a checked exception (`InterruptedException`), so the calling method must declare or handle it. See [Interrupts](/notebook/concurrency/01-foundations/19-interrupts). |
 
 ## join: where it goes matters
 
