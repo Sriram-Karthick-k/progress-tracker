@@ -6,8 +6,7 @@ description: Write or upgrade a Notebook note in content/notes/ as a rich, visua
 # Writing notes that people remember
 
 Notes in `content/notes/**.md` render at `/notebook/<path>` through a custom
-pipeline (`lib/notes.ts`), live from disk. An open tab updates itself when the file is saved (no refresh);
-for a live design session see the `whiteboard` skill.
+pipeline (`lib/notes.ts`), live from disk. An open tab updates itself when the file is saved (no refresh).
 
 **The bar:** a note should teach the topic to someone who has 10 minutes before
 an interview, and still make sense to them in 6 months. That means **picture
