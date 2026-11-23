@@ -305,4 +305,4 @@ The structure is the same, and the intent differs. A decorator adds behaviour to
 | Spring generates the proxy for you | That is what `@Transactional` and `@Cacheable` do |
 | Use functional wrapping for small, stateless extras | It needs no new classes |
 
-**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Glossary](/notebook/system-design/pattern/lld/glossary) · [Strategy](/notebook/system-design/pattern/lld/strategy) · [Train ticket booking board](/notebook/whiteboard/train-ticket-booking)
+**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Glossary](/notebook/system-design/pattern/lld/glossary) · [Strategy](/notebook/system-design/pattern/lld/strategy) · [Train ticket booking board](/notebook/system-design/practice/hld/train-ticket-booking)

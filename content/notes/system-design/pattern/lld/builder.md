@@ -313,4 +313,4 @@ A constructor does not compile if you leave out a required argument. With a buil
 | The check for required values moves from compile time to run time | Take the required values up front, or use a step builder |
 | Use it for many optional parameters | For two or three parameters, a constructor is simpler |
 
-**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Glossary](/notebook/system-design/pattern/lld/glossary) · [Factory Method](/notebook/system-design/pattern/lld/factory-method) · [Train ticket booking board](/notebook/whiteboard/train-ticket-booking)
+**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Glossary](/notebook/system-design/pattern/lld/glossary) · [Factory Method](/notebook/system-design/pattern/lld/factory-method) · [Train ticket booking board](/notebook/system-design/practice/hld/train-ticket-booking)

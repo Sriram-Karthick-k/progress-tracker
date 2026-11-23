@@ -550,7 +550,7 @@ payment service is a third participant that never joins a database transaction a
 
 | Where | How a saga shows up |
 |---|---|
-| Train-ticket booking | Hold the seat, take the payment, confirm. A refund is the compensation (see the [board](/notebook/whiteboard/train-ticket-booking)) |
+| Train-ticket booking | Hold the seat, take the payment, confirm. A refund is the compensation (see the [board](/notebook/system-design/practice/hld/train-ticket-booking)) |
 | Order platform | Order, stock and payment in separate services, as built in `playground/hld/saga-pattern` |
 | Travel booking | Flight, hotel and car in one trip: cancel the others if one fails |
 | Money transfer | Debit in one bank and credit in another, with a reversal if the credit fails |

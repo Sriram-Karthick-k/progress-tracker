@@ -56,4 +56,4 @@ The nested form suits a design with several pictures that belong together, such 
 > [!NOTE]
 > The board is one-way: the AI draws, you read, pan and zoom. Dragging shapes on screen is not saved back to the file.
 
-**Related:** [Several diagrams on one canvas](/notebook/notebook-features#several-diagrams-on-one-canvas) has the drawing syntax, and [Design a train ticket booking system](/notebook/whiteboard/train-ticket-booking) is a finished board to look at.
+**Related:** [Several diagrams on one canvas](/notebook/notebook-features#several-diagrams-on-one-canvas) has the drawing syntax, and [Design a train ticket booking system](/notebook/system-design/practice/hld/train-ticket-booking) is a finished board to look at.

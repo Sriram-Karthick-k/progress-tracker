@@ -272,4 +272,4 @@ The enum is the smallest, but its rules grow into one big file. The table shows 
 | Test the legal moves of every state | A forgotten override fails only at run time |
 | An in-memory state swap is not concurrency-safe | A real service persists the status and guards the change |
 
-**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Glossary](/notebook/system-design/pattern/lld/glossary) · [Strategy](/notebook/system-design/pattern/lld/strategy) · [Observer](/notebook/system-design/pattern/lld/observer) · [Train ticket booking board](/notebook/whiteboard/train-ticket-booking)
+**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Glossary](/notebook/system-design/pattern/lld/glossary) · [Strategy](/notebook/system-design/pattern/lld/strategy) · [Observer](/notebook/system-design/pattern/lld/observer) · [Train ticket booking board](/notebook/system-design/practice/hld/train-ticket-booking)

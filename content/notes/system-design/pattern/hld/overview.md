@@ -58,4 +58,4 @@ Four families: keep data right across services, survive a failing dependency, ha
 | Competing consumers | One queue, many workers, each message handled once | Planned |
 | Publish and subscribe | Many consumers need the same event, and the producer should not know them | Kafka topic and consumer group built in the sprint; no standalone note yet |
 
-**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Train ticket booking board](/notebook/whiteboard/train-ticket-booking)
+**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Train ticket booking board](/notebook/system-design/practice/hld/train-ticket-booking)

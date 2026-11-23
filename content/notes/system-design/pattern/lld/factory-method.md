@@ -347,4 +347,4 @@ A bean is a singleton, so every request thread shares one instance. `requestCoun
 | In Factory Method only the creating step is abstract | The shared flow stays in the parent, at the cost of one subclass per variant |
 | Do not use a future name as the "unknown" example in a test | It fails the day that case is added |
 
-**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Glossary](/notebook/system-design/pattern/lld/glossary) · [Strategy](/notebook/system-design/pattern/lld/strategy) · [Train ticket booking board](/notebook/whiteboard/train-ticket-booking)
+**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Glossary](/notebook/system-design/pattern/lld/glossary) · [Strategy](/notebook/system-design/pattern/lld/strategy) · [Train ticket booking board](/notebook/system-design/practice/hld/train-ticket-booking)

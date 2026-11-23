@@ -210,4 +210,6 @@ link: Booking flow -> Statuses "ticket and payment states"
 link: API -> Data model "the tables behind them"
 ````
 
-Open it full screen with the expand button, then zoom and pan. Every decision will live on this canvas as it grows. The long written version, with all the tables, is kept in [Train Ticket Booking: the written version](/notebook/whiteboard/train-ticket-booking-written).
+Open it full screen with the expand button, then zoom and pan.
+
+**Related:** [System design practice: the map](/notebook/system-design/practice/overview) · [HLD patterns: the map](/notebook/system-design/pattern/hld/overview) · [LLD patterns: the map](/notebook/system-design/pattern/lld/overview)

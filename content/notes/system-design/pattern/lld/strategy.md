@@ -208,4 +208,4 @@ Checked by running the lambda and the enum: Tatkal on 1000 gives 1300 and `Quota
 | Space the order numbers | The next rule slots in without renumbering |
 | Every strategy needs `@Component` | No annotation means no bean and a silent skip |
 
-**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Glossary](/notebook/system-design/pattern/lld/glossary) · [Train ticket booking board](/notebook/whiteboard/train-ticket-booking)
+**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Glossary](/notebook/system-design/pattern/lld/glossary) · [Train ticket booking board](/notebook/system-design/practice/hld/train-ticket-booking)

@@ -383,4 +383,4 @@ The one instance and its counter live as long as the JVM, so state left by earli
 | It lives as long as the JVM | Tests leak state, so inject dependencies instead |
 | In Spring it is one per container, not per JVM | Two contexts have two instances |
 
-**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Glossary](/notebook/system-design/pattern/lld/glossary) · [Factory Method](/notebook/system-design/pattern/lld/factory-method) · [Train ticket booking board](/notebook/whiteboard/train-ticket-booking)
+**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Glossary](/notebook/system-design/pattern/lld/glossary) · [Factory Method](/notebook/system-design/pattern/lld/factory-method) · [Train ticket booking board](/notebook/system-design/practice/hld/train-ticket-booking)

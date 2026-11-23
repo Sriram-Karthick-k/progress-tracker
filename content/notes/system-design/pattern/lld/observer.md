@@ -209,4 +209,4 @@ The Spring event bus was timed in Step 6 (synchronous). The pull and broker vari
 | Notification is synchronous by default | A slow observer delays the caller, and async or a queue each have costs |
 | Every observer needs `@Component` | No annotation means no bean and a silent skip |
 
-**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Glossary](/notebook/system-design/pattern/lld/glossary) · [Strategy](/notebook/system-design/pattern/lld/strategy) · [Train ticket booking board](/notebook/whiteboard/train-ticket-booking)
+**Related:** [LLD patterns: the map](/notebook/system-design/pattern/lld/overview) · [Glossary](/notebook/system-design/pattern/lld/glossary) · [Strategy](/notebook/system-design/pattern/lld/strategy) · [Train ticket booking board](/notebook/system-design/practice/hld/train-ticket-booking)
