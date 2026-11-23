@@ -386,7 +386,7 @@ carefully:
 | Orchestrator | A plain `@Service` that calls the steps in order and catches failure |
 | Recovery of stuck sagas | A `@Scheduled` job (needs `@EnableScheduling`) that reads orders by status with a derived query, `findByStatusInAndCreatedAtBefore`, and calls `cancel` again |
 | Reliable messages | Transactional outbox plus `@KafkaListener` (idempotent consumer) |
-| Call to the payment service | `RestClient` with `@Retryable` and a circuit breaker |
+| Call to the payment service | `RestClient` with `@Retryable` and a [circuit breaker](/notebook/system-design/pattern/hld/circuit-breaker) |
 | Workflow engines (named from memory, not used here) | Spring State Machine, Axon sagas, Temporal, Camunda |
 
 ```java

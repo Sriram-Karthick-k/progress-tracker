@@ -5,7 +5,7 @@ An HLD pattern is a named answer to a problem that shows up in almost every big 
 > [!TIP]
 > - **What this folder is:** the patterns you reach for when you draw boxes and arrows between services, queues and stores.
 > - **How to use it:** in an interview, find the problem in the table, then name the pattern and its trade-off.
-> - **Where we are:** saga, outbox, idempotency keys and retry with a circuit breaker are done. The rest are planned.
+> - **Where we are:** saga, outbox, idempotency keys, retry with a circuit breaker and CQRS are done. The rest are planned.
 
 ## HLD patterns at a glance
 
@@ -45,8 +45,8 @@ Four families: keep data right across services, survive a failing dependency, ha
 | Saga | One business step spans several databases and one of them can fail | Done: [Saga](/notebook/system-design/pattern/hld/saga) |
 | Transactional outbox | A row must be saved and an event must be sent, and both have to happen | Done: [Transactional outbox](/notebook/spring-boot-system-design/05-distributed-problems/transactional-outbox) |
 | Idempotency keys | A retried or double-clicked request must act once | Done: [Idempotency keys](/notebook/spring-boot-system-design/05-distributed-problems/idempotency-keys) |
-| Retry, backoff, circuit breaker | A dependency is slow or down and callers pile up | Built and verified in the sprint; no standalone note yet |
-| CQRS | Reads and writes need different shapes | Planned |
+| Retry, backoff, circuit breaker | A dependency is slow or down and callers pile up | Done: [Circuit breaker](/notebook/system-design/pattern/hld/circuit-breaker), with retry and backoff |
+| CQRS | Reads and writes need different shapes | Done: [CQRS](/notebook/system-design/pattern/hld/cqrs) |
 | Event sourcing | You need the full history and the ability to rebuild state | Planned |
 | 2PC and TCC | Compared with saga: strict atomicity across services | Planned |
 | Bulkhead | One slow dependency must not take down everything | Planned |
