@@ -5,10 +5,12 @@
 | Q1 | [860 Lemonade Change](https://leetcode.com/problems/lemonade-change/) | Easy | 3 | | | Solved |
 | Q2 | [1094 Car Pooling](https://leetcode.com/problems/car-pooling/) | Medium | 4 | | | Solved |
 | Q3 | [767 Reorganize String](https://leetcode.com/problems/reorganize-string/) | Medium | 5 | | | Solved |
-| Q4 | [97 Interleaving String](https://leetcode.com/problems/interleaving-string/) | Medium | 6 | | | Not started |
-| Q5 | [1235 Maximum Profit in Job Scheduling](https://leetcode.com/problems/maximum-profit-in-job-scheduling/) | Hard | 8 | | | Not started |
+| Q4 | [97 Interleaving String](https://leetcode.com/problems/interleaving-string/) | Medium | 6 | | | Failed |
+| Q5 | [1235 Maximum Profit in Job Scheduling](https://leetcode.com/problems/maximum-profit-in-job-scheduling/) | Hard | 8 | | | Failed |
 
-Status values: Not started, In progress, Solved, Skipped. Time box: 2 hours 30 minutes in total, 26 points. Java, submitted on LeetCode, then the code is pasted for review.
+**Result (contest day 2026-11-24): 12 of 26 points.** Q1 to Q3 solved in time. Q4 and Q5 were not finished in time, so they count as failed.
+
+Status values: Not started, In progress, Solved, Failed, Skipped. Time box: 2 hours 30 minutes in total, 26 points. Java, submitted on LeetCode, then the code is pasted for review.
 
 ## Q1. Lemonade Change (Easy, 3 points)
 
